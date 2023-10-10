@@ -9,20 +9,22 @@ export function initialize(svg: SVGElement) {
 
     let lastX = 0;
     let lastY = 0;
+    let upd = (e: PointerEvent) => {
+        lastX = (e.clientX - rect.left) / View.zoom() - View.x;
+        lastY = (e.clientY - rect.top) / View.zoom() - View.y;
+    };
 
     svg.addEventListener('contextmenu', e => e.preventDefault());
 
     svg.addEventListener('pointermove', e => {
-        lastX = e.clientX - rect.left - View.x;
-        lastY = e.clientY - rect.top - View.y;
+        upd(e);
         for (const t of activeTools) t.onmove(lastX, lastY);
     });
 
     svg.addEventListener('pointerdown', e => {
+        upd(e);
         const t = Toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        lastX = e.clientX - rect.left - View.x;
-        lastY = e.clientY - rect.top - View.y;
         t.ondown(lastX, lastY);
         activeTools.add(t);
     });
@@ -52,6 +54,14 @@ export function initialize(svg: SVGElement) {
         if (t === undefined) return;
         t.onup();
         activeTools.delete(t);
+    });
+
+    document.body.addEventListener('wheel', e => {
+        console.log(e);
+        const t = Toolbox.wheelTools.get(e.deltaY < 0);
+        if (t === undefined) return;
+        t.ondown(lastX, lastY);
+        t.onup();
     });
 
 }
