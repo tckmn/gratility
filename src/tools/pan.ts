@@ -7,19 +7,15 @@ export default class PanTool implements Tool {
 
     private mx = 0;
     private my = 0;
-    private vx = 0;
-    private vy = 0;
 
     public ondown(x: number, y: number) {
         this.mx = x;
         this.my = y;
-        this.vx = View.x;
-        this.vy = View.y;
     }
 
     public onmove(x: number, y: number) {
-        View.setX(this.vx - this.mx + x);
-        View.setY(this.vy - this.my + y);
+        View.setX(View.x - this.mx + x);
+        View.setY(View.y - this.my + y);
         View.update();
     }
 

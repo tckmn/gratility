@@ -1,5 +1,6 @@
 import Tool from 'tools/tool';
 import * as Toolbox from 'toolbox';
+import * as View from 'view';
 
 export function initialize(svg: SVGElement) {
 
@@ -12,16 +13,16 @@ export function initialize(svg: SVGElement) {
     svg.addEventListener('contextmenu', e => e.preventDefault());
 
     svg.addEventListener('pointermove', e => {
-        lastX = e.clientX - rect.left;
-        lastY = e.clientY - rect.top;
+        lastX = e.clientX - rect.left - View.x;
+        lastY = e.clientY - rect.top - View.y;
         for (const t of activeTools) t.onmove(lastX, lastY);
     });
 
     svg.addEventListener('pointerdown', e => {
         const t = Toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        lastX = e.clientX - rect.left;
-        lastY = e.clientY - rect.top;
+        lastX = e.clientX - rect.left - View.x;
+        lastY = e.clientY - rect.top - View.y;
         t.ondown(lastX, lastY);
         activeTools.add(t);
     });
