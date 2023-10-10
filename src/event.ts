@@ -57,7 +57,6 @@ export function initialize(svg: SVGElement) {
     });
 
     document.body.addEventListener('wheel', e => {
-        console.log(e);
         const t = Toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
         t.ondown(lastX, lastY);

@@ -28,3 +28,24 @@ export class Surface {
 }
 
 export const surfaces = new Map<number, Surface>();
+
+export class Line {
+    private elt: SVGElement;
+
+    public constructor(public readonly color: number, horiz: boolean, x: number, y: number) {
+        this.elt = Draw.draw(Layer.line, 'rect', {
+            width: horiz ? Measure.CELL : Measure.LINE,
+            height: horiz ? Measure.LINE : Measure.CELL,
+            x: Measure.CELL*(x+0.5),
+            y: Measure.CELL*(y+0.5),
+            fill: 'green'
+        });
+    }
+
+    public destroy() {
+        Layer.line.removeChild(this.elt);
+    }
+}
+
+export const hlines = new Map<number, Line>();
+export const vlines = new Map<number, Line>();
