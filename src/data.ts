@@ -12,12 +12,13 @@ export function decode(n: number): [number, number] {
 export class Surface {
     private elt: SVGElement;
 
-    public constructor(public readonly color: number, x: number, y: number) {
+    public constructor(public readonly color: number, n: number) {
+        const [x, y] = decode(n);
         this.elt = Draw.draw(Layer.surface, 'rect', {
             width: Measure.CELL,
             height: Measure.CELL,
-            x: Measure.CELL*x,
-            y: Measure.CELL*y,
+            x: Measure.HALFCELL*x,
+            y: Measure.HALFCELL*y,
             fill: 'red'
         });
     }
@@ -32,13 +33,15 @@ export const surfaces = new Map<number, Surface>();
 export class Line {
     private elt: SVGElement;
 
-    public constructor(public readonly color: number, horiz: boolean, x: number, y: number) {
-        this.elt = Draw.draw(Layer.line, 'rect', {
-            width: horiz ? Measure.CELL : Measure.LINE,
-            height: horiz ? Measure.LINE : Measure.CELL,
-            x: Measure.CELL*(x+0.5),
-            y: Measure.CELL*(y+0.5),
-            fill: 'green'
+    public constructor(public readonly color: number, n: number) {
+        const [x, y] = decode(n);
+        const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
+        this.elt = Draw.draw(Layer.line, 'line', {
+            x1: (x - horiz) * Measure.HALFCELL,
+            x2: (x + horiz) * Measure.HALFCELL,
+            y1: (y - (1-horiz)) * Measure.HALFCELL,
+            y2: (y + (1-horiz)) * Measure.HALFCELL,
+            stroke: 'green'
         });
     }
 
@@ -47,5 +50,4 @@ export class Line {
     }
 }
 
-export const hlines = new Map<number, Line>();
-export const vlines = new Map<number, Line>();
+export const lines = new Map<number, Line>();

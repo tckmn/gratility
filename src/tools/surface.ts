@@ -9,12 +9,12 @@ export default class SurfaceTool implements Tool {
     private isDrawing = false;
 
     public ondown(x: number, y: number) {
-        x = Math.floor(x / Measure.CELL);
-        y = Math.floor(y / Measure.CELL);
-        const n = Data.encode(x, y);
+        x = Measure.cell(x);
+        y = Measure.cell(y);
+        const n = Data.encode(x*2, y*2);
         const surface = Data.surfaces.get(n);
         if (surface === undefined) {
-            Data.surfaces.set(n, new Data.Surface(0, x, y));
+            Data.surfaces.set(n, new Data.Surface(0, n));
             this.isDrawing = true;
         } else {
             surface.destroy();
@@ -24,13 +24,13 @@ export default class SurfaceTool implements Tool {
     }
 
     public onmove(x: number, y: number) {
-        x = Math.floor(x / Measure.CELL);
-        y = Math.floor(y / Measure.CELL);
-        const n = Data.encode(x, y);
+        x = Measure.cell(x);
+        y = Measure.cell(y);
+        const n = Data.encode(x*2, y*2);
         const surface = Data.surfaces.get(n);
         if (surface === undefined) {
             if (this.isDrawing) {
-                Data.surfaces.set(n, new Data.Surface(0, x, y));
+                Data.surfaces.set(n, new Data.Surface(0, n));
             }
         } else {
             if (!this.isDrawing) {

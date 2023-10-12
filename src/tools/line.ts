@@ -11,13 +11,13 @@ export default class LineTool implements Tool {
     private y = 0;
 
     public ondown(x: number, y: number) {
-        this.x = Math.floor(x / Measure.CELL);
-        this.y = Math.floor(y / Measure.CELL);
+        this.x = Measure.cell(x);
+        this.y = Measure.cell(y);
     }
 
     public onmove(x: number, y: number) {
-        x = Math.floor(x / Measure.CELL);
-        y = Math.floor(y / Measure.CELL);
+        x = Measure.cell(x);
+        y = Measure.cell(y);
         if (x === this.x && y === this.y) return;
 
         const dx = Math.abs(this.x - x);
@@ -28,9 +28,8 @@ export default class LineTool implements Tool {
         this.y = y;
         if (!(dx === 0 && dy === 1 || dx === 1 && dy === 0)) return;
 
-        const n = Data.encode(lx, ly);
-        const data = dx > 0 ? Data.hlines : Data.vlines;
-        const line = data.get(n);
+        const n = dx > 0 ? Data.encode(lx*2+2, ly*2+1) : Data.encode(lx*2+1, ly*2+2);
+        const line = Data.lines.get(n);
 
         if (this.isDrawing === undefined) {
             this.isDrawing = line === undefined;
@@ -38,12 +37,12 @@ export default class LineTool implements Tool {
 
         if (line === undefined) {
             if (this.isDrawing) {
-                data.set(n, new Data.Line(0, dx > 0, lx, ly));
+                Data.lines.set(n, new Data.Line(0, n));
             }
         } else {
             if (!this.isDrawing) {
                 line.destroy();
-                data.delete(n);
+                Data.lines.delete(n);
             }
         }
     }
