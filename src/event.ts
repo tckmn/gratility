@@ -42,9 +42,9 @@ export function initialize(svg: SVGElement) {
     });
 
     document.body.addEventListener('keydown', e => {
-        if (e.repeat) return;
         const t = Toolbox.keyTools.get(e.key);
         if (t === undefined) return;
+        if (e.repeat && !t.repeat) return;
         t.ondown(lastX, lastY);
         activeTools.add(t);
     });

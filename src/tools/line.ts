@@ -5,6 +5,7 @@ import * as Measure from 'measure';
 export default class LineTool implements Tool {
 
     public readonly name = 'Line';
+    public readonly repeat = false;
 
     private isDrawing: boolean | undefined = undefined;
     private x = 0;
@@ -37,12 +38,11 @@ export default class LineTool implements Tool {
 
         if (line === undefined) {
             if (this.isDrawing) {
-                Data.lines.set(n, new Data.Line(0, n));
+                Data.add(new Data.Action(Data.Obj.LINE, n, 1));
             }
         } else {
             if (!this.isDrawing) {
-                line.destroy();
-                Data.lines.delete(n);
+                Data.add(new Data.Action(Data.Obj.LINE, n, 0));
             }
         }
     }

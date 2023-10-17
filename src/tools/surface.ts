@@ -5,6 +5,7 @@ import * as Measure from 'measure';
 export default class SurfaceTool implements Tool {
 
     public readonly name = 'Surface';
+    public readonly repeat = false;
 
     private isDrawing = false;
 
@@ -14,11 +15,10 @@ export default class SurfaceTool implements Tool {
         const n = Data.encode(x*2, y*2);
         const surface = Data.surfaces.get(n);
         if (surface === undefined) {
-            Data.surfaces.set(n, new Data.Surface(0, n));
+            Data.add(new Data.Action(Data.Obj.SURFACE, n, 1));
             this.isDrawing = true;
         } else {
-            surface.destroy();
-            Data.surfaces.delete(n);
+            Data.add(new Data.Action(Data.Obj.SURFACE, n, 0));
             this.isDrawing = false;
         }
     }
@@ -30,12 +30,11 @@ export default class SurfaceTool implements Tool {
         const surface = Data.surfaces.get(n);
         if (surface === undefined) {
             if (this.isDrawing) {
-                Data.surfaces.set(n, new Data.Surface(0, n));
+                Data.add(new Data.Action(Data.Obj.SURFACE, n, 1));
             }
         } else {
             if (!this.isDrawing) {
-                surface.destroy();
-                Data.surfaces.delete(n);
+                Data.add(new Data.Action(Data.Obj.SURFACE, n, 0));
             }
         }
     }
