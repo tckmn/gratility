@@ -74,6 +74,7 @@ const history = new Array<Action>();
 let histpos = 0;
 
 export function add(action: Action) {
+    if (histpos < history.length) history.splice(histpos, history.length);
     history.push(action);
     redo();
 }
