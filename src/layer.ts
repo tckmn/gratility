@@ -6,6 +6,7 @@ export let grid:      SVGElement;
 export let surface:   SVGElement;
 export let line:      SVGElement;
 export let copypaste: SVGElement;
+export let stamps:    SVGElement;
 
 export function initialize(svg: SVGElement) {
     parent    = Draw.draw(svg, 'g');
@@ -13,4 +14,5 @@ export function initialize(svg: SVGElement) {
     surface   = Draw.draw(parent, 'g');
     line      = Draw.draw(parent, 'g', { strokeWidth: Measure.LINE, strokeLinecap: 'round' });
     copypaste = Draw.draw(parent, 'g');
+    stamps    = Draw.draw(parent, 'g', { opacity: 0.5 });
 }

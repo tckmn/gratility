@@ -1,8 +1,9 @@
 import Tool from 'tool';
+import * as Data from 'data';
 import * as Draw from 'draw';
 import * as Layer from 'layer';
 import * as Measure from 'measure';
-import * as Data from 'data';
+import * as Stamp from 'stamp';
 
 export default class CopyTool implements Tool {
 
@@ -61,7 +62,7 @@ export default class CopyTool implements Tool {
             }
         }
 
-        console.log(stamp);
+        Stamp.add(stamp);
     }
 
 }

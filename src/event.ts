@@ -2,6 +2,8 @@ import Tool from 'tools/tool';
 import * as Toolbox from 'toolbox';
 import * as View from 'view';
 
+export const onmove: Array<(x: number, y: number) => void> = [];
+
 export function initialize(svg: SVGElement) {
 
     const activeTools = new Set<Tool>();
@@ -19,6 +21,7 @@ export function initialize(svg: SVGElement) {
     svg.addEventListener('pointermove', e => {
         upd(e);
         for (const t of activeTools) t.onmove(lastX, lastY);
+        for (const f of onmove) f(lastX, lastY);
     });
 
     svg.addEventListener('pointerdown', e => {

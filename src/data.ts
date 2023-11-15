@@ -23,17 +23,30 @@ export class Action {
     ) {}
 }
 
-export class Item {
+export abstract class Item {
     protected elt: SVGElement | undefined;
-    public constructor(protected n: number) {}
-    public init() {}
-    public deinit() {}
+    protected abstract layer: SVGElement;
+
+    public constructor(public n: number) {}
+
+    public abstract draw(x: number, y: number): SVGElement;
+
+    public init() {
+        const [x, y] = decode(this.n);
+        this.elt = this.draw(x, y);
+        this.layer.appendChild(this.elt);
+    }
+
+    public deinit() {
+        if (this.elt !== undefined) this.layer.removeChild(this.elt);
+    }
+
 }
 
 export class Surface extends Item {
-    public init() {
-        const [x, y] = decode(this.n);
-        this.elt = Draw.draw(Layer.surface, 'rect', {
+    protected layer: SVGElement = Layer.surface;
+    public draw(x: number, y: number) {
+        return Draw.draw(undefined, 'rect', {
             width: Measure.CELL,
             height: Measure.CELL,
             x: Measure.HALFCELL*x,
@@ -41,17 +54,13 @@ export class Surface extends Item {
             fill: 'red'
         });
     }
-
-    public deinit() {
-        if (this.elt !== undefined) Layer.surface.removeChild(this.elt);
-    }
 }
 
 export class Line extends Item {
-    public init() {
-        const [x, y] = decode(this.n);
+    protected layer: SVGElement = Layer.line;
+    public draw(x: number, y: number) {
         const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
-        this.elt = Draw.draw(Layer.line, 'line', {
+        return Draw.draw(undefined, 'line', {
             x1: (x - horiz) * Measure.HALFCELL,
             x2: (x + horiz) * Measure.HALFCELL,
             y1: (y - (1-horiz)) * Measure.HALFCELL,
@@ -59,15 +68,11 @@ export class Line extends Item {
             stroke: 'green'
         });
     }
-
-    public deinit() {
-        if (this.elt !== undefined) Layer.line.removeChild(this.elt);
-    }
 }
 
 export class Halfcell {
     public surface: Surface | undefined;
-    public line: Surface | undefined;
+    public line: Line | undefined;
 
     private howmany: number = 0;
 
@@ -97,6 +102,10 @@ export class Halfcell {
         case Obj.LINE:    if (this.line !== undefined)    --this.howmany; this.line    = undefined;
         }
         return this.howmany === 0;
+    }
+
+    public map<T>(fn: (i: Item) => T): Array<T> {
+        return ([this.surface, this.line].filter(x => x !== undefined) as Array<Item>).map(fn);
     }
 }
 
