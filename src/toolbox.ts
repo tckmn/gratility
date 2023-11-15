@@ -6,6 +6,7 @@ import SurfaceTool from 'tools/surface';
 import ZoomTool    from 'tools/zoom';
 import UndoTool    from 'tools/undo';
 import RedoTool    from 'tools/redo';
+import CopyTool    from 'tools/copy';
 
 export const mouseTools = new Map<number, Tool>();
 export const keyTools = new Map<string, Tool>();
@@ -17,5 +18,6 @@ keyTools.set('s', new SurfaceTool());
 keyTools.set('d', new LineTool());
 keyTools.set('z', new UndoTool());
 keyTools.set('x', new RedoTool());
+keyTools.set('c', new CopyTool());
 wheelTools.set(true, new ZoomTool(1));
 wheelTools.set(false, new ZoomTool(-1));

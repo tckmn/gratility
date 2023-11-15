@@ -5,7 +5,7 @@ export default class UndoTool implements Tool {
 
     public readonly name = 'Undo';
     public readonly repeat = true;
-    public ondown() { Data.undo(false); }
+    public ondown() { Data.undo(true); }
     public onmove() {}
     public onup() {}
 
