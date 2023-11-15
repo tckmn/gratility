@@ -13,7 +13,7 @@ export default class SurfaceTool implements Tool {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2, y*2);
-        const surface = Data.surfaces.get(n);
+        const surface = Data.halfcells.get(n)?.surface;
         if (surface === undefined) {
             Data.add(new Data.Action(Data.Obj.SURFACE, n, 1));
             this.isDrawing = true;
@@ -27,7 +27,7 @@ export default class SurfaceTool implements Tool {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2, y*2);
-        const surface = Data.surfaces.get(n);
+        const surface = Data.halfcells.get(n)?.surface;
         if (surface === undefined) {
             if (this.isDrawing) {
                 Data.add(new Data.Action(Data.Obj.SURFACE, n, 1));

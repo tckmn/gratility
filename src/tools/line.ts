@@ -30,7 +30,7 @@ export default class LineTool implements Tool {
         if (!(dx === 0 && dy === 1 || dx === 1 && dy === 0)) return;
 
         const n = dx > 0 ? Data.encode(lx*2+2, ly*2+1) : Data.encode(lx*2+1, ly*2+2);
-        const line = Data.lines.get(n);
+        const line = Data.halfcells.get(n)?.line;
 
         if (this.isDrawing === undefined) {
             this.isDrawing = line === undefined;

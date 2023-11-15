@@ -22,12 +22,14 @@ export class Action {
     ) {}
 }
 
-export class Surface {
-    private elt: SVGElement | undefined;
+export class Item {
+    protected elt: SVGElement | undefined;
+    public constructor(protected n: number) {}
+    public init() {}
+    public deinit() {}
+}
 
-    public constructor(private n: number) {
-    }
-
+export class Surface extends Item {
     public init() {
         const [x, y] = decode(this.n);
         this.elt = Draw.draw(Layer.surface, 'rect', {
@@ -44,12 +46,7 @@ export class Surface {
     }
 }
 
-export class Line {
-    private elt: SVGElement | undefined;
-
-    public constructor(private n: number) {
-    }
-
+export class Line extends Item {
     public init() {
         const [x, y] = decode(this.n);
         const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
@@ -67,8 +64,40 @@ export class Line {
     }
 }
 
-export const surfaces = new Map<number, Surface>();
-export const lines = new Map<number, Line>();
+export class Halfcell {
+    public surface: Surface | undefined;
+    public line: Surface | undefined;
+
+    public constructor(
+        public n: number
+    ) {}
+
+    public get(obj: Obj): Item | undefined {
+        switch (obj) {
+        case Obj.SURFACE: return this.surface;
+        case Obj.LINE:    return this.line;
+        }
+    }
+
+    public set(obj: Obj, data: number): Item {
+        switch (obj) {
+        case Obj.SURFACE: this.surface = new Surface(this.n); return this.surface;
+        case Obj.LINE:    this.line    = new Line(this.n);    return this.line
+        }
+    }
+
+    // should return whether the halfcell is gone now for optimization purposes
+    // doesn't do that yet
+    public delete(obj: Obj): boolean {
+        switch (obj) {
+        case Obj.SURFACE: this.surface = undefined;
+        case Obj.LINE:    this.line    = undefined;
+        }
+        return false;
+    }
+}
+
+export const halfcells = new Map<number, Halfcell>();
 
 const history = new Array<Action>();
 let histpos = 0;
@@ -76,67 +105,25 @@ let histpos = 0;
 export function add(action: Action) {
     if (histpos < history.length) history.splice(histpos, history.length);
     history.push(action);
-    redo();
+    undo(true);
 }
 
-export function undo() {
-    if (histpos <= 0) return;
+export function undo(isActuallyRedo: boolean) {
+    if (isActuallyRedo ? (histpos >= history.length) : (histpos <= 0)) return;
 
-    const action = history[--histpos];
-    switch (action.obj) {
+    const action = history[isActuallyRedo ? histpos++ : --histpos];
 
-    case Obj.SURFACE:
-        if (action.data === 1) {
-            surfaces.get(action.n)?.deinit();
-            surfaces.delete(action.n);
-        } else {
-            const surface = new Surface(action.n);
-            surface.init();
-            surfaces.set(action.n, surface);
+    if ((action.data & 1) ^ (isActuallyRedo ? 1 : 0)) {
+        // delete item
+        halfcells.get(action.n)?.get(action.obj)?.deinit();
+        if (halfcells.get(action.n)?.delete(action.obj)) {
+            halfcells.delete(action.n);
         }
-        break;
-
-    case Obj.LINE:
-        if (action.data === 1) {
-            lines.get(action.n)?.deinit();
-            lines.delete(action.n);
-        } else {
-            const line = new Line(action.n);
-            line.init();
-            lines.set(action.n, line);
+    } else {
+        // create item
+        if (!halfcells.has(action.n)) {
+            halfcells.set(action.n, new Halfcell(action.n));
         }
-        break;
-
-    }
-}
-
-export function redo() {
-    if (histpos >= history.length) return;
-
-    const action = history[histpos++];
-    switch (action.obj) {
-
-    case Obj.SURFACE:
-        if (action.data === 0) {
-            surfaces.get(action.n)?.deinit();
-            surfaces.delete(action.n);
-        } else {
-            const surface = new Surface(action.n);
-            surface.init();
-            surfaces.set(action.n, surface);
-        }
-        break;
-
-    case Obj.LINE:
-        if (action.data === 0) {
-            lines.get(action.n)?.deinit();
-            lines.delete(action.n);
-        } else {
-            const line = new Line(action.n);
-            line.init();
-            lines.set(action.n, line);
-        }
-        break;
-
+        halfcells.get(action.n)?.set(action.obj, action.data).init();
     }
 }
