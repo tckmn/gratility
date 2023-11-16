@@ -16,5 +16,5 @@ export const enum HC {
     CENTER
 }
 export function hctype(x: number, y: number): HC {
-    return ((x % 2) << 1) | (y % 2);
+    return (Math.abs(x % 2) << 1) | Math.abs(y % 2);
 }

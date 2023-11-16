@@ -65,7 +65,9 @@ export class Line extends Item {
             x2: (x + horiz) * Measure.HALFCELL,
             y1: (y - (1-horiz)) * Measure.HALFCELL,
             y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: 'green'
+            stroke: 'green',
+            strokeWidth: Measure.LINE,
+            strokeLinecap: 'round'
         });
     }
 }
@@ -94,8 +96,7 @@ export class Halfcell {
         }
     }
 
-    // should return whether the halfcell is gone now for optimization purposes
-    // doesn't do that yet
+    // returns whether the halfcell is gone now for optimization purposes
     public delete(obj: Obj): boolean {
         switch (obj) {
         case Obj.SURFACE: if (this.surface !== undefined) --this.howmany; this.surface = undefined;

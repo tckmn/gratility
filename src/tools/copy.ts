@@ -48,21 +48,26 @@ export default class CopyTool implements Tool {
         const tx = Measure.halfcell(Math.max(this.sx, this.tx));
         const ty = Measure.halfcell(Math.max(this.sy, this.ty));
 
-        const xoff = Math.round((sx+tx)/2);
-        const yoff = Math.round((sy+ty)/2);
+        const xoff = Math.round(sx/2)*2;
+        const yoff = Math.round(sy/2)*2;
 
         const stamp = new Map<number, Data.Halfcell>();
+        let xmin = tx+1, xmax = sx-1, ymin = ty+1, ymax = sy-1;
 
         for (let x = sx; x <= tx; ++x) {
             for (let y = sy; y <= ty; ++y) {
                 const hc = Data.halfcells.get(Data.encode(x, y));
                 if (hc !== undefined) {
-                    stamp.set(Data.encode(x-xoff, y-yoff), hc);
+                    stamp.set(Data.encode(x, y), hc);
+                    if (x < xmin) xmin = x;
+                    if (x > xmax) xmax = x;
+                    if (y < ymin) ymin = y;
+                    if (y > ymax) ymax = y;
                 }
             }
         }
 
-        Stamp.add(stamp);
+        Stamp.add(stamp, xmin, xmax, ymin, ymax);
     }
 
 }
