@@ -15,10 +15,10 @@ export default class SurfaceTool implements Tool {
         const n = Data.encode(x*2, y*2);
         const surface = Data.halfcells.get(n)?.surface;
         if (surface === undefined) {
-            Data.add(new Data.Action(Data.Obj.SURFACE, n, false, null));
+            Data.add(new Data.ObjAction(Data.Obj.SURFACE, n, false, null));
             this.isDrawing = true;
         } else {
-            Data.add(new Data.Action(Data.Obj.SURFACE, n, true, null));
+            Data.add(new Data.ObjAction(Data.Obj.SURFACE, n, true, null));
             this.isDrawing = false;
         }
     }
@@ -30,11 +30,11 @@ export default class SurfaceTool implements Tool {
         const surface = Data.halfcells.get(n)?.surface;
         if (surface === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.Action(Data.Obj.SURFACE, n, false, null));
+                Data.add(new Data.ObjAction(Data.Obj.SURFACE, n, false, null));
             }
         } else {
             if (!this.isDrawing) {
-                Data.add(new Data.Action(Data.Obj.SURFACE, n, true, null));
+                Data.add(new Data.ObjAction(Data.Obj.SURFACE, n, true, null));
             }
         }
     }
