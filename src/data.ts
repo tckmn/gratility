@@ -9,6 +9,32 @@ export function decode(n: number): [number, number] {
     return [n >> 16, n << 16 >> 16];
 }
 
+function itemadd(item: Item) {
+    // create item
+    if (!halfcells.has(item.n)) halfcells.set(item.n, new Halfcell(item.n));
+    halfcells.get(item.n)!.set(item.obj, item);
+
+    // draw it
+    const [x, y] = decode(item.n);
+    const elt = item.draw(x, y);
+    Layer.obj(item.obj).appendChild(elt);
+
+    // save the element
+    if (!drawn.has(item.n)) drawn.set(item.n, new Map());
+    drawn.get(item.n)?.set(item.obj, elt);
+}
+
+function itemdel(item: Item) {
+    // delete the drawing TODO the undefined case should never happen
+    const elt = drawn.get(item.n)?.get(item.obj);
+    if (elt !== undefined) Layer.obj(item.obj).removeChild(elt);
+
+    // delete item
+    if (halfcells.get(item.n)?.delete(item.obj)) {
+        halfcells.delete(item.n);
+    }
+}
+
 export const enum Obj {
     SURFACE = 0,
     LINE,
@@ -21,47 +47,46 @@ export abstract class Action {
     public abstract unperform(): void;
 }
 
-export class ObjAction extends Action {
+export class ItemAction extends Action {
     public constructor(
-        public obj: Obj,
-        public n: number,
-        public isUndo: boolean,
-        public data: any
+        public item: Item,
+        public isUndo: boolean
     ) { super(isUndo); }
 
     public perform() {
-        // create item
-        if (!halfcells.has(this.n)) halfcells.set(this.n, new Halfcell(this.n));
-        const item = halfcells.get(this.n)!.set(this.obj, this.data);
-
-        // draw it
-        const [x, y] = decode(this.n);
-        const elt = item.draw(x, y);
-        Layer.obj(this.obj).appendChild(elt);
-
-        // save the element
-        if (!drawn.has(this.n)) drawn.set(this.n, new Map());
-        drawn.get(this.n)?.set(this.obj, elt);
+        itemadd(this.item);
     }
 
     public unperform() {
-        // delete the drawing TODO the undefined case should never happen
-        const elt = drawn.get(this.n)?.get(this.obj);
-        if (elt !== undefined) Layer.obj(this.obj).removeChild(elt);
+        itemdel(this.item);
+    }
+}
 
-        // delete item
-        if (halfcells.get(this.n)?.delete(this.obj)) {
-            halfcells.delete(this.n);
-        }
+export class PasteAction extends Action {
+    public constructor(
+        public items: Array<Item>,
+        public isUndo: boolean
+    ) { super(isUndo); }
+
+    public perform() {
+        for (const item of this.items) itemadd(item);
+    }
+
+    public unperform() {
+        for (const item of this.items) itemdel(item);
     }
 }
 
 export abstract class Item {
-    public constructor(public n: number) {}
+    public abstract obj: Obj;
+    public constructor(public n: number, public data: any) {}
+    public abstract clone(): Item;
     public abstract draw(x: number, y: number): SVGElement;
 }
 
 export class Surface extends Item {
+    public obj = Obj.SURFACE;
+    public clone() { return new Surface(this.n, this.data); }
     public draw(x: number, y: number) {
         return Draw.draw(undefined, 'rect', {
             width: Measure.CELL,
@@ -74,6 +99,8 @@ export class Surface extends Item {
 }
 
 export class Line extends Item {
+    public obj = Obj.LINE;
+    public clone() { return new Line(this.n, this.data); }
     public draw(x: number, y: number) {
         const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
         return Draw.draw(undefined, 'line', {
@@ -107,8 +134,8 @@ export class Halfcell {
 
     public set(obj: Obj, data: any): Item {
         switch (obj) {
-        case Obj.SURFACE: if (this.surface === undefined) ++this.howmany; this.surface = new Surface(this.n); return this.surface;
-        case Obj.LINE:    if (this.line === undefined)    ++this.howmany; this.line    = new Line(this.n);    return this.line
+        case Obj.SURFACE: if (this.surface === undefined) ++this.howmany; this.surface = new Surface(this.n, data); return this.surface;
+        case Obj.LINE:    if (this.line === undefined)    ++this.howmany; this.line    = new Line(this.n, data);    return this.line
         }
     }
 
@@ -121,8 +148,8 @@ export class Halfcell {
         return this.howmany === 0;
     }
 
-    public map<T>(fn: (i: Item) => T): Array<T> {
-        return ([this.surface, this.line].filter(x => x !== undefined) as Array<Item>).map(fn);
+    public map<T>(fn: (i: Item) => T | undefined): Array<T> {
+        return [this.surface, this.line].map(x => x === undefined ? undefined : fn(x)).filter(x => x !== undefined) as Array<T>;
     }
 }
 

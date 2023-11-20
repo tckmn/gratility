@@ -38,11 +38,11 @@ export default class LineTool implements Tool {
 
         if (line === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.ObjAction(Data.Obj.LINE, n, false, null));
+                Data.add(new Data.ItemAction(new Data.Line(n, null), false));
             }
         } else {
             if (!this.isDrawing) {
-                Data.add(new Data.ObjAction(Data.Obj.LINE, n, true, null));
+                Data.add(new Data.ItemAction(line, true));
             }
         }
     }

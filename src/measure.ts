@@ -6,6 +6,8 @@ export const LINE = 5;
 
 export const CELL = 2*HALFCELL;
 
+export function round(x: number, r: number) { return Math.round(x/r)*r; }
+
 export function cell(x: number) { return Math.floor(x / CELL); }
 export function halfcell(x: number) { return Math.floor(x / HALFCELL); }
 
