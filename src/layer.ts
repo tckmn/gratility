@@ -1,5 +1,6 @@
 import * as Draw from 'draw';
 import * as Measure from 'measure';
+import * as Data from 'data';
 
 export let parent:    SVGElement;
 export let grid:      SVGElement;
@@ -15,4 +16,11 @@ export function initialize(svg: SVGElement) {
     line      = Draw.draw(parent, 'g');
     copypaste = Draw.draw(parent, 'g');
     stamps    = Draw.draw(parent, 'g', { opacity: 0.5 });
+}
+
+export function obj(obj: Data.Obj): SVGElement {
+    switch (obj) {
+    case Data.Obj.SURFACE: return surface;
+    case Data.Obj.LINE:    return line;
+    }
 }

@@ -24,27 +24,11 @@ export class Action {
 }
 
 export abstract class Item {
-    protected elt: SVGElement | undefined;
-    protected abstract layer: SVGElement;
-
     public constructor(public n: number) {}
-
     public abstract draw(x: number, y: number): SVGElement;
-
-    public init() {
-        const [x, y] = decode(this.n);
-        this.elt = this.draw(x, y);
-        this.layer.appendChild(this.elt);
-    }
-
-    public deinit() {
-        if (this.elt !== undefined) this.layer.removeChild(this.elt);
-    }
-
 }
 
 export class Surface extends Item {
-    protected layer: SVGElement = Layer.surface;
     public draw(x: number, y: number) {
         return Draw.draw(undefined, 'rect', {
             width: Measure.CELL,
@@ -57,7 +41,6 @@ export class Surface extends Item {
 }
 
 export class Line extends Item {
-    protected layer: SVGElement = Layer.line;
     public draw(x: number, y: number) {
         const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
         return Draw.draw(undefined, 'line', {
@@ -111,6 +94,7 @@ export class Halfcell {
 }
 
 export const halfcells = new Map<number, Halfcell>();
+const drawn = new Map<number, Map<Obj, SVGElement>>();
 
 const history = new Array<Action>();
 let histpos = 0;
@@ -128,13 +112,23 @@ export function undo(isUndo: boolean) {
 
     if (action.isUndo === isUndo) {
         // create item
-        if (!halfcells.has(action.n)) {
-            halfcells.set(action.n, new Halfcell(action.n));
-        }
-        halfcells.get(action.n)?.set(action.obj, action.data).init();
+        if (!halfcells.has(action.n)) halfcells.set(action.n, new Halfcell(action.n));
+        const item = halfcells.get(action.n)!.set(action.obj, action.data);
+
+        // draw it
+        const [x, y] = decode(action.n);
+        const elt = item.draw(x, y);
+        Layer.obj(action.obj).appendChild(elt);
+
+        // save the element
+        if (!drawn.has(action.n)) drawn.set(action.n, new Map());
+        drawn.get(action.n)?.set(action.obj, elt);
     } else {
+        // delete the drawing TODO the undefined case should never happen
+        const elt = drawn.get(action.n)?.get(action.obj);
+        if (elt !== undefined) Layer.obj(action.obj).removeChild(elt);
+
         // delete item
-        halfcells.get(action.n)?.get(action.obj)?.deinit();
         if (halfcells.get(action.n)?.delete(action.obj)) {
             halfcells.delete(action.n);
         }
