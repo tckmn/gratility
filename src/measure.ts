@@ -6,10 +6,12 @@ export const LINE = 5;
 
 export const CELL = 2*HALFCELL;
 
+// TODO figure these out
 export function round(x: number, r: number) { return Math.round(x/r)*r; }
-
 export function cell(x: number) { return Math.floor(x / CELL); }
-export function halfcell(x: number) { return Math.floor(x / HALFCELL); }
+export function halfcell(x: number) { return Math.round(x / HALFCELL); }
+export function rcell(x: number) { return Math.round(x / CELL) * CELL; }
+export function rhalfcell(x: number) { return Math.round(x / HALFCELL) * HALFCELL; }
 
 export const enum HC {
     CORNER = 0,

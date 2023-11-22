@@ -30,7 +30,7 @@ export function add(cells: Array<Data.Item>, xmin: number, xmax: number, ymin: n
 
 export function initialize() {
     Event.onmove.push((x, y) => {
-        if (stamppos === -1) return;
+        // if (stamppos === -1) return;
         Layer.stamps.setAttribute('transform', `translate(${Measure.round(x, Measure.CELL)} ${Measure.round(y, Measure.CELL)})`);
     });
 }

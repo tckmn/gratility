@@ -19,6 +19,8 @@ export default class CopyTool implements Tool {
     public ondown(x: number, y: number) {
         this.sx = x;
         this.sy = y;
+        this.tx = x;
+        this.ty = y;
         this.elt = Draw.draw(Layer.copypaste, 'rect', {
             x: x,
             y: y,
@@ -32,11 +34,17 @@ export default class CopyTool implements Tool {
     public onmove(x: number, y: number) {
         this.tx = x;
         this.ty = y;
+
+        const sx = Measure.rhalfcell(Math.min(this.sx, this.tx));
+        const sy = Measure.rhalfcell(Math.min(this.sy, this.ty));
+        const tx = Measure.rhalfcell(Math.max(this.sx, this.tx));
+        const ty = Measure.rhalfcell(Math.max(this.sy, this.ty));
+
         if (this.elt !== undefined) {
-            this.elt.setAttribute('x', Math.min(this.sx, this.tx).toString());
-            this.elt.setAttribute('y', Math.min(this.sy, this.ty).toString());
-            this.elt.setAttribute('width', Math.abs(this.sx - this.tx).toString());
-            this.elt.setAttribute('height', Math.abs(this.sy - this.ty).toString());
+            this.elt.setAttribute('x', sx.toString());
+            this.elt.setAttribute('y', sy.toString());
+            this.elt.setAttribute('width', (tx-sx).toString());
+            this.elt.setAttribute('height', (ty-sy).toString());
         }
     }
 
