@@ -13,13 +13,53 @@ export const mouseTools = new Map<number, Tool>();
 export const keyTools = new Map<string, Tool>();
 export const wheelTools = new Map<boolean, Tool>();
 
-mouseTools.set(1, new PanTool());
-keyTools.set(' ', new PanTool());
-keyTools.set('s', new SurfaceTool());
-keyTools.set('d', new LineTool());
-keyTools.set('z', new UndoTool());
-keyTools.set('x', new RedoTool());
-keyTools.set('c', new CopyTool());
-keyTools.set('v', new PasteTool());
-wheelTools.set(true, new ZoomTool(1));
-wheelTools.set(false, new ZoomTool(-1));
+function toolDisplay(tool: Tool, txt: string, delcb: () => void) {
+    const disp = document.createElement('div');
+    disp.textContent = txt + ' -- ' + tool.name;
+    const delbtn = document.createElement('button');
+    delbtn.textContent = 'x';
+    delbtn.addEventListener('click', () => {
+        delcb();
+        document.getElementById('toolbox')!.removeChild(disp);
+    });
+    disp.appendChild(delbtn);
+    document.getElementById('toolbox')!.appendChild(disp); // TODO
+}
+
+export function bindMouse(btn: number, tool: Tool): boolean {
+    if (mouseTools.has(btn)) return false;
+    mouseTools.set(btn, tool);
+    toolDisplay(tool, `mouse ${btn}`, () => {
+        mouseTools.delete(btn);
+    });
+    return true;
+}
+
+export function bindKey(key: string, tool: Tool): boolean {
+    if (keyTools.has(key)) return false;
+    keyTools.set(key, tool);
+    toolDisplay(tool, `key [${key}]`, () => {
+        keyTools.delete(key);
+    });
+    return true;
+}
+
+export function bindWheel(dir: boolean, tool: Tool) {
+    if (wheelTools.has(dir)) return false;
+    wheelTools.set(dir, tool);
+    toolDisplay(tool, `wheel ${dir ? 'up' : 'dn'}`, () => {
+        wheelTools.delete(dir);
+    });
+    return true;
+}
+
+bindMouse(1, new PanTool());
+bindKey(' ', new PanTool());
+bindKey('s', new SurfaceTool());
+bindKey('d', new LineTool());
+bindKey('z', new UndoTool());
+bindKey('x', new RedoTool());
+bindKey('c', new CopyTool());
+bindKey('v', new PasteTool());
+bindWheel(true, new ZoomTool(1));
+bindWheel(false, new ZoomTool(-1));
