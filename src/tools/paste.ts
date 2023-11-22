@@ -13,16 +13,16 @@ export default class PasteTool implements Tool {
         const yoff = Math.round(y / Measure.CELL) * 2;
 
         const stamp = Stamp.stamps[Stamp.stamppos];
-        Data.add(new Data.PasteAction(Array.from(stamp.cells.entries()).flatMap(([n, hc]) => {
-            const [x, y] = Data.decode(n);
+        for (let i = 0; i < stamp.cells.length; ++i) {
+            const cell = stamp.cells[i];
+            const [x, y] = Data.decode(cell.n);
             const newn = Data.encode(x - stamp.xoff + xoff, y - stamp.yoff + yoff);
-            return hc.map(item => {
-                if (Data.halfcells.get(newn)?.get(item.obj) !== undefined) return undefined;
-                const newitem = item.clone();
-                newitem.n = newn;
-                return newitem;
-            });
-        }), false));
+
+            const pre = Data.halfcells.get(newn)?.get(cell.obj);
+            if (pre !== cell.data) {
+                Data.add(new Data.Change(newn, cell.obj, pre, cell.data, i !== stamp.cells.length-1));
+            }
+        }
     }
 
     public onmove(x: number, y: number) { }

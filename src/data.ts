@@ -9,85 +9,32 @@ export function decode(n: number): [number, number] {
     return [n >> 16, n << 16 >> 16];
 }
 
-function itemadd(item: Item) {
-    // create item
-    if (!halfcells.has(item.n)) halfcells.set(item.n, new Halfcell(item.n));
-    halfcells.get(item.n)!.set(item.obj, item);
-
-    // draw it
-    const [x, y] = decode(item.n);
-    const elt = item.draw(x, y);
-    Layer.obj(item.obj).appendChild(elt);
-
-    // save the element
-    if (!drawn.has(item.n)) drawn.set(item.n, new Map());
-    drawn.get(item.n)?.set(item.obj, elt);
-}
-
-function itemdel(item: Item) {
-    // delete the drawing TODO the undefined case should never happen
-    const elt = drawn.get(item.n)?.get(item.obj);
-    if (elt !== undefined) Layer.obj(item.obj).removeChild(elt);
-
-    // delete item
-    if (halfcells.get(item.n)?.delete(item.obj)) {
-        halfcells.delete(item.n);
-    }
-}
-
 export const enum Obj {
     SURFACE = 0,
     LINE,
 }
 
-export abstract class Action {
-    public constructor(public isUndo: boolean) {}
-
-    public abstract perform(): void;
-    public abstract unperform(): void;
-}
-
-export class ItemAction extends Action {
+export class Item {
     public constructor(
-        public item: Item,
-        public isUndo: boolean
-    ) { super(isUndo); }
-
-    public perform() {
-        itemadd(this.item);
-    }
-
-    public unperform() {
-        itemdel(this.item);
-    }
+        public readonly n: number,
+        public readonly obj: Obj,
+        public readonly data: any
+    ) {}
 }
 
-export class PasteAction extends Action {
+export class Change {
     public constructor(
-        public items: Array<Item>,
-        public isUndo: boolean
-    ) { super(isUndo); }
-
-    public perform() {
-        for (const item of this.items) itemadd(item);
-    }
-
-    public unperform() {
-        for (const item of this.items) itemdel(item);
-    }
+        public readonly n: number,
+        public readonly obj: Obj,
+        public readonly pre: any,
+        public readonly post: any,
+        public readonly linked: boolean = false
+    ) {}
 }
 
-export abstract class Item {
-    public abstract obj: Obj;
-    public constructor(public n: number, public data: any) {}
-    public abstract clone(): Item;
-    public abstract draw(x: number, y: number): SVGElement;
-}
+export const drawfns = {
 
-export class Surface extends Item {
-    public obj = Obj.SURFACE;
-    public clone() { return new Surface(this.n, this.data); }
-    public draw(x: number, y: number) {
+    [Obj.SURFACE]: (x: number, y: number, data: any) => {
         return Draw.draw(undefined, 'rect', {
             width: Measure.CELL,
             height: Measure.CELL,
@@ -95,13 +42,9 @@ export class Surface extends Item {
             y: Measure.HALFCELL*y,
             fill: 'red'
         });
-    }
-}
+    },
 
-export class Line extends Item {
-    public obj = Obj.LINE;
-    public clone() { return new Line(this.n, this.data); }
-    public draw(x: number, y: number) {
+    [Obj.LINE]: (x: number, y: number, data: any) => {
         const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
         return Draw.draw(undefined, 'line', {
             x1: (x - horiz) * Measure.HALFCELL,
@@ -113,66 +56,58 @@ export class Line extends Item {
             strokeLinecap: 'round'
         });
     }
-}
 
-export class Halfcell {
-    public surface: Surface | undefined;
-    public line: Line | undefined;
+};
 
-    private howmany: number = 0;
-
-    public constructor(
-        public n: number
-    ) {}
-
-    public get(obj: Obj): Item | undefined {
-        switch (obj) {
-        case Obj.SURFACE: return this.surface;
-        case Obj.LINE:    return this.line;
-        }
-    }
-
-    public set(obj: Obj, data: any): Item {
-        switch (obj) {
-        case Obj.SURFACE: if (this.surface === undefined) ++this.howmany; this.surface = new Surface(this.n, data); return this.surface;
-        case Obj.LINE:    if (this.line === undefined)    ++this.howmany; this.line    = new Line(this.n, data);    return this.line
-        }
-    }
-
-    // returns whether the halfcell is gone now for optimization purposes
-    public delete(obj: Obj): boolean {
-        switch (obj) {
-        case Obj.SURFACE: if (this.surface !== undefined) --this.howmany; this.surface = undefined;
-        case Obj.LINE:    if (this.line !== undefined)    --this.howmany; this.line    = undefined;
-        }
-        return this.howmany === 0;
-    }
-
-    public map<T>(fn: (i: Item) => T | undefined): Array<T> {
-        return [this.surface, this.line].map(x => x === undefined ? undefined : fn(x)).filter(x => x !== undefined) as Array<T>;
-    }
-}
-
-export const halfcells = new Map<number, Halfcell>();
+export const halfcells = new Map<number, Map<Obj, any>>();
 const drawn = new Map<number, Map<Obj, SVGElement>>();
 
-const history = new Array<Action>();
+const history = new Array<Change>();
 let histpos = 0;
 
-export function add(action: Action) {
+export function add(change: Change) {
     if (histpos < history.length) history.splice(histpos, history.length);
-    history.push(action);
+    history.push(change);
     undo(false);
 }
 
 export function undo(isUndo: boolean) {
-    if (isUndo ? (histpos <= 0) : (histpos >= history.length)) return;
+    do {
+        if (isUndo ? (histpos <= 0) : (histpos >= history.length)) return;
 
-    const action = history[isUndo ? --histpos : histpos++];
+        const change = history[isUndo ? --histpos : histpos++];
+        const pre = isUndo ? change.post : change.pre;
+        const post = isUndo ? change.pre : change.post;
 
-    if (action.isUndo === isUndo) {
-        action.perform();
-    } else {
-        action.unperform();
-    }
+        if (pre !== undefined) {
+
+            // TODO undefined cases here should never happen
+            // delete the drawing
+            const elt = drawn.get(change.n)?.get(change.obj);
+            if (elt !== undefined) Layer.obj(change.obj).removeChild(elt);
+
+            // delete item
+            const hc = halfcells.get(change.n);
+            hc?.delete(change.obj);
+            if (hc?.size === 0) halfcells.delete(change.n);
+
+        }
+
+        if (post !== undefined) {
+
+            // create item
+            if (!halfcells.has(change.n)) halfcells.set(change.n, new Map());
+            halfcells.get(change.n)!.set(change.obj, post);
+
+            // draw it
+            const [x, y] = decode(change.n);
+            const elt = drawfns[change.obj](x, y, post);
+            Layer.obj(change.obj).appendChild(elt);
+
+            // save the element
+            if (!drawn.has(change.n)) drawn.set(change.n, new Map());
+            drawn.get(change.n)?.set(change.obj, elt);
+
+        }
+    } while (history[histpos-1]?.linked);
 }

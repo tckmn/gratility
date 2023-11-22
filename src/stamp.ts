@@ -5,7 +5,7 @@ import * as Measure from 'measure';
 
 class Stamp {
     public constructor(
-        public cells: Map<number, Data.Halfcell>,
+        public cells: Array<Data.Item>,
         public xoff: number,
         public yoff: number
     ) {}
@@ -14,7 +14,7 @@ class Stamp {
 export const stamps = new Array<Stamp>();
 export let stamppos = -1;
 
-export function add(cells: Map<number, Data.Halfcell>, xmin: number, xmax: number, ymin: number, ymax: number) {
+export function add(cells: Array<Data.Item>, xmin: number, xmax: number, ymin: number, ymax: number) {
     const xoff = Measure.round((xmin + xmax) / 2, 2);
     const yoff = Measure.round((ymin + ymax) / 2, 2);
 
@@ -22,9 +22,9 @@ export function add(cells: Map<number, Data.Halfcell>, xmin: number, xmax: numbe
     stamps.push(stamp);
     stamppos = stamps.length-1;
 
-    Layer.stamps.replaceChildren(...Array.from(cells.entries()).flatMap(([n, hc]) => {
-        const [x, y] = Data.decode(n);
-        return hc.map(item => item.draw(x - xoff, y - yoff));
+    Layer.stamps.replaceChildren(...cells.map(cell => {
+        const [x, y] = Data.decode(cell.n);
+        return Data.drawfns[cell.obj](x - xoff, y - yoff, cell.data);
     }));
 }
 

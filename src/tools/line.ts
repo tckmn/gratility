@@ -30,7 +30,7 @@ export default class LineTool implements Tool {
         if (!(dx === 0 && dy === 1 || dx === 1 && dy === 0)) return;
 
         const n = dx > 0 ? Data.encode(lx*2+2, ly*2+1) : Data.encode(lx*2+1, ly*2+2);
-        const line = Data.halfcells.get(n)?.line;
+        const line = Data.halfcells.get(n)?.get(Data.Obj.LINE);
 
         if (this.isDrawing === undefined) {
             this.isDrawing = line === undefined;
@@ -38,11 +38,11 @@ export default class LineTool implements Tool {
 
         if (line === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.ItemAction(new Data.Line(n, null), false));
+                Data.add(new Data.Change(n, Data.Obj.LINE, line, 0));
             }
         } else {
             if (!this.isDrawing) {
-                Data.add(new Data.ItemAction(line, true));
+                Data.add(new Data.Change(n, Data.Obj.LINE, line, undefined));
             }
         }
     }
