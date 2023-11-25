@@ -1,10 +1,10 @@
 import Tool from 'tools/tool';
-import * as Toolbox from 'toolbox';
+import Toolbox from 'toolbox';
 import * as View from 'view';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
 
-export function initialize(svg: SVGElement) {
+export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox) {
 
     const activeTools = new Set<Tool>();
     const rect = svg.getBoundingClientRect();
@@ -26,14 +26,14 @@ export function initialize(svg: SVGElement) {
 
     svg.addEventListener('pointerdown', e => {
         upd(e);
-        const t = Toolbox.mouseTools.get(e.button);
+        const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
         t.ondown(lastX, lastY);
         activeTools.add(t);
     });
 
     svg.addEventListener('pointerup', e => {
-        const t = Toolbox.mouseTools.get(e.button);
+        const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
         t.onup();
         activeTools.delete(t);
@@ -44,23 +44,23 @@ export function initialize(svg: SVGElement) {
         activeTools.clear();
     });
 
-    document.body.addEventListener('keydown', e => {
-        const t = Toolbox.keyTools.get(e.key);
+    page.addEventListener('keydown', e => {
+        const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         if (e.repeat && !t.repeat) return;
         t.ondown(lastX, lastY);
         activeTools.add(t);
     });
 
-    document.body.addEventListener('keyup', e => {
-        const t = Toolbox.keyTools.get(e.key);
+    page.addEventListener('keyup', e => {
+        const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         t.onup();
         activeTools.delete(t);
     });
 
-    document.body.addEventListener('wheel', e => {
-        const t = Toolbox.wheelTools.get(e.deltaY < 0);
+    page.addEventListener('wheel', e => {
+        const t = toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
         t.ondown(lastX, lastY);
         t.onup();

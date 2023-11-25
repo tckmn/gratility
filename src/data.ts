@@ -1,6 +1,7 @@
 import * as Draw from 'draw';
 import * as Layer from 'layer';
 import * as Measure from 'measure';
+import BitStream from 'bitstream';
 
 export function encode(x: number, y: number): number {
     return (x << 16) | (y & 0xffff);
@@ -58,6 +59,53 @@ export const drawfns = {
     }
 
 };
+
+const serializefns = {
+
+    [Obj.SURFACE]: (bs: BitStream, data: any) => {
+    },
+
+    [Obj.LINE]: (bs: BitStream, data: any) => {
+    }
+
+};
+
+const deserializefns = {
+
+    [Obj.SURFACE]: (bs: BitStream): any => {
+        return 0;
+    },
+
+    [Obj.LINE]: (bs: BitStream): any => {
+        return 0;
+    }
+
+};
+
+export function serialize(stamp: Array<Item>): Uint8Array {
+    const bs = BitStream.empty();
+
+    for (const item of stamp) {
+        bs.write(32, item.n);
+        bs.write(6, item.obj);
+        serializefns[item.obj](bs, item.data);
+    }
+
+    return bs.cut();
+}
+
+export function deserialize(arr: Uint8Array): Array<Item> {
+    const stamp = new Array<Item>();
+    const bs = BitStream.fromArr(arr);
+
+    while (bs.inbounds()) {
+        const n = bs.read(32);
+        const obj = bs.read(6) as Obj;
+        stamp.push(new Item(n, obj, deserializefns[obj](bs)));
+    }
+
+    return stamp;
+}
 
 export const halfcells = new Map<number, Map<Obj, any>>();
 const drawn = new Map<number, Map<Obj, SVGElement>>();

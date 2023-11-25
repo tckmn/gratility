@@ -9,57 +9,63 @@ import RedoTool    from 'tools/redo';
 import CopyTool    from 'tools/copy';
 import PasteTool   from 'tools/paste';
 
-export const mouseTools = new Map<number, Tool>();
-export const keyTools = new Map<string, Tool>();
-export const wheelTools = new Map<boolean, Tool>();
+export default class Toolbox {
 
-function toolDisplay(tool: Tool, txt: string, delcb: () => void) {
-    const disp = document.createElement('div');
-    disp.textContent = txt + ' -- ' + tool.name;
-    const delbtn = document.createElement('button');
-    delbtn.textContent = 'x';
-    delbtn.addEventListener('click', () => {
-        delcb();
-        document.getElementById('toolbox')!.removeChild(disp);
-    });
-    disp.appendChild(delbtn);
-    document.getElementById('toolbox')!.appendChild(disp); // TODO
+    public readonly mouseTools = new Map<number, Tool>();
+    public readonly keyTools = new Map<string, Tool>();
+    public readonly wheelTools = new Map<boolean, Tool>();
+
+    constructor(private container: HTMLElement) {
+        this.bindMouse(1, new PanTool());
+        this.bindKey(' ', new PanTool());
+        this.bindKey('s', new SurfaceTool());
+        this.bindKey('d', new LineTool());
+        this.bindKey('z', new UndoTool());
+        this.bindKey('x', new RedoTool());
+        this.bindKey('c', new CopyTool());
+        this.bindKey('v', new PasteTool());
+        this.bindWheel(true, new ZoomTool(1));
+        this.bindWheel(false, new ZoomTool(-1));
+    }
+
+    private toolDisplay(tool: Tool, txt: string, delcb: () => void) {
+        const disp = document.createElement('div');
+        disp.textContent = txt + ' -- ' + tool.name;
+        const delbtn = document.createElement('button');
+        delbtn.textContent = 'x';
+        delbtn.addEventListener('click', () => {
+            delcb();
+            this.container.removeChild(disp);
+        });
+        disp.appendChild(delbtn);
+        this.container.appendChild(disp);
+    }
+
+    public bindMouse(btn: number, tool: Tool): boolean {
+        if (this.mouseTools.has(btn)) return false;
+        this.mouseTools.set(btn, tool);
+        this.toolDisplay(tool, `mouse ${btn}`, () => {
+            this.mouseTools.delete(btn);
+        });
+        return true;
+    }
+
+    public bindKey(key: string, tool: Tool): boolean {
+        if (this.keyTools.has(key)) return false;
+        this.keyTools.set(key, tool);
+        this.toolDisplay(tool, `key [${key}]`, () => {
+            this.keyTools.delete(key);
+        });
+        return true;
+    }
+
+    public bindWheel(dir: boolean, tool: Tool) {
+        if (this.wheelTools.has(dir)) return false;
+        this.wheelTools.set(dir, tool);
+        this.toolDisplay(tool, `wheel ${dir ? 'up' : 'dn'}`, () => {
+            this.wheelTools.delete(dir);
+        });
+        return true;
+    }
+
 }
-
-export function bindMouse(btn: number, tool: Tool): boolean {
-    if (mouseTools.has(btn)) return false;
-    mouseTools.set(btn, tool);
-    toolDisplay(tool, `mouse ${btn}`, () => {
-        mouseTools.delete(btn);
-    });
-    return true;
-}
-
-export function bindKey(key: string, tool: Tool): boolean {
-    if (keyTools.has(key)) return false;
-    keyTools.set(key, tool);
-    toolDisplay(tool, `key [${key}]`, () => {
-        keyTools.delete(key);
-    });
-    return true;
-}
-
-export function bindWheel(dir: boolean, tool: Tool) {
-    if (wheelTools.has(dir)) return false;
-    wheelTools.set(dir, tool);
-    toolDisplay(tool, `wheel ${dir ? 'up' : 'dn'}`, () => {
-        wheelTools.delete(dir);
-    });
-    return true;
-}
-
-bindMouse(1, new PanTool());
-bindKey(' ', new PanTool());
-bindKey('s', new SurfaceTool());
-bindKey('d', new LineTool());
-bindKey('z', new UndoTool());
-bindKey('x', new RedoTool());
-bindKey('c', new CopyTool());
-bindKey('v', new PasteTool());
-bindWheel(true, new ZoomTool(1));
-bindWheel(false, new ZoomTool(-1));
