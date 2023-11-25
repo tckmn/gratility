@@ -9,7 +9,7 @@ export default class LineTool implements Tool {
     public name(): string { return 'Line'; }
     public icon(): SVGElement {
         return Draw.draw(undefined, 'svg', {
-            viewBox: '-20 0 40 40',
+            viewBox: `-${Measure.HALFCELL} 0 ${Measure.HALFCELL*2} ${Measure.HALFCELL*2}`,
             children: [
                 Data.drawfns[Data.Obj.LINE](0, 1, this.color)
             ]
