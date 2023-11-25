@@ -14,7 +14,19 @@ class Stamp {
 export const stamps = new Array<Stamp>();
 export let stamppos = -1;
 
-export function add(cells: Array<Data.Item>, xmin: number, xmax: number, ymin: number, ymax: number) {
+export function add(cells: Array<Data.Item>) {
+    if (cells.length === 0) return;
+
+    const [xtmp, ytmp] = Data.decode(cells[0].n);
+    let xmin = xtmp, xmax = xtmp, ymin = ytmp, ymax = ytmp;
+    for (const cell of cells) {
+        const [x, y] = Data.decode(cell.n);
+        if (x < xmin) xmin = x;
+        if (x > xmax) xmax = x;
+        if (y < ymin) ymin = y;
+        if (y > ymax) ymax = y;
+    }
+
     const xoff = Measure.round((xmin + xmax) / 2, 2);
     const yoff = Measure.round((ymin + ymax) / 2, 2);
 

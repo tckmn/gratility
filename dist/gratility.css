@@ -24,3 +24,36 @@ div#toolbox > div {
 svg#grid {
     flex: 1;
 }
+
+div#menupopups > div {
+    display: none;
+    position: fixed;
+    width: 80vw;
+    height: 80vh;
+    left: 10vw;
+    top: 10vh;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    box-sizing: border-box;
+    padding: 15px;
+    flex-direction: column;
+}
+
+div#menupopups > div .big {
+    flex: 1;
+}
+
+div.menuclose {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: #f00;
+    font-weight: bold;
+}

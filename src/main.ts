@@ -12,7 +12,7 @@ const toolbox = new Toolbox(document.getElementById('toolbox')!);
 
 Layer.initialize(svg);
 Event.initialize(svg, document.body, toolbox);
-Menu.initialize(Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>);
+Menu.initialize(Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>, Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>);
 View.initialize(svg);
 Grid.initialize();
 Stamp.initialize();

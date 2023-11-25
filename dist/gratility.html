@@ -10,6 +10,7 @@
         <script type='text/javascript'>requirejs(['main'])</script>
     </head>
     <body>
+
         <main>
             <section id='toolbar'>
                 <div id='toolbox'>
@@ -20,5 +21,13 @@
             </section>
             <svg id='grid'></svg>
         </main>
+
+        <div id='menupopups'>
+            <div data-menu='stamp'>
+                <textarea class='menuinput big' data-menu='value'></textarea>
+                <button class='menuinput' data-menu='go' data-event='click'>load</button>
+            </div>
+        </div>
+
     </body>
 </html>

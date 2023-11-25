@@ -98,8 +98,9 @@ export function deserialize(arr: Uint8Array): Array<Item> {
     const stamp = new Array<Item>();
     const bs = BitStream.fromArr(arr);
 
-    while (bs.inbounds()) {
+    while (1) {
         const n = bs.read(32);
+        if (!bs.inbounds()) break;
         const obj = bs.read(6) as Obj;
         stamp.push(new Item(n, obj, deserializefns[obj](bs)));
     }

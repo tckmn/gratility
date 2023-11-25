@@ -60,7 +60,6 @@ export default class CopyTool implements Tool {
         const yoff = Math.round(sy/2)*2;
 
         const stamp = new Array<Data.Item>();
-        let xmin = tx+1, xmax = sx-1, ymin = ty+1, ymax = sy-1;
 
         for (let x = sx; x <= tx; ++x) {
             for (let y = sy; y <= ty; ++y) {
@@ -70,15 +69,11 @@ export default class CopyTool implements Tool {
                     stamp.push(...Array.from(hc.entries()).map(([k,v]) => {
                         return new Data.Item(n, k, v);
                     }));
-                    if (x < xmin) xmin = x;
-                    if (x > xmax) xmax = x;
-                    if (y < ymin) ymin = y;
-                    if (y > ymax) ymax = y;
                 }
             }
         }
 
-        Stamp.add(stamp, xmin, xmax, ymin, ymax);
+        Stamp.add(stamp);
     }
 
 }
