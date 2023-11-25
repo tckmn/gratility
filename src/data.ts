@@ -33,6 +33,11 @@ export class Change {
     ) {}
 }
 
+const colors = [
+    '#000000',
+    '#008000'
+]
+
 export const drawfns = {
 
     [Obj.SURFACE]: (x: number, y: number, data: any) => {
@@ -41,7 +46,7 @@ export const drawfns = {
             height: Measure.CELL,
             x: Measure.HALFCELL*x,
             y: Measure.HALFCELL*y,
-            fill: 'red'
+            fill: colors[data as number]
         });
     },
 
@@ -52,7 +57,7 @@ export const drawfns = {
             x2: (x + horiz) * Measure.HALFCELL,
             y1: (y - (1-horiz)) * Measure.HALFCELL,
             y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: 'green',
+            stroke: colors[data as number],
             strokeWidth: Measure.LINE,
             strokeLinecap: 'round'
         });

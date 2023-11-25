@@ -12,7 +12,7 @@ class Stamp {
 }
 
 export const stamps = new Array<Stamp>();
-let stamppos = -1;
+let stamppos = 0;
 
 export function add(cells: Array<Data.Item>) {
     if (cells.length === 0) return;
@@ -42,6 +42,11 @@ export function add(cells: Array<Data.Item>) {
 
 export function current(): Stamp | undefined {
     return stamppos >= 0 && stamppos < stamps.length ? stamps[stamppos] : undefined;
+}
+
+export function deselect() {
+    stamppos = stamps.length;
+    Layer.stamps.replaceChildren();
 }
 
 export function initialize() {

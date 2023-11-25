@@ -5,8 +5,9 @@ import * as Measure from 'measure';
 
 export default class PasteTool implements Tool {
 
-    public readonly name = 'Paste';
     public readonly repeat = false;
+    public name(): string { return 'Paste'; }
+    public icon() {}
 
     public ondown(x: number, y: number) {
         const xoff = Math.round(x / Measure.CELL) * 2;

@@ -7,8 +7,9 @@ import * as Stamp from 'stamp';
 
 export default class CopyTool implements Tool {
 
-    public readonly name = 'Copy';
     public readonly repeat = false;
+    public name(): string { return 'Copy'; }
+    public icon() {}
 
     private sx = 0;
     private sy = 0;
@@ -55,6 +56,11 @@ export default class CopyTool implements Tool {
         const sy = Measure.halfcell(Math.min(this.sy, this.ty));
         const tx = Measure.halfcell(Math.max(this.sx, this.tx));
         const ty = Measure.halfcell(Math.max(this.sy, this.ty));
+
+        if (sx === tx && sy === ty) {
+            Stamp.deselect();
+            return;
+        }
 
         const xoff = Math.round(sx/2)*2;
         const yoff = Math.round(sy/2)*2;

@@ -3,8 +3,9 @@ import * as View from 'view';
 
 export default class PanTool implements Tool {
 
-    public readonly name = 'Pan';
     public readonly repeat = false;
+    public name(): string { return 'Pan'; }
+    public icon() {}
 
     private mx = 0;
     private my = 0;

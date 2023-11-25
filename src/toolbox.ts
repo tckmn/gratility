@@ -5,7 +5,6 @@ import PanTool     from 'tools/pan';
 import SurfaceTool from 'tools/surface';
 import ZoomTool    from 'tools/zoom';
 import UndoTool    from 'tools/undo';
-import RedoTool    from 'tools/redo';
 import CopyTool    from 'tools/copy';
 import PasteTool   from 'tools/paste';
 
@@ -18,10 +17,10 @@ export default class Toolbox {
     constructor(private container: HTMLElement) {
         this.bindMouse(1, new PanTool());
         this.bindKey(' ', new PanTool());
-        this.bindKey('s', new SurfaceTool());
-        this.bindKey('d', new LineTool());
-        this.bindKey('z', new UndoTool());
-        this.bindKey('x', new RedoTool());
+        this.bindKey('s', new SurfaceTool(0));
+        this.bindKey('d', new LineTool(1));
+        this.bindKey('z', new UndoTool(true));
+        this.bindKey('x', new UndoTool(false));
         this.bindKey('c', new CopyTool());
         this.bindKey('v', new PasteTool());
         this.bindWheel(true, new ZoomTool(1));
@@ -29,22 +28,35 @@ export default class Toolbox {
     }
 
     private toolDisplay(tool: Tool, txt: string, delcb: () => void) {
-        const disp = document.createElement('div');
-        disp.textContent = txt + ' -- ' + tool.name;
+        const bind = document.createElement('div');
+        bind.textContent = txt;
+        this.container.appendChild(bind);
+
+        const name = document.createElement('div');
+        name.textContent = tool.name();
+        this.container.appendChild(name);
+
+        const icon = document.createElement('div');
+        const maybeIcon = tool.icon();
+        if (maybeIcon !== undefined) icon.appendChild(maybeIcon);
+        this.container.appendChild(icon);
+
         const delbtn = document.createElement('button');
         delbtn.textContent = 'x';
         delbtn.addEventListener('click', () => {
             delcb();
-            this.container.removeChild(disp);
+            this.container.removeChild(bind);
+            this.container.removeChild(name);
+            this.container.removeChild(icon);
+            this.container.removeChild(delbtn);
         });
-        disp.appendChild(delbtn);
-        this.container.appendChild(disp);
+        this.container.appendChild(delbtn);
     }
 
     public bindMouse(btn: number, tool: Tool): boolean {
         if (this.mouseTools.has(btn)) return false;
         this.mouseTools.set(btn, tool);
-        this.toolDisplay(tool, `mouse ${btn}`, () => {
+        this.toolDisplay(tool, `click ${btn}`, () => {
             this.mouseTools.delete(btn);
         });
         return true;
@@ -62,7 +74,7 @@ export default class Toolbox {
     public bindWheel(dir: boolean, tool: Tool) {
         if (this.wheelTools.has(dir)) return false;
         this.wheelTools.set(dir, tool);
-        this.toolDisplay(tool, `wheel ${dir ? 'up' : 'dn'}`, () => {
+        this.toolDisplay(tool, `scr ${dir ? 'up' : 'dn'}`, () => {
             this.wheelTools.delete(dir);
         });
         return true;

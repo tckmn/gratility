@@ -3,8 +3,9 @@ import * as View from 'view';
 
 export default class ZoomTool implements Tool {
 
-    public readonly name = 'Zoom';
     public readonly repeat = false;
+    public name(): string { return 'Zoom ' + (this.amount > 0 ? 'in' : 'out'); }
+    public icon() {}
 
     public constructor(private readonly amount: number) {}
 

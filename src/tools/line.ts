@@ -1,11 +1,22 @@
 import Tool from 'tool';
 import * as Data from 'data';
+import * as Draw from 'draw';
 import * as Measure from 'measure';
 
 export default class LineTool implements Tool {
 
-    public readonly name = 'Line';
     public readonly repeat = false;
+    public name(): string { return 'Line'; }
+    public icon(): SVGElement {
+        return Draw.draw(undefined, 'svg', {
+            viewBox: '-20 0 40 40',
+            children: [
+                Data.drawfns[Data.Obj.LINE](0, 1, this.color)
+            ]
+        });
+    }
+
+    constructor(private color: number) {}
 
     private isDrawing: boolean | undefined = undefined;
     private x = 0;
@@ -38,7 +49,7 @@ export default class LineTool implements Tool {
 
         if (line === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.LINE, line, 0));
+                Data.add(new Data.Change(n, Data.Obj.LINE, line, this.color));
             }
         } else {
             if (!this.isDrawing) {

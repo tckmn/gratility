@@ -16,10 +16,13 @@ section#toolbar {
 
 section#toolbar > button { width: 100%; }
 
-div#toolbox > div {
-    display: flex;
-    justify-content: space-between;
+div#toolbox {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    grid-column-gap: 0.5rem;
 }
+
+div#toolbox svg { width: 1rem; height: 1rem; }
 
 svg#grid {
     flex: 1;
