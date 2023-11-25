@@ -12,7 +12,7 @@ class Stamp {
 }
 
 export const stamps = new Array<Stamp>();
-export let stamppos = -1;
+let stamppos = -1;
 
 export function add(cells: Array<Data.Item>) {
     if (cells.length === 0) return;
@@ -38,6 +38,10 @@ export function add(cells: Array<Data.Item>) {
         const [x, y] = Data.decode(cell.n);
         return Data.drawfns[cell.obj](x - xoff, y - yoff, cell.data);
     }));
+}
+
+export function current(): Stamp | undefined {
+    return stamppos >= 0 && stamppos < stamps.length ? stamps[stamppos] : undefined;
 }
 
 export function initialize() {

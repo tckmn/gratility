@@ -1,6 +1,10 @@
 import * as Stamp from 'stamp';
 import * as Data from 'data';
 
+let activeMenu: Menu | undefined = undefined;
+export function isOpen(): boolean { return activeMenu !== undefined; }
+export function close() { if (activeMenu !== undefined) activeMenu.close(); }
+
 class Menu {
     constructor(
         public name: string,
@@ -9,11 +13,14 @@ class Menu {
     ) {}
 
     public open() {
+        if (activeMenu !== undefined) return;
+        activeMenu = this;
         this.popup.style.display = 'flex';
         menuevent(this, 'open');
     }
 
     public close() {
+        activeMenu = undefined;
         this.popup.style.display = 'none';
         menuevent(this, 'close');
     }
@@ -33,9 +40,10 @@ const menuactions: Map<string, () => void> = new Map([
 const menuevents: Map<string, (menu: Menu) => void> = new Map([
 
     ['stamp-open', (menu: Menu) => {
-        // TODO awful
+        // TODO this whole function is awful
         const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-        elt.value = btoa(String.fromCharCode.apply(null, Data.serialize(Stamp.stamps[Stamp.stamppos].cells) as unknown as number[]));
+        const stamp = Stamp.current();
+        elt.value = stamp === undefined ? '' : btoa(String.fromCharCode.apply(null, Data.serialize(stamp.cells) as unknown as number[]));
         elt.focus();
         elt.select();
     }],

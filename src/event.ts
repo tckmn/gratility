@@ -1,5 +1,6 @@
 import Tool from 'tools/tool';
 import Toolbox from 'toolbox';
+import * as Menu from 'menu';
 import * as View from 'view';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
@@ -19,12 +20,14 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox)
     svg.addEventListener('contextmenu', e => e.preventDefault());
 
     svg.addEventListener('pointermove', e => {
+        if (Menu.isOpen()) return;
         upd(e);
         for (const t of activeTools) t.onmove(lastX, lastY);
         for (const f of onmove) f(lastX, lastY);
     });
 
     svg.addEventListener('pointerdown', e => {
+        if (Menu.isOpen()) return;
         upd(e);
         const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
@@ -33,6 +36,7 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox)
     });
 
     svg.addEventListener('pointerup', e => {
+        if (Menu.isOpen()) return;
         const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
         t.onup();
@@ -45,6 +49,10 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox)
     });
 
     page.addEventListener('keydown', e => {
+        if (Menu.isOpen()) {
+            if (e.key === 'Escape') Menu.close();
+            return;
+        }
         const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         if (e.repeat && !t.repeat) return;
@@ -53,6 +61,7 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox)
     });
 
     page.addEventListener('keyup', e => {
+        if (Menu.isOpen()) return;
         const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         t.onup();
@@ -60,6 +69,7 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox)
     });
 
     page.addEventListener('wheel', e => {
+        if (Menu.isOpen()) return;
         const t = toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
         t.ondown(lastX, lastY);

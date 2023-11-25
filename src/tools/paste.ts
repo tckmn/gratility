@@ -12,7 +12,8 @@ export default class PasteTool implements Tool {
         const xoff = Math.round(x / Measure.CELL) * 2;
         const yoff = Math.round(y / Measure.CELL) * 2;
 
-        const stamp = Stamp.stamps[Stamp.stamppos];
+        const stamp = Stamp.current();
+        if (stamp === undefined) return;
         for (let i = 0; i < stamp.cells.length; ++i) {
             const cell = stamp.cells[i];
             const [x, y] = Data.decode(cell.n);
