@@ -1,5 +1,7 @@
 export const GRIDCOLOR = '#aaa';
 export const GRIDLINE = 1;
+export const GRIDSIZE = 500;
+
 export const HALFCELL = 20;
 export const ZOOMTICK = 1.1;
 export const LINE = 5;
