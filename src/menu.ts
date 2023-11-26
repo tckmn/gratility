@@ -5,6 +5,20 @@ let activeMenu: Menu | undefined = undefined;
 export function isOpen(): boolean { return activeMenu !== undefined; }
 export function close() { if (activeMenu !== undefined) activeMenu.close(); }
 
+export function alert(msg: string) {
+    const alerts = document.getElementById('alerts')!; // TODO
+
+    const elt = document.createElement('div');
+    elt.textContent = msg;
+    const rm = () => {
+        alerts.removeChild(elt);
+    };
+    elt.addEventListener('click', rm);
+    setTimeout(rm, Math.max(3000, 250*msg.length));
+
+    alerts.insertBefore(elt, alerts.firstChild);
+}
+
 class Menu {
     constructor(
         public name: string,
@@ -50,9 +64,7 @@ const menuevents: Map<string, (menu: Menu) => void> = new Map([
 
     ['stamp-go', (menu: Menu) => {
         const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-        const newst = Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0))));
-        console.log(newst);
-        Stamp.add(newst);
+        Stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
         menu.close();
     }]
 

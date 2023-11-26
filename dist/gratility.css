@@ -60,3 +60,17 @@ div.menuclose {
     background-color: #f00;
     font-weight: bold;
 }
+
+div#alerts {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    width: 30vw;
+}
+
+div#alerts > div {
+    background-color: rgba(200,200,255,0.8);
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+}

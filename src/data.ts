@@ -1,6 +1,7 @@
 import * as Draw from 'draw';
 import * as Layer from 'layer';
 import * as Measure from 'measure';
+import * as Menu from 'menu';
 import BitStream from 'bitstream';
 
 export function encode(x: number, y: number): number {
@@ -65,12 +66,18 @@ export const drawfns = {
 
 };
 
+const N_BITS = 32;
+const OBJ_BITS = 6;
+const COLOR_BITS = 6;
+
 const serializefns = {
 
     [Obj.SURFACE]: (bs: BitStream, data: any) => {
+        bs.write(COLOR_BITS, data as number);
     },
 
     [Obj.LINE]: (bs: BitStream, data: any) => {
+        bs.write(COLOR_BITS, data as number);
     }
 
 };
@@ -78,21 +85,22 @@ const serializefns = {
 const deserializefns = {
 
     [Obj.SURFACE]: (bs: BitStream): any => {
-        return 0;
+        return bs.read(COLOR_BITS);
     },
 
     [Obj.LINE]: (bs: BitStream): any => {
-        return 0;
+        return bs.read(COLOR_BITS);
     }
 
 };
 
 export function serialize(stamp: Array<Item>): Uint8Array {
     const bs = BitStream.empty();
+    bs.write(1, 0);
 
     for (const item of stamp) {
-        bs.write(32, item.n);
-        bs.write(6, item.obj);
+        bs.write(N_BITS, item.n);
+        bs.write(OBJ_BITS, item.obj);
         serializefns[item.obj](bs, item.data);
     }
 
@@ -103,10 +111,16 @@ export function deserialize(arr: Uint8Array): Array<Item> {
     const stamp = new Array<Item>();
     const bs = BitStream.fromArr(arr);
 
+    const version = bs.read(1);
+    if (version !== 0) {
+        Menu.alert('deserialize: invalid version number');
+        return [];
+    }
+
     while (1) {
-        const n = bs.read(32);
+        const n = bs.read(N_BITS);
         if (!bs.inbounds()) break;
-        const obj = bs.read(6) as Obj;
+        const obj = bs.read(OBJ_BITS) as Obj;
         stamp.push(new Item(n, obj, deserializefns[obj](bs)));
     }
 
