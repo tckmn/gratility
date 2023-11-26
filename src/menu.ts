@@ -71,6 +71,27 @@ const menuevents: Map<string, (menu: Menu, e: Event | undefined) => void> = new 
     ['stamp-key', (menu: Menu, e: Event | undefined) => {
         // TODO the types in here are awful
         if (e !== undefined && (e as KeyboardEvent).key === 'Enter') menuevent(menu, 'go');
+    }],
+
+    ['addtool-bindmouse', (menu: Menu, e_: Event | undefined) => {
+        const e = e_ as MouseEvent;
+        if (e.button !== 0) e.preventDefault();
+        (e.target as HTMLInputElement).value = 'click ' + e.button;
+    }],
+
+    ['addtool-bindkey', (menu: Menu, e_: Event | undefined) => {
+        const e = e_ as KeyboardEvent;
+        e.preventDefault();
+        (e.target as HTMLInputElement).value = 'key [' + e.key + ']';
+    }],
+
+    ['addtool-bindwheel', (menu: Menu, e_: Event | undefined) => {
+        const e = e_ as WheelEvent;
+        (e.target as HTMLInputElement).value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
+    }],
+
+    ['addtool-nop', (menu: Menu, e: Event | undefined) => {
+        e!.preventDefault();
     }]
 
 ]);
@@ -99,10 +120,12 @@ export function initialize(btns: Array<HTMLElement>, popups: Array<HTMLElement>)
             popup.dataset.menu as string,
             popup,
             new Map((Array.from(popup.getElementsByClassName('menuinput')) as Array<HTMLElement>).map(ipt => {
-                for (const ev of ['click', 'keypress']) {
-                    if (ipt.dataset[ev] !== undefined) {
-                        ipt.addEventListener(ev, e => {
-                            menuevent(menu, ipt.dataset[ev] as string, e);
+                const evs = ipt.dataset.event;
+                if (evs !== undefined) {
+                    for (const ev of evs.split(';')) {
+                        const [k, v] = ev.split('=');
+                        ipt.addEventListener(k, e => {
+                            menuevent(menu, v, e);
                         });
                     }
                 }

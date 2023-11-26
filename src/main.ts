@@ -16,3 +16,15 @@ Menu.initialize(Array.from(document.getElementsByClassName('menuaction')) as Arr
 View.initialize(svg);
 Grid.initialize();
 Stamp.initialize();
+
+// TODO this stuff should really go somewhere else
+for (const multisel of Array.from(document.getElementsByClassName('multisel')) as Array<HTMLElement>) {
+    const children = Array.from(multisel.children) as Array<HTMLElement>;
+    for (const child of children) {
+        child.addEventListener('click', () => {
+            for (const ch of children) ch.classList.remove('active');
+            child.classList.add('active');
+            multisel.dataset.multisel = child.dataset.multisel;
+        });
+    }
+}

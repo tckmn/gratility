@@ -16,7 +16,7 @@
                 <div id='toolbox'>
                 </div>
                 <div style='flex:1'></div>
-                <button class='menuaction' data-menu='toolbox'>+ add tool...</button>
+                <button class='menuaction' data-menu='addtool'>+ add tool...</button>
                 <button class='menuaction' data-menu='toolbox'>save/load toolbox</button>
                 <button class='menuaction' data-menu='stamp'>save/load stamp</button>
                 <button class='menuaction' data-menu='colors'>save/load colors</button>
@@ -25,10 +25,30 @@
         </main>
 
         <div id='menupopups'>
-            <div data-menu='stamp'>
-                <textarea class='menuinput big' data-menu='value' data-keypress='key'></textarea>
-                <button class='menuinput' data-menu='go' data-click='go'>load</button>
+
+            <div data-menu='addtool'>
+                <p><strong>binding</strong></p>
+                <div>
+                    <!-- what kind? -->
+                    <!-- <span class='menuinput multisel' data-multisel='mouse'><!-- -->
+                    <!--     -1-><button class='left active' data-multisel='mouse'>mouse</button><!-- -->
+                    <!--     -1-><button class='mid' data-multisel='key'>key</button><!-- -->
+                    <!--     -1-><button class='right' data-multisel='wheel'>wheel</button><!-- -->
+                    <!-- -1-></span> -->
+                    click, type, or scroll here:
+                    <input class='menuinput' data-event='pointerdown=bindmouse;keydown=bindkey;wheel=bindwheel;paste=nop;contextmenu=nop'>
+                </div>
+                <p><strong>action</strong></p>
+                <div class='big'>
+                </div>
+                <button class='menuinput' data-menu='go' data-event='click=go'>add</button>
             </div>
+
+            <div data-menu='stamp'>
+                <textarea class='menuinput big' data-menu='value' data-event='keypress=key'></textarea>
+                <button class='menuinput' data-menu='go' data-event='click=go'>load</button>
+            </div>
+
         </div>
 
         <div id='alerts'>

@@ -1,3 +1,7 @@
+html {
+    font-family: sans-serif;
+}
+
 main {
     position: absolute;
     width: 100vw;
@@ -5,7 +9,6 @@ main {
     top: 0;
     left: 0;
     display: flex;
-    font-family: sans-serif;
 }
 
 section#toolbar {
@@ -48,7 +51,7 @@ div#menupopups > div {
     height: 80vh;
     left: 10vw;
     top: 10vh;
-    background-color: rgba(0,0,0,0.2);
+    background-color: #eee;
     border-radius: 10px;
     box-sizing: border-box;
     padding: 15px;
@@ -87,3 +90,9 @@ div#alerts > div {
     padding: 10px;
     cursor: pointer;
 }
+
+.multisel button { border: 1px solid #444; border-radius: 5px; }
+.multisel button.left, .multisel button.mid { border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.multisel button.right, .multisel button.mid { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.multisel button.active { background-color: #161; color: #eee; }
+.multisel button.active:hover { background-color: #040; }
