@@ -36,10 +36,32 @@
                     <!--     -1-><button class='right' data-multisel='wheel'>wheel</button><!-- -->
                     <!-- -1-></span> -->
                     click, type, or scroll here:
-                    <input class='menuinput' data-event='pointerdown=bindmouse;keydown=bindkey;wheel=bindwheel;paste=nop;contextmenu=nop'>
+                    <input class='menuinput' data-menu='binding' data-event='pointerdown=bindmouse;keydown=bindkey;wheel=bindwheel;paste=nop;contextmenu=nop'>
                 </div>
                 <p><strong>action</strong></p>
-                <div class='big'>
+                <div id='actions' class='big' data-menu='actions'>
+                    <section class='group first'>
+                        <span>drawing</span>
+                        <div data-event='click=setsurface'>Surface <label>color: <input></label></div>
+                        <div data-event='click=setline'>Line <label>color: <input></label></div>
+                    </section>
+
+                    <section class='group'>
+                        <span>movement</span>
+                        <div data-event='click=setpan'>Pan</div>
+                        <div data-event='click=setzoom'>Zoom <label>direction: </label></div>
+                    </section>
+
+                    <section class='group'>
+                        <span>stamps</span>
+                        <div data-event='click=setcopy'>Copy</div>
+                        <div data-event='click=setpaste'>Paste</div>
+                    </section>
+
+                    <section class='group'>
+                        <span>misc</span>
+                        <div data-event='click=setundo'>Undo <label>direction: </label></div>
+                    </section>
                 </div>
                 <button class='menuinput' data-menu='go' data-event='click=go'>add</button>
             </div>

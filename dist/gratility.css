@@ -51,7 +51,7 @@ div#menupopups > div {
     height: 80vh;
     left: 10vw;
     top: 10vh;
-    background-color: #eee;
+    background-color: #f8f8f8;
     border-radius: 10px;
     box-sizing: border-box;
     padding: 15px;
@@ -96,3 +96,45 @@ div#alerts > div {
 .multisel button.right, .multisel button.mid { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .multisel button.active { background-color: #161; color: #eee; }
 .multisel button.active:hover { background-color: #040; }
+
+section.group {
+    position: relative;
+    border: 1px dashed #666;
+    border-radius: 10px;
+    margin-top: 30px;
+    padding: 10px 10px;
+}
+
+section.group.first { margin-top: 10px; }
+
+section.group > span:first-child {
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background-color: #f8f8f8;
+}
+
+div#actions { overflow-y: scroll; }
+
+div#actions div {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    min-height: 30px;
+    margin: 10px;
+    border: 1px dotted #666;
+}
+
+div#actions div:hover {
+    background-color: #eee;
+}
+
+div#actions div.active {
+    background-color: #9f9;
+}
+
+div#actions label {
+    background-color: #ddf;
+    padding: 5px 10px;
+    margin-left: 20px;
+}

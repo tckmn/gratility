@@ -73,6 +73,11 @@ const menuevents: Map<string, (menu: Menu, e: Event | undefined) => void> = new 
         if (e !== undefined && (e as KeyboardEvent).key === 'Enter') menuevent(menu, 'go');
     }],
 
+    ['addtool-open', (menu: Menu) => {
+        const elt = menu.inputs.get('binding') as HTMLTextAreaElement;
+        elt.value = '';
+    }],
+
     ['addtool-bindmouse', (menu: Menu, e_: Event | undefined) => {
         const e = e_ as MouseEvent;
         if (e.button !== 0) e.preventDefault();
