@@ -41,8 +41,9 @@ export default class Toolbox {
         if (maybeIcon !== undefined) icon.appendChild(maybeIcon);
         this.container.appendChild(icon);
 
-        const delbtn = document.createElement('button');
-        delbtn.textContent = 'x';
+        const delbtn = document.createElement('div');
+        delbtn.className = 'delbtn';
+        delbtn.textContent = '×';
         delbtn.addEventListener('click', () => {
             delcb();
             this.container.removeChild(bind);
