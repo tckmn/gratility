@@ -51,7 +51,7 @@ const menuactions: Map<string, () => void> = new Map([
 
 ]);
 
-const menuevents: Map<string, (menu: Menu) => void> = new Map([
+const menuevents: Map<string, (menu: Menu, e: Event | undefined) => void> = new Map([
 
     ['stamp-open', (menu: Menu) => {
         // TODO this whole function is awful
@@ -66,13 +66,18 @@ const menuevents: Map<string, (menu: Menu) => void> = new Map([
         const elt = menu.inputs.get('value') as HTMLTextAreaElement;
         Stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
         menu.close();
+    }],
+
+    ['stamp-key', (menu: Menu, e: Event | undefined) => {
+        // TODO the types in here are awful
+        if (e !== undefined && (e as KeyboardEvent).key === 'Enter') menuevent(menu, 'go');
     }]
 
 ]);
 
-function menuevent(menu: Menu, ev: string) {
+function menuevent(menu: Menu, ev: string, e: Event | undefined = undefined) {
     const fn = menuevents.get(`${menu.name}-${ev}`);
-    if (fn !== undefined) fn(menu);
+    if (fn !== undefined) fn(menu, e);
 }
 
 const menus: Map<string, Menu> = new Map();
@@ -94,10 +99,12 @@ export function initialize(btns: Array<HTMLElement>, popups: Array<HTMLElement>)
             popup.dataset.menu as string,
             popup,
             new Map((Array.from(popup.getElementsByClassName('menuinput')) as Array<HTMLElement>).map(ipt => {
-                if (ipt.dataset.event !== undefined) {
-                    ipt.addEventListener(ipt.dataset.event, () => {
-                        menuevent(menu, ipt.dataset.menu as string);
-                    });
+                for (const ev of ['click', 'keypress']) {
+                    if (ipt.dataset[ev] !== undefined) {
+                        ipt.addEventListener(ev, e => {
+                            menuevent(menu, ipt.dataset[ev] as string, e);
+                        });
+                    }
                 }
                 return [ipt.dataset.menu as string, ipt];
             }))
