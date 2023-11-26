@@ -112,28 +112,37 @@ section.group > span:first-child {
     top: -10px;
     left: 15px;
     background-color: #f8f8f8;
+    font-size: 10pt;
+    color: #666;
 }
 
 div#actions { overflow-y: scroll; }
 
-div#actions div {
-    display: flex;
+div#actions div.settool {
+    cursor: pointer;
+    display: inline-flex;
+    width: 10em;
     align-items: center;
     padding: 5px 10px;
     min-height: 30px;
-    margin: 10px;
+    margin: 10px 5px;
     border: 1px dotted #666;
 }
 
-div#actions div:hover {
+div#actions div.settool.full {
+    display: flex;
+    width: auto;
+}
+
+div#actions div.settool:hover {
     background-color: #eee;
 }
 
-div#actions div.active {
+div#actions div.settool.addtool-active {
     background-color: #9f9;
 }
 
-div#actions label {
+div#actions div.settool label {
     background-color: #ddf;
     padding: 5px 10px;
     margin-left: 20px;

@@ -51,59 +51,61 @@ const menuactions: Map<string, () => void> = new Map([
 
 ]);
 
-const menuevents: Map<string, (menu: Menu, e: Event | undefined) => void> = new Map([
+const menuevents: Map<string, (menu: Menu, e: never, target: never) => void> = new Map();
 
-    ['stamp-open', (menu: Menu) => {
-        // TODO this whole function is awful
-        const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-        const stamp = Stamp.current();
-        elt.value = stamp === undefined ? '' : btoa(String.fromCharCode.apply(null, Data.serialize(stamp.cells) as unknown as number[]));
-        elt.focus();
-        elt.select();
-    }],
+menuevents.set('stamp-open', (menu: Menu) => {
+    // TODO this whole function is awful
+    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
+    const stamp = Stamp.current();
+    elt.value = stamp === undefined ? '' :
+        btoa(String.fromCharCode.apply(null, Data.serialize(stamp.cells) as unknown as number[]));
+    elt.focus();
+    elt.select();
+});
 
-    ['stamp-go', (menu: Menu) => {
-        const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-        Stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
-        menu.close();
-    }],
+menuevents.set('stamp-go', (menu: Menu) => {
+    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
+    Stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
+    menu.close();
+});
 
-    ['stamp-key', (menu: Menu, e: Event | undefined) => {
-        // TODO the types in here are awful
-        if (e !== undefined && (e as KeyboardEvent).key === 'Enter') menuevent(menu, 'go');
-    }],
+menuevents.set('stamp-key', (menu: Menu, e: KeyboardEvent) => {
+    if (e.key === 'Enter') menuevent(menu, 'go');
+});
 
-    ['addtool-open', (menu: Menu) => {
-        const elt = menu.inputs.get('binding') as HTMLTextAreaElement;
-        elt.value = '';
-    }],
+menuevents.set('addtool-open', (menu: Menu) => {
+    const elt = menu.inputs.get('binding') as HTMLTextAreaElement;
+    elt.value = '';
+});
 
-    ['addtool-bindmouse', (menu: Menu, e_: Event | undefined) => {
-        const e = e_ as MouseEvent;
-        if (e.button !== 0) e.preventDefault();
-        (e.target as HTMLInputElement).value = 'click ' + e.button;
-    }],
+menuevents.set('addtool-bindmouse', (menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
+    if (e.button !== 0) e.preventDefault();
+    target.value = 'click ' + e.button;
+});
 
-    ['addtool-bindkey', (menu: Menu, e_: Event | undefined) => {
-        const e = e_ as KeyboardEvent;
-        e.preventDefault();
-        (e.target as HTMLInputElement).value = 'key [' + e.key + ']';
-    }],
+menuevents.set('addtool-bindkey', (menu: Menu, e: KeyboardEvent, target: HTMLInputElement) => {
+    e.preventDefault();
+    target.value = 'key [' + e.key + ']';
+});
 
-    ['addtool-bindwheel', (menu: Menu, e_: Event | undefined) => {
-        const e = e_ as WheelEvent;
-        (e.target as HTMLInputElement).value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
-    }],
+menuevents.set('addtool-bindwheel', (menu: Menu, e: WheelEvent, target: HTMLInputElement) => {
+    target.value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
+});
 
-    ['addtool-nop', (menu: Menu, e: Event | undefined) => {
-        e!.preventDefault();
-    }]
+menuevents.set('addtool-nop', (menu: Menu, e: Event) => {
+    e.preventDefault();
+});
 
-]);
+menuevents.set('addtool-settool', (menu: Menu, e: Event, target: Element) => {
+    for (const el of Array.from(document.getElementsByClassName('addtool-active'))) {
+        el.classList.remove('addtool-active');
+    }
+    target.classList.add('addtool-active');
+});
 
-function menuevent(menu: Menu, ev: string, e: Event | undefined = undefined) {
+function menuevent(menu: Menu, ev: string, e: Event | undefined = undefined, target: Element | undefined = undefined) {
     const fn = menuevents.get(`${menu.name}-${ev}`);
-    if (fn !== undefined) fn(menu, e);
+    if (fn !== undefined) fn(menu, e as never, target as never);
 }
 
 const menus: Map<string, Menu> = new Map();
@@ -125,15 +127,32 @@ export function initialize(btns: Array<HTMLElement>, popups: Array<HTMLElement>)
             popup.dataset.menu as string,
             popup,
             new Map((Array.from(popup.getElementsByClassName('menuinput')) as Array<HTMLElement>).map(ipt => {
+
                 const evs = ipt.dataset.event;
                 if (evs !== undefined) {
                     for (const ev of evs.split(';')) {
                         const [k, v] = ev.split('=');
                         ipt.addEventListener(k, e => {
-                            menuevent(menu, v, e);
+                            menuevent(menu, v, e, ipt);
                         });
                     }
                 }
+
+                const chevs = ipt.dataset.events;
+                if (chevs !== undefined) {
+                    for (const chev of chevs.split('&')) {
+                        const [sel, subevs] = chev.split('@');
+                        for (const ch of Array.from(popup.querySelectorAll(sel))) {
+                            for (const subev of subevs.split(';')) {
+                                const [k, v] = subev.split('=');
+                                ch.addEventListener(k, e => {
+                                    menuevent(menu, v, e, ch);
+                                });
+                            }
+                        }
+                    }
+                }
+
                 return [ipt.dataset.menu as string, ipt];
             }))
         );

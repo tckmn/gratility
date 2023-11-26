@@ -39,28 +39,30 @@
                     <input class='menuinput' data-menu='binding' data-event='pointerdown=bindmouse;keydown=bindkey;wheel=bindwheel;paste=nop;contextmenu=nop'>
                 </div>
                 <p><strong>action</strong></p>
-                <div id='actions' class='big' data-menu='actions'>
+                <div id='actions' class='menuinput big' data-menu='actions' data-events='div.settool@click=settool'>
                     <section class='group first'>
                         <span>drawing</span>
-                        <div data-event='click=setsurface'>Surface <label>color: <input></label></div>
-                        <div data-event='click=setline'>Line <label>color: <input></label></div>
+                        <div class='settool full' data-tool='surface'>Surface <label>color: <input></label></div>
+                        <div class='settool full' data-tool='line'>Line <label>color: <input></label></div>
                     </section>
 
                     <section class='group'>
                         <span>movement</span>
-                        <div data-event='click=setpan'>Pan</div>
-                        <div data-event='click=setzoom'>Zoom <label>direction: </label></div>
+                        <div class='settool' data-tool='pan'>Pan</div>
+                        <div class='settool' data-tool='zoomin'>Zoom in</div>
+                        <div class='settool' data-tool='zoomout'>Zoom out</div>
                     </section>
 
                     <section class='group'>
                         <span>stamps</span>
-                        <div data-event='click=setcopy'>Copy</div>
-                        <div data-event='click=setpaste'>Paste</div>
+                        <div class='settool' data-tool='copy'>Copy</div>
+                        <div class='settool' data-tool='paste'>Paste</div>
                     </section>
 
                     <section class='group'>
                         <span>misc</span>
-                        <div data-event='click=setundo'>Undo <label>direction: </label></div>
+                        <div class='settool' data-tool='undo'>Undo</div>
+                        <div class='settool' data-tool='redo'>Redo</div>
                     </section>
                 </div>
                 <button class='menuinput' data-menu='go' data-event='click=go'>add</button>
