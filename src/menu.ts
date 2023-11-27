@@ -93,7 +93,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     default: MenuManager.alert('unknown tool??'); return;
     }
 
-    menu.close();
+    manager.close();
 });
 
 // ###### STAMP MENU ###### //
@@ -111,7 +111,7 @@ menuevents.set('stamp-open', (manager: MenuManager, menu: Menu) => {
 menuevents.set('stamp-go', (manager: MenuManager, menu: Menu) => {
     const elt = menu.inputs.get('value') as HTMLTextAreaElement;
     Stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
-    menu.close();
+    manager.close();
 });
 
 menuevents.set('stamp-key', (manager: MenuManager, menu: Menu, e: KeyboardEvent) => {
@@ -121,32 +121,34 @@ menuevents.set('stamp-key', (manager: MenuManager, menu: Menu, e: KeyboardEvent)
 
 class Menu {
     constructor(
-        private manager: MenuManager,
         public name: string,
         public popup: HTMLElement,
         public inputs: Map<string, HTMLElement>
     ) {}
 
-    public open() {
-        if (this.manager.isOpen()) return;
-        this.manager.activeMenu = this;
-        this.popup.style.display = 'flex';
-        this.manager.menuevent(this, 'open');
-    }
-
-    public close() {
-        this.manager.activeMenu = undefined;
-        this.popup.style.display = 'none';
-        this.manager.menuevent(this, 'close');
-    }
+    public open()  { this.popup.style.display = 'flex'; }
+    public close() { this.popup.style.display = 'none'; }
 }
 
 export default class MenuManager {
 
-    // this should morally be private; only Menu accesses it directly
-    public activeMenu: Menu | undefined = undefined;
+    private activeMenu: Menu | undefined = undefined;
     public isOpen(): boolean { return this.activeMenu !== undefined; }
-    public close() { if (this.activeMenu !== undefined) this.activeMenu.close(); }
+
+    public open(menu: Menu) {
+        menu.open();
+        this.activeMenu = menu;
+        this.menuevent(menu, 'open');
+    }
+
+    public close() {
+        if (this.activeMenu !== undefined) {
+            const menu = this.activeMenu;
+            this.activeMenu.close();
+            this.activeMenu = undefined;
+            this.menuevent(menu, 'close');
+        }
+    }
 
     // TODO
     public static alert(msg: string) {
@@ -169,8 +171,9 @@ export default class MenuManager {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
                 const menu = this.menus.get(btn.dataset.menu as string);
-                if (menu !== undefined) menu.open();
-                else {
+                if (menu !== undefined && this.activeMenu === undefined) {
+                    this.open(menu);
+                } else {
                     const fn = menuactions.get(btn.dataset.menu as string);
                     if (fn !== undefined) fn();
                 }
@@ -179,7 +182,6 @@ export default class MenuManager {
 
         for (const popup of popups) {
             const menu = new Menu(
-                this,
                 popup.dataset.menu as string,
                 popup,
                 new Map((Array.from(popup.getElementsByClassName('menuinput')) as Array<HTMLElement>).map(ipt => {
@@ -218,7 +220,7 @@ export default class MenuManager {
             close.textContent = '×';
             close.className = 'menuclose';
             close.addEventListener('click', () => {
-                menu.close();
+                this.close();
             });
             popup.appendChild(close);
         }
