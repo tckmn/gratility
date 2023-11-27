@@ -72,7 +72,7 @@ export default class Toolbox {
         return true;
     }
 
-    public bindWheel(dir: boolean, tool: Tool) {
+    public bindWheel(dir: boolean, tool: Tool): boolean {
         if (this.wheelTools.has(dir)) return false;
         this.wheelTools.set(dir, tool);
         this.toolDisplay(tool, `scr ${dir ? 'up' : 'dn'}`, () => {

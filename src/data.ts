@@ -1,7 +1,7 @@
 import * as Draw from 'draw';
 import * as Layer from 'layer';
 import * as Measure from 'measure';
-import * as Menu from 'menu';
+import MenuManager from 'menu';
 import BitStream from 'bitstream';
 
 export function encode(x: number, y: number): number {
@@ -113,7 +113,7 @@ export function deserialize(arr: Uint8Array): Array<Item> {
 
     const version = bs.read(1);
     if (version !== 0) {
-        Menu.alert('deserialize: invalid version number');
+        MenuManager.alert('deserialize: invalid version number');
         return [];
     }
 
