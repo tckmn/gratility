@@ -36,10 +36,10 @@ export default class CopyTool implements Tool {
         this.tx = x;
         this.ty = y;
 
-        const sx = Measure.rhalfcell(Math.min(this.sx, this.tx));
-        const sy = Measure.rhalfcell(Math.min(this.sy, this.ty));
-        const tx = Measure.rhalfcell(Math.max(this.sx, this.tx));
-        const ty = Measure.rhalfcell(Math.max(this.sy, this.ty));
+        const sx = Measure.physhc(Math.min(this.sx, this.tx));
+        const sy = Measure.physhc(Math.min(this.sy, this.ty));
+        const tx = Measure.physhc(Math.max(this.sx, this.tx));
+        const ty = Measure.physhc(Math.max(this.sy, this.ty));
 
         if (this.elt !== undefined) {
             this.elt.setAttribute('x', sx.toString());
@@ -52,10 +52,10 @@ export default class CopyTool implements Tool {
     public onup() {
         if (this.elt !== undefined) Layer.copypaste.removeChild(this.elt);
 
-        const sx = Measure.halfcell(Math.min(this.sx, this.tx));
-        const sy = Measure.halfcell(Math.min(this.sy, this.ty));
-        const tx = Measure.halfcell(Math.max(this.sx, this.tx));
-        const ty = Measure.halfcell(Math.max(this.sy, this.ty));
+        const sx = Measure.hc(Math.min(this.sx, this.tx));
+        const sy = Measure.hc(Math.min(this.sy, this.ty));
+        const tx = Measure.hc(Math.max(this.sx, this.tx));
+        const ty = Measure.hc(Math.max(this.sy, this.ty));
 
         if (sx === tx && sy === ty) {
             Stamp.deselect();

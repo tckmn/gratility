@@ -12,6 +12,7 @@ export default class Toolbox {
         this.bindKey(' ', new Tools.PanTool());
         this.bindKey('s', new Tools.SurfaceTool(0));
         this.bindKey('d', new Tools.LineTool(1));
+        this.bindKey('e', new Tools.EdgeTool(0));
         this.bindKey('z', new Tools.UndoTool(true));
         this.bindKey('x', new Tools.UndoTool(false));
         this.bindKey('c', new Tools.CopyTool());

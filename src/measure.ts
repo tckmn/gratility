@@ -5,14 +5,27 @@ export const GRIDSIZE = 500;
 export const HALFCELL = 20;
 export const ZOOMTICK = 1.1;
 export const LINE = 5;
+export const EDGE = 5;
 
 export const CELL = 2*HALFCELL;
 
-// TODO figure these out
+// this doesn't really belong here lol
 export function round(x: number, r: number) { return Math.round(x/r)*r; }
+
+// when you only care about which square in the visual grid the point is in, use this one
 export function cell(x: number) { return Math.floor(x / CELL); }
-export function halfcell(x: number) { return Math.round(x / HALFCELL); }
-export function rhalfcell(x: number) { return Math.round(x / HALFCELL) * HALFCELL; }
+
+// i think of this as the fundamental one, i guess
+// "spc" specifies how much to weight grid-aligned points relative to half-grid-aligned points
+// higher values of "spc" result in rounding towards gridline intersections more
+// cf pzv MouseInput#getpos
+export function hc(x: number, spc: number = 0.25) {
+    const prelim = x / CELL, cellpos = Math.floor(prelim), offset = prelim - cellpos;
+    return cellpos*2 + (offset >= spc ? 1 : 0) + (offset >= 1-spc ? 1 : 0);
+}
+
+// sometimes you want the physical coordinates
+export function physhc(x: number, spc: number = 0.25) { return hc(x, spc) * HALFCELL; }
 
 export const enum HC {
     CORNER = 0,

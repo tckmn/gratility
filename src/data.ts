@@ -14,6 +14,7 @@ export function decode(n: number): [number, number] {
 export const enum Obj {
     SURFACE = 0,
     LINE,
+    EDGE,
 }
 
 export class Item {
@@ -62,7 +63,20 @@ export const drawfns = {
             strokeWidth: Measure.LINE,
             strokeLinecap: 'round'
         });
-    }
+    },
+
+    [Obj.EDGE]: (x: number, y: number, data: any) => {
+        const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 0 : 1;
+        return Draw.draw(undefined, 'line', {
+            x1: (x - horiz) * Measure.HALFCELL,
+            x2: (x + horiz) * Measure.HALFCELL,
+            y1: (y - (1-horiz)) * Measure.HALFCELL,
+            y2: (y + (1-horiz)) * Measure.HALFCELL,
+            stroke: colors[data as number],
+            strokeWidth: Measure.EDGE,
+            strokeLinecap: 'round'
+        });
+    },
 
 };
 
@@ -78,7 +92,11 @@ const serializefns = {
 
     [Obj.LINE]: (bs: BitStream, data: any) => {
         bs.write(COLOR_BITS, data as number);
-    }
+    },
+
+    [Obj.EDGE]: (bs: BitStream, data: any) => {
+        bs.write(COLOR_BITS, data as number);
+    },
 
 };
 
@@ -90,7 +108,11 @@ const deserializefns = {
 
     [Obj.LINE]: (bs: BitStream): any => {
         return bs.read(COLOR_BITS);
-    }
+    },
+
+    [Obj.EDGE]: (bs: BitStream): any => {
+        return bs.read(COLOR_BITS);
+    },
 
 };
 
