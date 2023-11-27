@@ -41,18 +41,24 @@ menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
 menuevents.set('addtool-bindmouse', (manager: MenuManager, menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
     if (e.button !== 0) e.preventDefault();
     target.value = 'click ' + e.button;
-    resolve = tool => manager.toolbox.bindMouse(e.button, tool);
+    const conflict = manager.toolbox.mouseTools.has(e.button);
+    target.classList.toggle('conflict', conflict);
+    resolve = conflict ? undefined : tool => manager.toolbox.bindMouse(e.button, tool);
 });
 
 menuevents.set('addtool-bindkey', (manager: MenuManager, menu: Menu, e: KeyboardEvent, target: HTMLInputElement) => {
     e.preventDefault();
     target.value = 'key [' + e.key + ']';
-    resolve = tool => manager.toolbox.bindKey(e.key, tool);
+    const conflict = manager.toolbox.keyTools.has(e.key);
+    target.classList.toggle('conflict', conflict);
+    resolve = conflict ? undefined : tool => manager.toolbox.bindKey(e.key, tool);
 });
 
 menuevents.set('addtool-bindwheel', (manager: MenuManager, menu: Menu, e: WheelEvent, target: HTMLInputElement) => {
     target.value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
-    resolve = tool => manager.toolbox.bindWheel(e.deltaY < 0, tool);
+    const conflict = manager.toolbox.wheelTools.has(e.deltaY < 0);
+    target.classList.toggle('conflict', conflict);
+    resolve = conflict ? undefined : tool => manager.toolbox.bindWheel(e.deltaY < 0, tool);
 });
 
 menuevents.set('addtool-nop', (manager: MenuManager, menu: Menu, e: Event) => {
@@ -68,7 +74,7 @@ menuevents.set('addtool-settool', (manager: MenuManager, menu: Menu, e: Event, t
 
 menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     if (resolve === undefined) {
-        MenuManager.alert('please pick a binding for this tool');
+        MenuManager.alert('please pick an available binding for this tool');
         return;
     }
 

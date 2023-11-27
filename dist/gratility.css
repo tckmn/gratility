@@ -97,6 +97,8 @@ div#alerts > div {
 .multisel button.active { background-color: #161; color: #eee; }
 .multisel button.active:hover { background-color: #040; }
 
+input.conflict { box-shadow: 0 0 5px 2px #f00; }
+
 section.group {
     position: relative;
     border: 1px dashed #666;
