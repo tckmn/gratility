@@ -12,7 +12,6 @@ export const CELL = 2*HALFCELL;
 export function round(x: number, r: number) { return Math.round(x/r)*r; }
 export function cell(x: number) { return Math.floor(x / CELL); }
 export function halfcell(x: number) { return Math.round(x / HALFCELL); }
-export function rcell(x: number) { return Math.round(x / CELL) * CELL; }
 export function rhalfcell(x: number) { return Math.round(x / HALFCELL) * HALFCELL; }
 
 export const enum HC {

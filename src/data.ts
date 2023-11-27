@@ -45,8 +45,8 @@ export const drawfns = {
         return Draw.draw(undefined, 'rect', {
             width: Measure.CELL,
             height: Measure.CELL,
-            x: Measure.HALFCELL*x,
-            y: Measure.HALFCELL*y,
+            x: Measure.HALFCELL*(x-1),
+            y: Measure.HALFCELL*(y-1),
             fill: colors[data as number]
         });
     },
