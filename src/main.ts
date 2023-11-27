@@ -26,9 +26,12 @@ for (const multisel of Array.from(document.getElementsByClassName('multisel')) a
     const children = Array.from(multisel.children) as Array<HTMLElement>;
     for (const child of children) {
         child.addEventListener('click', () => {
-            for (const ch of children) ch.classList.remove('active');
-            child.classList.add('active');
-            multisel.dataset.multisel = child.dataset.multisel;
+            if (!multisel.classList.contains('any')) for (const ch of children) ch.classList.remove('active');
+            child.classList.toggle('active');
+            multisel.dataset.multisel = children
+                .filter(ch => ch.classList.contains('active'))
+                .map(ch => ch.dataset.multisel)
+                .join('|');
         });
     }
 }

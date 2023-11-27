@@ -13,7 +13,7 @@ export default class EdgeTool implements Tool {
         return Draw.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.HALFCELL*2} ${Measure.HALFCELL*2}`,
             children: [
-                Data.drawfns[Data.Obj.EDGE](0, 1, this.color)
+                Data.objdraw(Data.Obj.EDGE, 0, 1, this.color)
             ]
         });
     }

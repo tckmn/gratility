@@ -36,7 +36,7 @@ export function add(cells: Array<Data.Item>) {
 
     Layer.stamps.replaceChildren(...cells.map(cell => {
         const [x, y] = Data.decode(cell.n);
-        return Data.drawfns[cell.obj](x - xoff, y - yoff, cell.data);
+        return Data.objdraw(cell.obj, x - xoff, y - yoff, cell.data);
     }));
 }
 

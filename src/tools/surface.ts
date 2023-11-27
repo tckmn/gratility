@@ -11,7 +11,7 @@ export default class SurfaceTool implements Tool {
         return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.HALFCELL*2} ${Measure.HALFCELL*2}`,
             children: [
-                Data.drawfns[Data.Obj.SURFACE](1, 1, this.color)
+                Data.objdraw(Data.Obj.SURFACE, 1, 1, this.color)
             ]
         });
     }

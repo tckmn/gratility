@@ -15,6 +15,21 @@ export const enum Obj {
     SURFACE = 0,
     LINE,
     EDGE,
+    SHAPE,
+}
+
+export const enum Shape {
+    CIRCLE = 0,
+    SQUARE,
+    CROSS,
+    STAR
+}
+
+export type ShapeSpec = {
+    shape: Shape,
+    fill: number | undefined,
+    outline: number | undefined,
+    size: number
 }
 
 export class Item {
@@ -37,48 +52,77 @@ export class Change {
 
 const colors = [
     '#000000',
-    '#008000'
+    '#008000',
+    '#ffffff'
 ]
 
-export const drawfns = {
+const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement } = {
 
-    [Obj.SURFACE]: (x: number, y: number, data: any) => {
+    [Obj.SURFACE]: (x: number, y: number, data: number) => {
         return Draw.draw(undefined, 'rect', {
             width: Measure.CELL,
             height: Measure.CELL,
             x: Measure.HALFCELL*(x-1),
             y: Measure.HALFCELL*(y-1),
-            fill: colors[data as number]
+            fill: colors[data]
         });
     },
 
-    [Obj.LINE]: (x: number, y: number, data: any) => {
+    [Obj.LINE]: (x: number, y: number, data: number) => {
         const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
         return Draw.draw(undefined, 'line', {
             x1: (x - horiz) * Measure.HALFCELL,
             x2: (x + horiz) * Measure.HALFCELL,
             y1: (y - (1-horiz)) * Measure.HALFCELL,
             y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: colors[data as number],
+            stroke: colors[data],
             strokeWidth: Measure.LINE,
             strokeLinecap: 'round'
         });
     },
 
-    [Obj.EDGE]: (x: number, y: number, data: any) => {
+    [Obj.EDGE]: (x: number, y: number, data: number) => {
         const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 0 : 1;
         return Draw.draw(undefined, 'line', {
             x1: (x - horiz) * Measure.HALFCELL,
             x2: (x + horiz) * Measure.HALFCELL,
             y1: (y - (1-horiz)) * Measure.HALFCELL,
             y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: colors[data as number],
+            stroke: colors[data],
             strokeWidth: Measure.EDGE,
             strokeLinecap: 'round'
         });
     },
 
+    [Obj.SHAPE]: (x: number, y: number, data: ShapeSpec[]) => {
+        const g = Draw.draw(undefined, 'g', {
+            transform: `translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})`
+        });
+        for (const spec of data) {
+            switch (spec.shape) {
+            case Shape.CIRCLE:
+                Draw.draw(g, 'circle', {
+                    cx: 0,
+                    cy: 0,
+                    r: 5,
+                    strokeWidth: 2,
+                    fill: spec.fill === undefined ? 'transparent' : colors[spec.fill],
+                    stroke: spec.outline === undefined ? 'transparent' : colors[spec.outline]
+                });
+                break;
+            default:
+                // TODO
+                break;
+            }
+        }
+        return g;
+    },
+
 };
+
+export function objdraw(obj: Obj, x: number, y: number, data: any) {
+    return drawfns[obj](x, y, data as never);
+}
 
 const N_BITS = 32;
 const OBJ_BITS = 6;
@@ -98,6 +142,10 @@ const serializefns = {
         bs.write(COLOR_BITS, data as number);
     },
 
+    [Obj.SHAPE]: (bs: BitStream, data: any) => {
+        // TODO
+    },
+
 };
 
 const deserializefns = {
@@ -112,6 +160,10 @@ const deserializefns = {
 
     [Obj.EDGE]: (bs: BitStream): any => {
         return bs.read(COLOR_BITS);
+    },
+
+    [Obj.SHAPE]: (bs: BitStream): any => {
+        // TODO
     },
 
 };
@@ -191,7 +243,7 @@ export function undo(isUndo: boolean) {
 
             // draw it
             const [x, y] = decode(change.n);
-            const elt = drawfns[change.obj](x, y, post);
+            const elt = objdraw(change.obj, x, y, post);
             Layer.obj(change.obj).appendChild(elt);
 
             // save the element
