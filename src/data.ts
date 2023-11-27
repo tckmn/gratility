@@ -104,13 +104,19 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
                 Draw.draw(g, 'circle', {
                     cx: 0,
                     cy: 0,
-                    r: 5,
-                    strokeWidth: 2,
+                    r: Measure.HALFCELL * (spec.size/6),
+                    strokeWidth: Measure.HALFCELL * (0.05 + 0.1*(spec.size/12)),
                     fill: spec.fill === undefined ? 'transparent' : colors[spec.fill],
                     stroke: spec.outline === undefined ? 'transparent' : colors[spec.outline]
                 });
                 break;
-            default:
+            case Shape.SQUARE:
+                // TODO
+                break;
+            case Shape.CROSS:
+                // TODO
+                break;
+            case Shape.STAR:
                 // TODO
                 break;
             }

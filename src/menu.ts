@@ -79,7 +79,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     }
 
     const args = (Array.from(el.getElementsByClassName('arg')) as Array<HTMLElement>).map(el => {
-        if (el.tagName === 'input') {
+        if (el.tagName === 'INPUT') {
             return (el as HTMLInputElement).value;
         } else if (el.classList.contains('multisel')) {
             return el.dataset.multisel ?? '';
@@ -92,12 +92,18 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'surface': resolve(new Tools.SurfaceTool(parseInt(args[0], 10))); break;
     case 'line': resolve(new Tools.LineTool(parseInt(args[0], 10))); break;
     case 'edge': resolve(new Tools.EdgeTool(parseInt(args[0], 10))); break;
-    case 'shape': resolve(new Tools.ShapeTool({
-        shape: parseInt(args[0], 10),
-        fill: args[1] === '' ? undefined : parseInt(args[1], 10),
-        outline: args[2] === '' ? undefined : parseInt(args[2], 10),
-        size: parseInt(args[3], 10)
-    }, args[4].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0))); break;
+    case 'shape':
+        if (parseInt(args[3], 10) < 1 || parseInt(args[3], 10) > 5) {
+            MenuManager.alert('shape size should be between 1 and 5');
+            return;
+        }
+        resolve(new Tools.ShapeTool({
+            shape: parseInt(args[0], 10),
+            fill: args[1] === '' ? undefined : parseInt(args[1], 10),
+            outline: args[2] === '' ? undefined : parseInt(args[2], 10),
+            size: parseInt(args[3], 10)
+        }, args[4].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0)));
+        break;
     case 'pan': resolve(new Tools.PanTool()); break;
     case 'zoomin': resolve(new Tools.ZoomTool(1)); break;
     case 'zoomout': resolve(new Tools.ZoomTool(-1)); break;
