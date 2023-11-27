@@ -2,14 +2,8 @@ import * as Stamp from 'stamp';
 import * as Data from 'data';
 import Tool from 'tools/tool';
 import Toolbox from 'toolbox';
+import * as Tools from 'tools/alltools';
 
-import LineTool    from 'tools/line';
-import PanTool     from 'tools/pan';
-import SurfaceTool from 'tools/surface';
-import ZoomTool    from 'tools/zoom';
-import UndoTool    from 'tools/undo';
-import CopyTool    from 'tools/copy';
-import PasteTool   from 'tools/paste';
 
 const menuactions: Map<string, () => void> = new Map([
 
@@ -87,15 +81,15 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     const args = Array.from(el.getElementsByTagName('input')).map(x => x.value);
 
     switch (el.dataset.tool) {
-    case 'surface': resolve(new SurfaceTool(parseInt(args[0], 10))); break;
-    case 'line': resolve(new LineTool(parseInt(args[0], 10))); break;
-    case 'pan': resolve(new PanTool()); break;
-    case 'zoomin': resolve(new ZoomTool(1)); break;
-    case 'zoomout': resolve(new ZoomTool(-1)); break;
-    case 'copy': resolve(new CopyTool()); break;
-    case 'paste': resolve(new PasteTool()); break;
-    case 'undo': resolve(new UndoTool(true)); break;
-    case 'redo': resolve(new UndoTool(false)); break;
+    case 'surface': resolve(new Tools.SurfaceTool(parseInt(args[0], 10))); break;
+    case 'line': resolve(new Tools.LineTool(parseInt(args[0], 10))); break;
+    case 'pan': resolve(new Tools.PanTool()); break;
+    case 'zoomin': resolve(new Tools.ZoomTool(1)); break;
+    case 'zoomout': resolve(new Tools.ZoomTool(-1)); break;
+    case 'copy': resolve(new Tools.CopyTool()); break;
+    case 'paste': resolve(new Tools.PasteTool()); break;
+    case 'undo': resolve(new Tools.UndoTool(true)); break;
+    case 'redo': resolve(new Tools.UndoTool(false)); break;
     default: MenuManager.alert('unknown tool??'); return;
     }
 

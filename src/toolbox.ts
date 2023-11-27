@@ -1,12 +1,5 @@
 import Tool from 'tools/tool';
-
-import LineTool    from 'tools/line';
-import PanTool     from 'tools/pan';
-import SurfaceTool from 'tools/surface';
-import ZoomTool    from 'tools/zoom';
-import UndoTool    from 'tools/undo';
-import CopyTool    from 'tools/copy';
-import PasteTool   from 'tools/paste';
+import * as Tools from 'tools/alltools';
 
 export default class Toolbox {
 
@@ -15,16 +8,16 @@ export default class Toolbox {
     public readonly wheelTools = new Map<boolean, Tool>();
 
     constructor(private container: HTMLElement) {
-        this.bindMouse(1, new PanTool());
-        this.bindKey(' ', new PanTool());
-        this.bindKey('s', new SurfaceTool(0));
-        this.bindKey('d', new LineTool(1));
-        this.bindKey('z', new UndoTool(true));
-        this.bindKey('x', new UndoTool(false));
-        this.bindKey('c', new CopyTool());
-        this.bindKey('v', new PasteTool());
-        this.bindWheel(true, new ZoomTool(1));
-        this.bindWheel(false, new ZoomTool(-1));
+        this.bindMouse(1, new Tools.PanTool());
+        this.bindKey(' ', new Tools.PanTool());
+        this.bindKey('s', new Tools.SurfaceTool(0));
+        this.bindKey('d', new Tools.LineTool(1));
+        this.bindKey('z', new Tools.UndoTool(true));
+        this.bindKey('x', new Tools.UndoTool(false));
+        this.bindKey('c', new Tools.CopyTool());
+        this.bindKey('v', new Tools.PasteTool());
+        this.bindWheel(true, new Tools.ZoomTool(1));
+        this.bindWheel(false, new Tools.ZoomTool(-1));
     }
 
     private toolDisplay(tool: Tool, txt: string, delcb: () => void) {
