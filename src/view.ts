@@ -14,7 +14,7 @@ export function setX(n: number) { x = n; }
 export function setY(n: number) { y = n; }
 export function setZ(n: number) { z = n; }
 
-export function zoom() { return Math.pow(Measure.ZOOMTICK, z); }
+export function zoom(n?: number) { return Math.pow(Measure.ZOOMTICK, n ?? z); }
 
 export function update() {
     parent.setAttribute('transform', `scale(${zoom()}) translate(${x} ${y})`);

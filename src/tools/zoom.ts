@@ -10,6 +10,8 @@ export default class ZoomTool implements Tool {
     public constructor(private readonly amount: number) {}
 
     public ondown(x: number, y: number) {
+        View.setX((x + View.x) * View.zoom(-this.amount) - x);
+        View.setY((y + View.y) * View.zoom(-this.amount) - y);
         View.setZ(View.z + this.amount);
         View.update();
     }
