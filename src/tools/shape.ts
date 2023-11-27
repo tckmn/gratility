@@ -45,11 +45,12 @@ export default class ShapeTool implements Tool {
         if (shape === undefined) {
             Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, [this.spec]));
             this.isDrawing = true;
-        } else if (!shape.some(sh => sh.shape === this.spec.shape && sh.size === this.spec.size)) {
+        } else if (!shape.some(sh => Data.sheq(sh, this.spec))) {
             Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, shape.concat(this.spec)));
             this.isDrawing = true;
         } else {
-            Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, undefined));
+            const remaining = shape.filter(sh => !Data.sheq(sh, this.spec));
+            Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, remaining.length === 0 ? undefined : remaining));
             this.isDrawing = false;
         }
     }
@@ -62,13 +63,14 @@ export default class ShapeTool implements Tool {
             if (this.isDrawing) {
                 Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, [this.spec]));
             }
-        } else if (!shape.some(sh => sh.shape === this.spec.shape && sh.size === this.spec.size)) {
+        } else if (!shape.some(sh => Data.sheq(sh, this.spec))) {
             if (this.isDrawing) {
                 Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, shape.concat(this.spec)));
             }
         } else {
             if (!this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, undefined));
+                const remaining = shape.filter(sh => !Data.sheq(sh, this.spec));
+                Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, remaining.length === 0 ? undefined : remaining));
             }
         }
     }

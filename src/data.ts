@@ -32,6 +32,10 @@ export type ShapeSpec = {
     size: number
 }
 
+export function sheq(a: ShapeSpec, b: ShapeSpec) {
+    return a.shape === b.shape && a.size === b.size;
+}
+
 export class Item {
     public constructor(
         public readonly n: number,
