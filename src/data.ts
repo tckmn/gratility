@@ -147,6 +147,12 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
             y: Measure.HALFCELL*y,
             textAnchor: 'middle',
             dominantBaseline: 'central',
+            fontSize: Measure.CELL*(
+                data.length === 1 ? 0.75 :
+                data.length === 2 ? 0.55 :
+                data.length === 3 ? 0.4 :
+                0.3
+            ),
             textContent: data
         });
     },
