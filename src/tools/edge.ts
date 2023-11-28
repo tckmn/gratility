@@ -11,7 +11,7 @@ export default class EdgeTool implements Tool {
     public name(): string { return 'Edge'; }
     public icon(): SVGElement {
         return Draw.draw(undefined, 'svg', {
-            viewBox: `-${Measure.HALFCELL} 0 ${Measure.HALFCELL*2} ${Measure.HALFCELL*2}`,
+            viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
                 Data.objdraw(Data.Obj.EDGE, 0, 1, this.color)
             ]

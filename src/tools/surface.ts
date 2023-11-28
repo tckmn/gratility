@@ -9,7 +9,7 @@ export default class SurfaceTool implements Tool {
     public name(): string { return 'Surface'; }
     public icon(): SVGElement {
         return Draw.draw(undefined, 'svg', {
-            viewBox: `0 0 ${Measure.HALFCELL*2} ${Measure.HALFCELL*2}`,
+            viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
                 Data.objdraw(Data.Obj.SURFACE, 1, 1, this.color)
             ]

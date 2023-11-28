@@ -29,12 +29,19 @@ export default class ShapeTool implements Tool {
 
     public readonly repeat = false;
     public name(): string { return 'Shape'; }
-    public icon() {} // TODO
+    public icon() {
+        return Draw.draw(undefined, 'svg', {
+            viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
+            children: [
+                Data.objdraw(Data.Obj.SHAPE, 1, 1, [this.spec])
+            ]
+        });
+    }
 
     constructor(
         private spec: Data.ShapeSpec,
         private locs: number // bitmask: 0b center edge corner
-    ) {console.log(spec)}
+    ) {}
 
     private isDrawing = false;
 

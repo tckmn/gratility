@@ -102,29 +102,41 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
         const g = Draw.draw(undefined, 'g', {
             transform: `translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})`
         });
+
         for (const spec of data) {
+            const r = Measure.HALFCELL * (spec.size/6);
+            const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(spec.size/12));
+            const fill = spec.fill === undefined ? 'transparent' : colors[spec.fill];
+            const stroke = spec.outline === undefined ? 'transparent' : colors[spec.outline];
+
             switch (spec.shape) {
             case Shape.CIRCLE:
                 Draw.draw(g, 'circle', {
-                    cx: 0,
-                    cy: 0,
-                    r: Measure.HALFCELL * (spec.size/6),
-                    strokeWidth: Measure.HALFCELL * (0.05 + 0.1*(spec.size/12)),
-                    fill: spec.fill === undefined ? 'transparent' : colors[spec.fill],
-                    stroke: spec.outline === undefined ? 'transparent' : colors[spec.outline]
+                    cx: 0, cy: 0, r: r,
+                    strokeWidth, fill, stroke
                 });
                 break;
             case Shape.SQUARE:
-                // TODO
+                Draw.draw(g, 'rect', {
+                    width: r*2, height: r*2, x: -r, y: -r,
+                    strokeWidth, fill, stroke
+                });
                 break;
             case Shape.CROSS:
                 // TODO
                 break;
             case Shape.STAR:
-                // TODO
+                Draw.draw(g, 'path', {
+                    d: 'M' + [0,1,2,3,4,5,6,7,8,9].map(n => (
+                        r*(n%2===0?1:0.5)*Math.cos((n/5+0.5)*Math.PI) + ' ' +
+                            -r*(n%2===0?1:0.5)*Math.sin((n/5+0.5)*Math.PI)
+                    )).join('L') + 'Z',
+                    strokeWidth, fill, stroke
+                });
                 break;
             }
         }
+
         return g;
     },
 
