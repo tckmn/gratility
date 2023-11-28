@@ -90,8 +90,16 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'line': resolve(new Tools.LineTool(parseInt(args[0], 10))); break;
     case 'edge': resolve(new Tools.EdgeTool(parseInt(args[0], 10))); break;
     case 'shape':
-        if (parseInt(args[2], 10) < 1 || parseInt(args[2], 10) > 5) {
+        if (!(parseInt(args[1], 10) >= 1 && parseInt(args[1], 10) <= 5)) {
             MenuManager.alert('shape size should be between 1 and 5');
+            return;
+        }
+        if (args[2] === '') {
+            MenuManager.alert('shape should be placeable in at least one location');
+            return;
+        }
+        if (args[3] === '' && args[4] === '') {
+            MenuManager.alert('shape should should have at least one of fill or outline');
             return;
         }
         resolve(new Tools.ShapeTool({

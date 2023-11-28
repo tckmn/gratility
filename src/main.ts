@@ -76,5 +76,5 @@ for (const colorpicker of Array.from(document.getElementsByClassName('colorpicke
     });
 
     children[0].classList.add('active');
-    colorpicker.dataset.value = '0';
+    colorpicker.dataset.value = colorpicker.classList.contains('optional') ? '' : '0';
 }
