@@ -192,7 +192,7 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
     },
 
     [Obj.TEXT]: (bs: BitStream, data: string) => {
-        // TODO
+        bs.writeString(data);
     },
 
 };
@@ -226,7 +226,7 @@ const deserializefns = {
     },
 
     [Obj.TEXT]: (bs: BitStream): any => {
-        // TODO
+        return bs.readString();
     },
 
 };
