@@ -3,6 +3,7 @@ import * as Event from 'event';
 import * as Grid from 'grid';
 import * as View from 'view';
 import * as Stamp from 'stamp';
+import * as Color from 'color';
 import MenuManager from 'menu';
 import Toolbox from 'toolbox';
 
@@ -23,15 +24,57 @@ Stamp.initialize();
 
 // TODO this stuff should really go somewhere else
 for (const multisel of Array.from(document.getElementsByClassName('multisel')) as Array<HTMLElement>) {
+    const any = multisel.classList.contains('any');
     const children = Array.from(multisel.children) as Array<HTMLElement>;
     for (const child of children) {
         child.addEventListener('click', () => {
-            if (!multisel.classList.contains('any')) for (const ch of children) ch.classList.remove('active');
+            if (!any) for (const ch of children) ch.classList.remove('active');
             child.classList.toggle('active');
-            multisel.dataset.multisel = children
+            multisel.dataset.value = children
                 .filter(ch => ch.classList.contains('active'))
                 .map(ch => ch.dataset.multisel)
                 .join('|');
         });
     }
+
+    if (any) {
+        multisel.dataset.value = '';
+    } else {
+        children[0].classList.add('active');
+        multisel.dataset.value = children[0].dataset.multisel;
+    }
+}
+
+for (const colorpicker of Array.from(document.getElementsByClassName('colorpicker')) as Array<HTMLElement>) {
+    const children: Array<HTMLSpanElement> = [];
+
+    // TODO less repetition
+    if (colorpicker.classList.contains('optional')) {
+        const el = document.createElement('span');
+        el.classList.add('transparent');
+        el.addEventListener('click', () => {
+            for (const ch of children) ch.classList.remove('active');
+            el.classList.add('active');
+            colorpicker.dataset.value = '';
+        });
+
+        colorpicker.appendChild(el);
+        children.push(el);
+    }
+
+    Color.colors.forEach((color, i) => {
+        const el = document.createElement('span');
+        el.style.backgroundColor = color;
+        el.addEventListener('click', () => {
+            for (const ch of children) ch.classList.remove('active');
+            el.classList.add('active');
+            colorpicker.dataset.value = i.toString();
+        });
+
+        colorpicker.appendChild(el);
+        children.push(el);
+    });
+
+    children[0].classList.add('active');
+    colorpicker.dataset.value = '0';
 }

@@ -36,28 +36,34 @@
                 <div id='actions' class='menuinput big' data-menu='actions' data-events='div.settool@click=settool'>
                     <section class='group first'>
                         <span>drawing</span>
-                        <div class='settool full' data-tool='surface'>Surface <label>color: <input class='arg'></label></div>
-                        <div class='settool full' data-tool='line'>Line <label>color: <input class='arg'></label></div>
-                        <div class='settool full' data-tool='edge'>Edge <label>color: <input class='arg'></label></div>
+                        <div class='settool full' data-tool='surface'>Surface
+                            <label>color: <span class='arg colorpicker'></span></label>
+                        </div>
+                        <div class='settool full' data-tool='line'>Line
+                            <label>color: <span class='arg colorpicker'></span></label>
+                        </div>
+                        <div class='settool full' data-tool='edge'>Edge
+                            <label>color: <span class='arg colorpicker'></span></label>
+                        </div>
                         <div class='settool full' data-tool='shape'>Shape
                             <span>shape:
-                                <span class='arg menuinput multisel' data-multisel='0'><!--
-                                    --><button class='left active' data-multisel='0'>circle</button><!--
+                                <span class='arg menuinput multisel'><!--
+                                    --><button class='left' data-multisel='0'>circle</button><!--
                                     --><button class='mid' data-multisel='1'>square</button><!--
                                     --><button class='mid' data-multisel='2'>cross</button><!--
                                     --><button class='right' data-multisel='3'>star</button><!--
                                 --></span>
                             </span>
-                            <label>fill: <input class='arg'></label>
-                            <label>outline: <input class='arg'></label>
-                            <label>size: <input class='arg'></label>
+                            <label>size: <input class='arg' type='number' size=3 min=1 max=5></label>
                             <span>location:
-                                <span class='arg menuinput multisel any' data-multisel=''><!--
+                                <span class='arg menuinput multisel any'><!--
                                     --><button class='left' data-multisel='4'>center</button><!--
                                     --><button class='mid' data-multisel='2'>edge</button><!--
                                     --><button class='right' data-multisel='1'>corner</button><!--
                                 --></span>
                             </span>
+                            <label>fill: <span class='arg colorpicker optional'></span></label>
+                            <label>outline: <span class='arg colorpicker optional'></span></label>
                         </div>
 
                         <div class='settool full' data-tool='text'>Text</div>

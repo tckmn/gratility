@@ -1,6 +1,7 @@
 import * as Draw from 'draw';
 import * as Layer from 'layer';
 import * as Measure from 'measure';
+import * as Color from 'color';
 import MenuManager from 'menu';
 import BitStream from 'bitstream';
 
@@ -55,12 +56,6 @@ export class Change {
     ) {}
 }
 
-const colors = [
-    '#000000',
-    '#008000',
-    '#ffffff'
-]
-
 const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement } = {
 
     [Obj.SURFACE]: (x: number, y: number, data: number) => {
@@ -69,7 +64,7 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
             height: Measure.CELL,
             x: Measure.HALFCELL*(x-1),
             y: Measure.HALFCELL*(y-1),
-            fill: colors[data]
+            fill: Color.colors[data]
         });
     },
 
@@ -80,7 +75,7 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
             x2: (x + horiz) * Measure.HALFCELL,
             y1: (y - (1-horiz)) * Measure.HALFCELL,
             y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: colors[data],
+            stroke: Color.colors[data],
             strokeWidth: Measure.LINE,
             strokeLinecap: 'round'
         });
@@ -93,7 +88,7 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
             x2: (x + horiz) * Measure.HALFCELL,
             y1: (y - (1-horiz)) * Measure.HALFCELL,
             y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: colors[data],
+            stroke: Color.colors[data],
             strokeWidth: Measure.EDGE,
             strokeLinecap: 'round'
         });
@@ -107,8 +102,8 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
         for (const spec of data) {
             const r = Measure.HALFCELL * (spec.size/6);
             const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(spec.size/12));
-            const fill = spec.fill === undefined ? 'transparent' : colors[spec.fill];
-            const stroke = spec.outline === undefined ? 'transparent' : colors[spec.outline];
+            const fill = spec.fill === undefined ? 'transparent' : Color.colors[spec.fill];
+            const stroke = spec.outline === undefined ? 'transparent' : Color.colors[spec.outline];
 
             switch (spec.shape) {
             case Shape.CIRCLE:

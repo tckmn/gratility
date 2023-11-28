@@ -81,8 +81,8 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     const args = (Array.from(el.getElementsByClassName('arg')) as Array<HTMLElement>).map(el => {
         if (el.tagName === 'INPUT') {
             return (el as HTMLInputElement).value;
-        } else if (el.classList.contains('multisel')) {
-            return el.dataset.multisel ?? '';
+        } else if (el.dataset.value !== undefined) {
+            return el.dataset.value;
         } else {
             return '???'; // TODO
         }
@@ -93,16 +93,16 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'line': resolve(new Tools.LineTool(parseInt(args[0], 10))); break;
     case 'edge': resolve(new Tools.EdgeTool(parseInt(args[0], 10))); break;
     case 'shape':
-        if (parseInt(args[3], 10) < 1 || parseInt(args[3], 10) > 5) {
+        if (parseInt(args[2], 10) < 1 || parseInt(args[2], 10) > 5) {
             MenuManager.alert('shape size should be between 1 and 5');
             return;
         }
         resolve(new Tools.ShapeTool({
             shape: parseInt(args[0], 10),
-            fill: args[1] === '' ? undefined : parseInt(args[1], 10),
-            outline: args[2] === '' ? undefined : parseInt(args[2], 10),
-            size: parseInt(args[3], 10)
-        }, args[4].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0)));
+            size: parseInt(args[1], 10),
+            fill: args[3] === '' ? undefined : parseInt(args[3], 10),
+            outline: args[4] === '' ? undefined : parseInt(args[4], 10)
+        }, args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0)));
         break;
     case 'text': resolve(new Tools.TextTool()); break;
     case 'pan': resolve(new Tools.PanTool()); break;
