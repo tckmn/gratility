@@ -136,24 +136,35 @@ export function objdraw(obj: Obj, x: number, y: number, data: any) {
 
 const N_BITS = 32;
 const OBJ_BITS = 6;
+const SHAPE_BITS = 6;
 const COLOR_BITS = 6;
+const SIZE_BITS = 3;
+const VLQ_CHUNK = 4;
 
-const serializefns = {
+const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
 
-    [Obj.SURFACE]: (bs: BitStream, data: any) => {
-        bs.write(COLOR_BITS, data as number);
+    [Obj.SURFACE]: (bs: BitStream, data: number) => {
+        bs.write(COLOR_BITS, data);
     },
 
-    [Obj.LINE]: (bs: BitStream, data: any) => {
-        bs.write(COLOR_BITS, data as number);
+    [Obj.LINE]: (bs: BitStream, data: number) => {
+        bs.write(COLOR_BITS, data);
     },
 
-    [Obj.EDGE]: (bs: BitStream, data: any) => {
-        bs.write(COLOR_BITS, data as number);
+    [Obj.EDGE]: (bs: BitStream, data: number) => {
+        bs.write(COLOR_BITS, data);
     },
 
-    [Obj.SHAPE]: (bs: BitStream, data: any) => {
-        // TODO
+    [Obj.SHAPE]: (bs: BitStream, data: ShapeSpec[]) => {
+        bs.writeVLQ(VLQ_CHUNK, data.length);
+        for (const spec of data) {
+            bs.write(SHAPE_BITS, spec.shape);
+            if (spec.fill === undefined) bs.write(1, 0);
+            else { bs.write(1, 1); bs.write(COLOR_BITS, spec.fill); }
+            if (spec.outline === undefined) bs.write(1, 0);
+            else { bs.write(1, 1); bs.write(COLOR_BITS, spec.outline); }
+            bs.write(SIZE_BITS, spec.size);
+        }
     },
 
 };
@@ -173,7 +184,17 @@ const deserializefns = {
     },
 
     [Obj.SHAPE]: (bs: BitStream): any => {
-        // TODO
+        // TODO don't allow maliciously constructed encodings lol
+        const len = bs.readVLQ(VLQ_CHUNK);
+        const arr = [];
+        for (let i = 0; i < len; ++i) {
+            const shape = bs.read(SHAPE_BITS) as Shape;
+            const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+            const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+            const size = bs.read(SIZE_BITS);
+            arr.push({ shape, fill, outline, size });
+        }
+        return arr;
     },
 
 };
@@ -185,7 +206,7 @@ export function serialize(stamp: Array<Item>): Uint8Array {
     for (const item of stamp) {
         bs.write(N_BITS, item.n);
         bs.write(OBJ_BITS, item.obj);
-        serializefns[item.obj](bs, item.data);
+        serializefns[item.obj](bs, item.data as never);
     }
 
     return bs.cut();
