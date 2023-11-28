@@ -4,6 +4,7 @@ import MenuManager from 'menu';
 import * as View from 'view';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
+export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref: undefined };
 
 export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager) {
 
@@ -51,6 +52,10 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox,
     page.addEventListener('keydown', e => {
         if (menu.isOpen()) {
             if (e.key === 'Escape') menu.close();
+            return;
+        }
+        if (keyeater.ref !== undefined) {
+            keyeater.ref(e);
             return;
         }
         const t = toolbox.keyTools.get(e.key);

@@ -8,6 +8,8 @@ export let surface:   SVGElement;
 export let line:      SVGElement;
 export let edge:      SVGElement;
 export let shape:     SVGElement;
+export let textInd:   SVGElement;
+export let text:      SVGElement;
 export let copypaste: SVGElement;
 export let stamps:    SVGElement;
 
@@ -18,6 +20,8 @@ export function initialize(svg: SVGElement) {
     line      = Draw.draw(parent, 'g');
     edge      = Draw.draw(parent, 'g');
     shape     = Draw.draw(parent, 'g');
+    textInd   = Draw.draw(parent, 'g');
+    text      = Draw.draw(parent, 'g');
     copypaste = Draw.draw(parent, 'g');
     stamps    = Draw.draw(parent, 'g', { opacity: 0.5 });
 }
@@ -28,5 +32,6 @@ export function obj(obj: Data.Obj): SVGElement {
     case Data.Obj.LINE:    return line;
     case Data.Obj.EDGE:    return edge;
     case Data.Obj.SHAPE:   return shape;
+    case Data.Obj.TEXT:    return text;
     }
 }

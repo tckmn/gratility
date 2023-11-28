@@ -104,6 +104,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
             size: parseInt(args[3], 10)
         }, args[4].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0)));
         break;
+    case 'text': resolve(new Tools.TextTool()); break;
     case 'pan': resolve(new Tools.PanTool()); break;
     case 'zoomin': resolve(new Tools.ZoomTool(1)); break;
     case 'zoomout': resolve(new Tools.ZoomTool(-1)); break;

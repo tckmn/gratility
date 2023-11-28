@@ -16,6 +16,7 @@ export const enum Obj {
     LINE,
     EDGE,
     SHAPE,
+    TEXT,
 }
 
 export const enum Shape {
@@ -140,6 +141,16 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
         return g;
     },
 
+    [Obj.TEXT]: (x: number, y: number, data: string) => {
+        return Draw.draw(undefined, 'text', {
+            x: Measure.HALFCELL*x,
+            y: Measure.HALFCELL*y,
+            textAnchor: 'middle',
+            dominantBaseline: 'central',
+            textContent: data
+        });
+    },
+
 };
 
 export function objdraw(obj: Obj, x: number, y: number, data: any) {
@@ -179,6 +190,10 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
         }
     },
 
+    [Obj.TEXT]: (bs: BitStream, data: string) => {
+        // TODO
+    },
+
 };
 
 const deserializefns = {
@@ -207,6 +222,10 @@ const deserializefns = {
             arr.push({ shape, fill, outline, size });
         }
         return arr;
+    },
+
+    [Obj.TEXT]: (bs: BitStream): any => {
+        // TODO
     },
 
 };

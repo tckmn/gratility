@@ -14,20 +14,13 @@ export default class Toolbox {
         this.bindKey('s', new Tools.SurfaceTool(0));
         this.bindKey('d', new Tools.LineTool(1));
         this.bindKey('e', new Tools.EdgeTool(0));
+        this.bindKey('t', new Tools.TextTool());
         this.bindKey('z', new Tools.UndoTool(true));
         this.bindKey('x', new Tools.UndoTool(false));
         this.bindKey('c', new Tools.CopyTool());
         this.bindKey('v', new Tools.PasteTool());
         this.bindWheel(true, new Tools.ZoomTool(1));
         this.bindWheel(false, new Tools.ZoomTool(-1));
-
-        // temporary
-        this.bindKey('q', new Tools.ShapeTool({
-            shape: Data.Shape.CIRCLE,
-            fill: 2,
-            outline: 0,
-            size: 1
-        }, 0b111));
     }
 
     private toolDisplay(tool: Tool, txt: string, delcb: () => void) {
