@@ -20,8 +20,14 @@
                 <button class='menuaction' data-menu='toolbox'>save/load toolbox</button>
                 <button class='menuaction' data-menu='stamp'>save/load stamp</button>
                 <button class='menuaction' data-menu='colors'>save/load colors</button>
+                <button class='menuaction' data-menu='dark'>toggle dark mode</button>
             </section>
-            <svg id='grid'></svg>
+            <svg id='grid'>
+                <!-- Filter+ from Dark Reader, https://github.com/darkreader/darkreader/blob/7f047b20909b09b8cdb3e45550d0c586abeb98a4/src/generators/utils/matrix.ts#L42 -->
+                <filter id="invertFilter" x="0" y="0" width="999999" height="999999" style={"color-interpolation-filters": "srgb"}>
+                <feColorMatrix type="matrix" values="0.33333 -0.66667 -0.66667 0 1 -0.66667 0.33333 -0.66667 0 1 -0.66667 -0.66667 0.33333 0 1 0 0 0 1 0"/>
+                </filter>
+            </svg>
         </main>
 
         <div id='menupopups'>

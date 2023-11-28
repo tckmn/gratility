@@ -7,12 +7,9 @@ import * as Tools from 'tools/alltools';
 
 const menuactions: Map<string, () => void> = new Map([
 
-    // ['stamp', () => {
-
-    //     console.log(Stamp.stamps[Stamp.stamppos].cells);
-    //     console.log(Data.deserialize(Data.serialize(Stamp.stamps[Stamp.stamppos].cells)));
-
-    // }]
+    ['dark', () => {
+        document.body.classList.toggle('dark');
+    }]
 
 ]);
 
