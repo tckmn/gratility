@@ -23,7 +23,7 @@ export const enum Obj {
 export const enum Shape {
     CIRCLE = 0,
     SQUARE,
-    CROSS,
+    FLAG,
     STAR
 }
 
@@ -118,8 +118,12 @@ const drawfns: { [obj in Obj]: (x: number, y: number, data: never) => SVGElement
                     strokeWidth, fill, stroke
                 });
                 break;
-            case Shape.CROSS:
-                // TODO
+            case Shape.FLAG:
+                Draw.draw(g, 'path', {
+                    d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
+                    transform: `scale(${r})`,
+                    strokeWidth: strokeWidth/r, fill, stroke
+                });
                 break;
             case Shape.STAR:
                 Draw.draw(g, 'path', {
