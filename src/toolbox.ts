@@ -14,7 +14,7 @@ export default class Toolbox {
         this.bindKey('s', new Tools.SurfaceTool(0));
         this.bindKey('d', new Tools.LineTool(8));
         this.bindKey('e', new Tools.EdgeTool(0));
-        this.bindKey('t', new Tools.TextTool());
+        this.bindKey('t', new Tools.TextTool(''));
         this.bindKey('z', new Tools.UndoTool(true));
         this.bindKey('x', new Tools.UndoTool(false));
         this.bindKey('c', new Tools.CopyTool());

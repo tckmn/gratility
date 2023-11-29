@@ -11,13 +11,24 @@ export default class TextTool implements Tool {
     public name(): string { return 'Text'; }
     public icon() {}
 
-    constructor() {}
+    constructor(private preset: string) {}
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;
+    private isDrawing: boolean = false;
 
     public ondown(x: number, y: number) {
-        if (Event.keyeater.ref === undefined) {
+        if (this.preset !== '') {
+            const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
+            const text = Data.halfcells.get(n)?.get(Data.Obj.TEXT);
+            if (text === this.preset) {
+                Data.add(new Data.Change(n, Data.Obj.TEXT, text, undefined));
+                this.isDrawing = false;
+            } else {
+                Data.add(new Data.Change(n, Data.Obj.TEXT, text, this.preset));
+                this.isDrawing = true;
+            }
+        } else if (Event.keyeater.ref === undefined) {
             const cx = Measure.cell(x)*2, cy = Measure.cell(y)*2;
             this.n = Data.encode(cx+1, cy+1);
             // TODO some of this goes somewhere else
@@ -47,7 +58,21 @@ export default class TextTool implements Tool {
         if (this.elt !== undefined) this.elt.parentNode!.removeChild(this.elt);
     }
 
-    public onmove(x: number, y: number) {}
+    public onmove(x: number, y: number) {
+        if (this.preset === '') return;
+        const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
+        const text = Data.halfcells.get(n)?.get(Data.Obj.TEXT);
+        if (text === this.preset) {
+            if (!this.isDrawing) {
+                Data.add(new Data.Change(n, Data.Obj.TEXT, text, undefined));
+            }
+        } else {
+            if (this.isDrawing) {
+                Data.add(new Data.Change(n, Data.Obj.TEXT, text, this.preset));
+            }
+        }
+    }
+
     public onup() {}
 
 }
