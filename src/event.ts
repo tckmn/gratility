@@ -1,7 +1,7 @@
-import Tool from 'tools/tool';
-import Toolbox from 'toolbox';
-import MenuManager from 'menu';
-import * as View from 'view';
+import Tool from './tools/tool.js';
+import Toolbox from './toolbox.js';
+import MenuManager from './menu.js';
+import * as View from './view.js';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
 export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref: undefined };

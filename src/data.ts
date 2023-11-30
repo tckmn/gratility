@@ -1,9 +1,9 @@
-import * as Draw from 'draw';
-import * as Layer from 'layer';
-import * as Measure from 'measure';
-import * as Color from 'color';
-import MenuManager from 'menu';
-import BitStream from 'bitstream';
+import * as Draw from './draw.js';
+import * as Layer from './layer.js';
+import * as Measure from './measure.js';
+import * as Color from './color.js';
+import MenuManager from './menu.js';
+import BitStream from './bitstream.js';
 
 export function encode(x: number, y: number): number {
     return (x << 16) | (y & 0xffff);

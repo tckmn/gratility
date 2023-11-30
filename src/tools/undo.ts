@@ -1,5 +1,5 @@
-import Tool from 'tool';
-import * as Data from 'data';
+import Tool from './tool.js';
+import * as Data from '../data.js';
 
 export default class UndoTool implements Tool {
 

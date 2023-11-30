@@ -1,5 +1,5 @@
-import { parent } from 'layer';
-import * as Measure from 'measure';
+import { parent } from './layer.js';
+import * as Measure from './measure.js';
 
 export let x = 0;
 export let y = 0;

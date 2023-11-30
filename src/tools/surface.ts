@@ -1,7 +1,7 @@
-import Tool from 'tool';
-import * as Data from 'data';
-import * as Draw from 'draw';
-import * as Measure from 'measure';
+import Tool from './tool.js';
+import * as Data from '../data.js';
+import * as Draw from '../draw.js';
+import * as Measure from '../measure.js';
 
 export default class SurfaceTool implements Tool {
 

@@ -1,6 +1,6 @@
-import * as Draw from 'draw';
-import * as Layer from 'layer';
-import * as Measure from 'measure';
+import * as Draw from './draw.js';
+import * as Layer from './layer.js';
+import * as Measure from './measure.js';
 
 export function initialize() {
     for (let i = 0; i < Measure.GRIDSIZE; ++i) {

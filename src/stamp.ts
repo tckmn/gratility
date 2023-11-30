@@ -1,7 +1,7 @@
-import * as Data from 'data';
-import * as Event from 'event';
-import * as Layer from 'layer';
-import * as Measure from 'measure';
+import * as Data from './data.js';
+import * as Event from './event.js';
+import * as Layer from './layer.js';
+import * as Measure from './measure.js';
 
 class Stamp {
     public constructor(

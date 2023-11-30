@@ -1,8 +1,8 @@
-import * as Stamp from 'stamp';
-import * as Data from 'data';
-import Tool from 'tools/tool';
-import Toolbox from 'toolbox';
-import * as Tools from 'tools/alltools';
+import * as Stamp from './stamp.js';
+import * as Data from './data.js';
+import Tool from './tools/tool.js';
+import Toolbox from './toolbox.js';
+import * as Tools from './tools/alltools.js';
 
 
 const menuactions: Map<string, () => void> = new Map([

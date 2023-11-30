@@ -1,7 +1,7 @@
-import Tool from 'tool';
-import * as Data from 'data';
-import * as Stamp from 'stamp';
-import * as Measure from 'measure';
+import Tool from './tool.js';
+import * as Data from '../data.js';
+import * as Stamp from '../stamp.js';
+import * as Measure from '../measure.js';
 
 export default class PasteTool implements Tool {
 

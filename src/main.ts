@@ -1,11 +1,11 @@
-import * as Layer from 'layer';
-import * as Event from 'event';
-import * as Grid from 'grid';
-import * as View from 'view';
-import * as Stamp from 'stamp';
-import * as Color from 'color';
-import MenuManager from 'menu';
-import Toolbox from 'toolbox';
+import * as Layer from './layer.js';
+import * as Event from './event.js';
+import * as Grid from './grid.js';
+import * as View from './view.js';
+import * as Stamp from './stamp.js';
+import * as Color from './color.js';
+import MenuManager from './menu.js';
+import Toolbox from './toolbox.js';
 
 // TODO make this better i guess
 const svg = document.getElementById('grid') as unknown as SVGElement;

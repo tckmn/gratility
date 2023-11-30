@@ -1,6 +1,6 @@
-import * as Draw from 'draw';
-import * as Measure from 'measure';
-import * as Data from 'data';
+import * as Draw from './draw.js';
+import * as Measure from './measure.js';
+import * as Data from './data.js';
 
 export let parent:    SVGElement;
 export let grid:      SVGElement;

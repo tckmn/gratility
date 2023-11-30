@@ -1,9 +1,9 @@
-import Tool from 'tool';
-import * as Data from 'data';
-import * as Measure from 'measure';
-import * as Event from 'event';
-import * as Layer from 'layer';
-import * as Draw from 'draw';
+import Tool from './tool.js';
+import * as Data from '../data.js';
+import * as Measure from '../measure.js';
+import * as Event from '../event.js';
+import * as Layer from '../layer.js';
+import * as Draw from '../draw.js';
 
 export default class TextTool implements Tool {
 

@@ -1,5 +1,5 @@
-import Tool from 'tool';
-import * as View from 'view';
+import Tool from './tool.js';
+import * as View from '../view.js';
 
 export default class ZoomTool implements Tool {
 

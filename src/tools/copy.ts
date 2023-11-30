@@ -1,9 +1,9 @@
-import Tool from 'tool';
-import * as Data from 'data';
-import * as Draw from 'draw';
-import * as Layer from 'layer';
-import * as Measure from 'measure';
-import * as Stamp from 'stamp';
+import Tool from './tool.js';
+import * as Data from '../data.js';
+import * as Draw from '../draw.js';
+import * as Layer from '../layer.js';
+import * as Measure from '../measure.js';
+import * as Stamp from '../stamp.js';
 
 export default class CopyTool implements Tool {
 

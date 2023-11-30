@@ -1,6 +1,6 @@
-import Tool from 'tools/tool';
-import * as Tools from 'tools/alltools';
-import * as Data from 'data';
+import Tool from './tools/tool.js';
+import * as Tools from './tools/alltools.js';
+import * as Data from './data.js';
 
 export default class Toolbox {
 
@@ -21,6 +21,20 @@ export default class Toolbox {
         this.bindKey('v', new Tools.PasteTool());
         this.bindWheel(true, new Tools.ZoomTool(1));
         this.bindWheel(false, new Tools.ZoomTool(-1));
+
+        // temporary
+        this.bindKey('q', new Tools.ShapeTool({
+            shape: Data.Shape.FLAG,
+            fill: 0,
+            outline: undefined,
+            size: 5
+        }, 0b100));
+        this.bindKey('w', new Tools.ShapeTool({
+            shape: Data.Shape.FLAG,
+            fill: 3,
+            outline: 6,
+            size: 5
+        }, 0b100));
     }
 
     private toolDisplay(tool: Tool, txt: string, delcb: () => void) {
