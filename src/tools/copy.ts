@@ -1,7 +1,6 @@
 import Tool from './tool.js';
+import Image from '../image.js';
 import * as Data from '../data.js';
-import * as Draw from '../draw.js';
-import * as Layer from '../layer.js';
 import * as Measure from '../measure.js';
 import * as Stamp from '../stamp.js';
 
@@ -9,7 +8,7 @@ export default class CopyTool implements Tool {
 
     public readonly repeat = false;
     public name(): string { return 'Copy'; }
-    public icon() {}
+    public icon(image: Image) {}
 
     private sx = 0;
     private sy = 0;
@@ -17,12 +16,14 @@ export default class CopyTool implements Tool {
     private ty = 0;
     private elt: SVGElement | undefined;
 
+    constructor (private image: Image) {}
+
     public ondown(x: number, y: number) {
         this.sx = x;
         this.sy = y;
         this.tx = x;
         this.ty = y;
-        this.elt = Draw.draw(Layer.copypaste, 'rect', {
+        this.elt = this.image.draw(this.image.copypaste, 'rect', {
             x: x,
             y: y,
             width: 0,
@@ -50,7 +51,7 @@ export default class CopyTool implements Tool {
     }
 
     public onup() {
-        if (this.elt !== undefined) Layer.copypaste.removeChild(this.elt);
+        if (this.elt !== undefined) this.image.copypaste.removeChild(this.elt);
 
         const sx = Measure.hc(Math.min(this.sx, this.tx));
         const sy = Measure.hc(Math.min(this.sy, this.ty));

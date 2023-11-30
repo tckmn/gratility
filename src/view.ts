@@ -1,13 +1,14 @@
-import { parent } from './layer.js';
 import * as Measure from './measure.js';
+import Image from './image.js';
 
 export let x = 0;
 export let y = 0;
 export let z = 0;
-let elt: SVGElement;
+// TODO this is absolutely an extremely temporary bandaid lol
+let img: Image;
 
-export function initialize(svg: SVGElement) {
-    elt = svg;
+export function initialize(image: Image) {
+    img = image;
 }
 
 export function setX(n: number) { x = n; }
@@ -17,5 +18,5 @@ export function setZ(n: number) { z = n; }
 export function zoom(n?: number) { return Math.pow(Measure.ZOOMTICK, n ?? z); }
 
 export function update() {
-    parent.setAttribute('transform', `scale(${zoom()}) translate(${x} ${y})`);
+    img.root.setAttribute('transform', `scale(${zoom()}) translate(${x} ${y})`);
 }

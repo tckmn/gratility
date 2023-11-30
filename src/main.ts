@@ -1,26 +1,29 @@
-import * as Layer from './layer.js';
 import * as Event from './event.js';
 import * as Grid from './grid.js';
 import * as View from './view.js';
 import * as Stamp from './stamp.js';
 import * as Color from './color.js';
+import * as Data from './data.js';
 import MenuManager from './menu.js';
 import Toolbox from './toolbox.js';
+import Image from './image.js';
 
 // TODO make this better i guess
 const svg = document.getElementById('grid') as unknown as SVGElement;
-const toolbox = new Toolbox(document.getElementById('toolbox')!);
+const image = new Image(document, svg);
+const toolbox = new Toolbox(image, document.getElementById('toolbox')!);
 const menu = new MenuManager(
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
-    toolbox
+    toolbox,
+    image
 );
 
-Layer.initialize(svg);
 Event.initialize(svg, document.body, toolbox, menu);
-View.initialize(svg);
-Grid.initialize();
-Stamp.initialize();
+View.initialize(image);
+Grid.initialize(image);
+Stamp.initialize(image);
+Data.initialize(image);
 
 // TODO this stuff should really go somewhere else
 for (const multisel of Array.from(document.getElementsByClassName('multisel')) as Array<HTMLElement>) {

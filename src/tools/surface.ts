@@ -1,17 +1,17 @@
 import Tool from './tool.js';
+import Image from '../image.js';
 import * as Data from '../data.js';
-import * as Draw from '../draw.js';
 import * as Measure from '../measure.js';
 
 export default class SurfaceTool implements Tool {
 
     public readonly repeat = false;
     public name(): string { return 'Surface'; }
-    public icon(): SVGElement {
-        return Draw.draw(undefined, 'svg', {
+    public icon(image: Image): SVGElement {
+        return image.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                Data.objdraw(Data.Obj.SURFACE, 1, 1, this.color)
+                image.objdraw(Data.Obj.SURFACE, 1, 1, this.color)
             ]
         });
     }

@@ -1,6 +1,6 @@
 import Tool from './tool.js';
+import Image from '../image.js';
 import * as Data from '../data.js';
-import * as Draw from '../draw.js';
 import * as Measure from '../measure.js';
 
 const HC_WEIGHT = 0.35;
@@ -9,11 +9,11 @@ export default class EdgeTool implements Tool {
 
     public readonly repeat = false;
     public name(): string { return 'Edge'; }
-    public icon(): SVGElement {
-        return Draw.draw(undefined, 'svg', {
+    public icon(image: Image): SVGElement {
+        return image.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                Data.objdraw(Data.Obj.EDGE, 0, 1, this.color)
+                image.objdraw(Data.Obj.EDGE, 0, 1, this.color)
             ]
         });
     }

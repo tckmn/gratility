@@ -1,4 +1,5 @@
 import Tool from './tools/tool.js';
+import Image from './image.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
 
@@ -8,16 +9,16 @@ export default class Toolbox {
     public readonly keyTools = new Map<string, Tool>();
     public readonly wheelTools = new Map<boolean, Tool>();
 
-    constructor(private container: HTMLElement) {
+    constructor(private image: Image, private container: HTMLElement) {
         this.bindMouse(1, new Tools.PanTool());
         this.bindKey(' ', new Tools.PanTool());
         this.bindKey('s', new Tools.SurfaceTool(0));
         this.bindKey('d', new Tools.LineTool(8));
         this.bindKey('e', new Tools.EdgeTool(0));
-        this.bindKey('t', new Tools.TextTool(''));
+        this.bindKey('t', new Tools.TextTool(image, ''));
         this.bindKey('z', new Tools.UndoTool(true));
         this.bindKey('x', new Tools.UndoTool(false));
-        this.bindKey('c', new Tools.CopyTool());
+        this.bindKey('c', new Tools.CopyTool(image));
         this.bindKey('v', new Tools.PasteTool());
         this.bindWheel(true, new Tools.ZoomTool(1));
         this.bindWheel(false, new Tools.ZoomTool(-1));
@@ -47,7 +48,7 @@ export default class Toolbox {
         this.container.appendChild(name);
 
         const icon = document.createElement('div');
-        const maybeIcon = tool.icon();
+        const maybeIcon = tool.icon(this.image);
         if (maybeIcon !== undefined) icon.appendChild(maybeIcon);
         this.container.appendChild(icon);
 

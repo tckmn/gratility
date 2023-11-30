@@ -1,0 +1,10 @@
+{
+    "name": "gratility",
+    "version": "0.0.1",
+    "dependencies": {
+        "jsdom": "^23.0.0"
+    },
+    "devDependencies": {
+        "@types/jsdom": "^21.1.6"
+    }
+}

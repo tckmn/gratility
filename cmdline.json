@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "target": "es2019",
+        "lib": ["dom", "es2019"],
+        "module": "nodenext",
+        "outDir": "bin"
+    },
+    "include": ["src/**/*.ts"]
+}

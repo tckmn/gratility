@@ -1,17 +1,16 @@
 import Tool from './tool.js';
+import Image from '../image.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 import * as Event from '../event.js';
-import * as Layer from '../layer.js';
-import * as Draw from '../draw.js';
 
 export default class TextTool implements Tool {
 
     public readonly repeat = false;
     public name(): string { return 'Text'; }
-    public icon() {}
+    public icon(image: Image) {}
 
-    constructor(private preset: string) {}
+    constructor(private image: Image, private preset: string) {}
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;
@@ -32,7 +31,7 @@ export default class TextTool implements Tool {
             const cx = Measure.cell(x)*2, cy = Measure.cell(y)*2;
             this.n = Data.encode(cx+1, cy+1);
             // TODO some of this goes somewhere else
-            this.elt = Draw.draw(Layer.textInd, 'rect', {
+            this.elt = this.image.draw(this.image.textInd, 'rect', {
                 x: cx*Measure.HALFCELL, y: cy*Measure.HALFCELL, width: Measure.CELL, height: Measure.CELL,
                 fill: '#ccc',
                 stroke: '#f88',

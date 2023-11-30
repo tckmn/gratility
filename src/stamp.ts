@@ -1,7 +1,7 @@
 import * as Data from './data.js';
 import * as Event from './event.js';
-import * as Layer from './layer.js';
 import * as Measure from './measure.js';
+import Image from './image.js';
 
 class Stamp {
     public constructor(
@@ -11,6 +11,8 @@ class Stamp {
     ) {}
 }
 
+// TODO this is absolutely an extremely temporary bandaid lol
+let img: Image;
 export const stamps = new Array<Stamp>();
 let stamppos = 0;
 
@@ -34,9 +36,9 @@ export function add(cells: Array<Data.Item>) {
     stamps.push(stamp);
     stamppos = stamps.length-1;
 
-    Layer.stamps.replaceChildren(...cells.map(cell => {
+    img.stamps.replaceChildren(...cells.map(cell => {
         const [x, y] = Data.decode(cell.n);
-        return Data.objdraw(cell.obj, x - xoff, y - yoff, cell.data);
+        return img.objdraw(cell.obj, x - xoff, y - yoff, cell.data);
     }));
 }
 
@@ -46,12 +48,13 @@ export function current(): Stamp | undefined {
 
 export function deselect() {
     stamppos = stamps.length;
-    Layer.stamps.replaceChildren();
+    img.stamps.replaceChildren();
 }
 
-export function initialize() {
+export function initialize(image: Image) {
+    img = image;
     Event.onmove.push((x, y) => {
         // if (stamppos === -1) return;
-        Layer.stamps.setAttribute('transform', `translate(${Measure.round(x, Measure.CELL)} ${Measure.round(y, Measure.CELL)})`);
+        img.stamps.setAttribute('transform', `translate(${Measure.round(x, Measure.CELL)} ${Measure.round(y, Measure.CELL)})`);
     });
 }

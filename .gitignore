@@ -1,1 +1,3 @@
 dist/gratility.js
+bin
+node_modules

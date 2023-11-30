@@ -1,3 +1,4 @@
+import Image from './image.js';
 import * as Stamp from './stamp.js';
 import * as Data from './data.js';
 import Tool from './tools/tool.js';
@@ -109,11 +110,11 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
             outline: args[4] === '' ? undefined : parseInt(args[4], 10)
         }, args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0)));
         break;
-    case 'text': resolve(new Tools.TextTool(args[0])); break;
+    case 'text': resolve(new Tools.TextTool(manager.image, args[0])); break;
     case 'pan': resolve(new Tools.PanTool()); break;
     case 'zoomin': resolve(new Tools.ZoomTool(1)); break;
     case 'zoomout': resolve(new Tools.ZoomTool(-1)); break;
-    case 'copy': resolve(new Tools.CopyTool()); break;
+    case 'copy': resolve(new Tools.CopyTool(manager.image)); break;
     case 'paste': resolve(new Tools.PasteTool()); break;
     case 'undo': resolve(new Tools.UndoTool(true)); break;
     case 'redo': resolve(new Tools.UndoTool(false)); break;
@@ -194,7 +195,7 @@ export default class MenuManager {
 
     private readonly menus: Map<string, Menu> = new Map();
 
-    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public toolbox: Toolbox) {
+    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public toolbox: Toolbox, public image: Image) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
                 const menu = this.menus.get(btn.dataset.menu as string);

@@ -1,11 +1,12 @@
 import Tool from './tool.js';
+import Image from '../image.js';
 import * as View from '../view.js';
 
 export default class PanTool implements Tool {
 
     public readonly repeat = false;
     public name(): string { return 'Pan'; }
-    public icon() {}
+    public icon(image: Image) {}
 
     private mx = 0;
     private my = 0;

@@ -1,4 +1,5 @@
 import Tool from './tool.js';
+import Image from '../image.js';
 import * as Data from '../data.js';
 import * as Stamp from '../stamp.js';
 import * as Measure from '../measure.js';
@@ -7,7 +8,7 @@ export default class PasteTool implements Tool {
 
     public readonly repeat = false;
     public name(): string { return 'Paste'; }
-    public icon() {}
+    public icon(image: Image) {}
 
     public ondown(x: number, y: number) {
         const xoff = Math.round(x / Measure.CELL) * 2;
