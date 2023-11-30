@@ -109,7 +109,7 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
 export default class Image {
 
     public readonly root:      SVGElement;
-    public readonly grid:      SVGElement;
+    public readonly gridlines: SVGElement;
     public readonly surface:   SVGElement;
     public readonly line:      SVGElement;
     public readonly edge:      SVGElement;
@@ -121,7 +121,7 @@ export default class Image {
 
     constructor(private document: HTMLDocument, svg: SVGElement) {
         this.root      = this.draw(svg, 'g');
-        this.grid      = this.draw(this.root, 'g', { stroke: Measure.GRIDCOLOR, strokeWidth: Measure.GRIDLINE });
+        this.gridlines = this.draw(this.root, 'g', { stroke: Measure.GRIDCOLOR, strokeWidth: Measure.GRIDLINE });
         this.surface   = this.draw(this.root, 'g');
         this.line      = this.draw(this.root, 'g');
         this.edge      = this.draw(this.root, 'g');
@@ -161,4 +161,18 @@ export default class Image {
         return drawfns[obj](this, x, y, data as never);
     }
 
+    public grid(xmin: number, xmax: number, ymin: number, ymax: number) {
+        for (let x = Math.ceil(xmin/2)*2; x <= xmax; x += 2) {
+            this.draw(this.gridlines, 'line', {
+                x1: x * Measure.HALFCELL, x2: x * Measure.HALFCELL,
+                y1: ymin * Measure.HALFCELL, y2: ymax * Measure.HALFCELL
+            });
+        }
+        for (let y = Math.ceil(ymin/2)*2; y <= ymax; y += 2) {
+            this.draw(this.gridlines, 'line', {
+                x1: xmin * Measure.HALFCELL, x2: xmax * Measure.HALFCELL,
+                y1: y * Measure.HALFCELL, y2: y * Measure.HALFCELL
+            });
+        }
+    }
 }

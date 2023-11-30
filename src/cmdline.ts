@@ -1,29 +1,29 @@
 import * as Data from './data.js';
 import * as Stamp from './stamp.js';
+import * as Measure from './measure.js';
 import Image from './image.js';
 
 import { JSDOM } from 'jsdom';
 import fs from 'node:fs';
 
-const dom = new JSDOM('<svg id="grid"></svg>');
+const imgpad = 1;
+const gridpad = 0;
 
+const dom = new JSDOM('<svg id="grid"></svg>');
 const svg = dom.window.document.getElementById('grid') as unknown as SVGElement;
 const image = new Image(dom.window.document, svg);
 Data.initialize(image);
 
-const stamp = Data.deserialize(new Uint8Array(atob('AAWACIAAAFgAmAAABYAKgAAAWAC4AAAGgAeAAABoAIgAAAaAC4AAAGgAyAAAB4AGgAAAeAB4AAAHgAyAAACIAHAkAAiACAJAAIgAkCQACIAKAkAAiADIAAAIgA2AAACQAGgkAAkACoJAAJgAYCQACYALAkAAmADIAAAJgA2AAACgALgkAAqADAJAAKgAyAAACwAMgkAAuAC4AAALgAyAAADAAMgkAA==').split('').map(c => c.charCodeAt(0))));
+const stamp = Stamp.render(Data.deserialize(new Uint8Array(atob(process.argv[2]).split('').map(c => c.charCodeAt(0)))));
+stamp.apply(0, 0);
 
-for (let i = 0; i < stamp.length; ++i) {
-    const cell = stamp[i];
+const xmin = Math.floor(stamp.xmin/2)*2;
+const ymin = Math.floor(stamp.ymin/2)*2;
+const xmax = Math.ceil(stamp.xmax/2)*2;
+const ymax = Math.ceil(stamp.ymax/2)*2;
+image.grid(xmin-gridpad, xmax+gridpad, ymin-gridpad, ymax+gridpad);
 
-    // const [x, y] = Data.decode(cell.n);
-    // const newn = Data.encode(x - stamp.xoff + xoff, y - stamp.yoff + yoff);
-    const newn = cell.n;
-
-    const pre = Data.halfcells.get(newn)?.get(cell.obj);
-    if (pre !== cell.data) {
-        Data.add(new Data.Change(newn, cell.obj, pre, cell.data, i !== stamp.length-1));
-    }
-}
+image.text.setAttribute('transform', 'translate(0 2.5)');
+svg.setAttribute('viewBox', `${Measure.HALFCELL*(xmin-imgpad)} ${Measure.HALFCELL*(ymin-imgpad)} ${Measure.HALFCELL*(xmax-xmin+2*imgpad)} ${Measure.HALFCELL*(ymax-ymin+2*imgpad)}`);
 
 fs.writeFileSync('out.svg', svg.outerHTML);

@@ -1,5 +1,4 @@
 import * as Event from './event.js';
-import * as Grid from './grid.js';
 import * as View from './view.js';
 import * as Stamp from './stamp.js';
 import * as Color from './color.js';
@@ -21,9 +20,11 @@ const menu = new MenuManager(
 
 Event.initialize(svg, document.body, toolbox, menu);
 View.initialize(image);
-Grid.initialize(image);
 Stamp.initialize(image);
 Data.initialize(image);
+
+// TODO better
+image.grid(-500, 500, -500, 500);
 
 // TODO this stuff should really go somewhere else
 for (const multisel of Array.from(document.getElementsByClassName('multisel')) as Array<HTMLElement>) {

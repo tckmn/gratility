@@ -14,18 +14,7 @@ export default class PasteTool implements Tool {
         const xoff = Math.round(x / Measure.CELL) * 2;
         const yoff = Math.round(y / Measure.CELL) * 2;
 
-        const stamp = Stamp.current();
-        if (stamp === undefined) return;
-        for (let i = 0; i < stamp.cells.length; ++i) {
-            const cell = stamp.cells[i];
-            const [x, y] = Data.decode(cell.n);
-            const newn = Data.encode(x - stamp.xoff + xoff, y - stamp.yoff + yoff);
-
-            const pre = Data.halfcells.get(newn)?.get(cell.obj);
-            if (pre !== cell.data) {
-                Data.add(new Data.Change(newn, cell.obj, pre, cell.data, i !== stamp.cells.length-1));
-            }
-        }
+        Stamp.current()?.apply(xoff, yoff);
     }
 
     public onmove(x: number, y: number) { }

@@ -4,7 +4,9 @@
         "target": "es2019",
         "lib": ["dom", "es2019"],
         "module": "amd",
-        "outFile": "dist/gratility.js"
+        "outFile": "dist/gratility.js",
+        "skipLibCheck": true
     },
-    "include": ["src/**/*.ts"]
+    "include": ["src/**/*.ts"],
+    "exclude": ["src/cmdline.ts"]
 }
