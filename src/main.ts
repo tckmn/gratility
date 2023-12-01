@@ -82,3 +82,5 @@ for (const colorpicker of Array.from(document.getElementsByClassName('colorpicke
     children[0].classList.add('active');
     colorpicker.dataset.value = colorpicker.classList.contains('optional') ? '' : '0';
 }
+
+window.addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = true; });
