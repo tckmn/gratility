@@ -69,8 +69,8 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
             case Data.Shape.FLAG:
                 image.draw(g, 'path', {
                     d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
-                    transform: `scale(${r})`,
-                    strokeWidth: strokeWidth/r, fill, stroke
+                    transform: `scale(${r*0.9})`,
+                    strokeWidth: strokeWidth/(r*0.9), fill, stroke
                 });
                 break;
             case Data.Shape.STAR:

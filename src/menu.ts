@@ -10,6 +10,21 @@ const menuactions: Map<string, () => void> = new Map([
 
     ['dark', () => {
         document.body.classList.toggle('dark');
+    }],
+
+    ['dlstamp', () => {
+        const stamp = Stamp.current();
+        if (stamp === undefined) return;
+        const blob = new Blob([Data.serialize(stamp.cells)], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'gratility.stamp');
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }]
 
 ]);

@@ -24,9 +24,12 @@ export default class Toolbox {
         this.bindWheel(false, new Tools.ZoomTool(-1));
 
         // temporary
+        for (let i = 1; i <= 9; ++i) {
+            this.bindKey(i.toString(), new Tools.TextTool(image, i.toString()));
+        }
         this.bindKey('q', new Tools.ShapeTool({
             shape: Data.Shape.FLAG,
-            fill: 0,
+            fill: 13,
             outline: undefined,
             size: 5
         }, 0b100));

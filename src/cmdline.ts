@@ -9,12 +9,21 @@ import fs from 'node:fs';
 const imgpad = 1;
 const gridpad = 0;
 
+function interpret(s: string) {
+    try {
+        return Stamp.render(Data.deserialize(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
+    } catch (e) {
+        return Stamp.render(Data.deserialize(fs.readFileSync(s)));
+    }
+}
+
 const dom = new JSDOM('<svg id="grid"></svg>');
 const svg = dom.window.document.getElementById('grid') as unknown as SVGElement;
 const image = new Image(dom.window.document, svg);
 Data.initialize(image);
 
-const stamp = Stamp.render(Data.deserialize(new Uint8Array(atob(process.argv[2]).split('').map(c => c.charCodeAt(0)))));
+const arg = process.argv[2];
+const stamp = interpret(arg);
 stamp.apply(0, 0);
 
 const xmin = Math.floor(stamp.xmin/2)*2;
@@ -26,4 +35,4 @@ image.grid(xmin-gridpad, xmax+gridpad, ymin-gridpad, ymax+gridpad);
 image.text.setAttribute('transform', 'translate(0 2.5)');
 svg.setAttribute('viewBox', `${Measure.HALFCELL*(xmin-imgpad)} ${Measure.HALFCELL*(ymin-imgpad)} ${Measure.HALFCELL*(xmax-xmin+2*imgpad)} ${Measure.HALFCELL*(ymax-ymin+2*imgpad)}`);
 
-fs.writeFileSync('out.svg', svg.outerHTML);
+fs.writeFileSync(arg.slice(-6) === '.stamp' ? arg.replace(/\.stamp$/, '.svg') : 'out.svg', svg.outerHTML);
