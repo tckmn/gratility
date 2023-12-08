@@ -44,12 +44,12 @@ export default class EdgeTool implements Tool {
         let cx, cy, dir;
         if (dx**2 + dy**2 !== 1) return;
         if (dx === 0) {
-            if (x%2 === 1) return;
+            if (x%2 !== 0) return;
             cx = x;
             cy = y%2 ? y : y+dy;
             dir = dy;
         } else {
-            if (y%2 === 1) return;
+            if (y%2 !== 0) return;
             cy = y;
             cx = x%2 ? x : x+dx;
             dir = dx;
