@@ -28,6 +28,19 @@ export const enum Shape {
     STAR
 }
 
+export const enum Head {
+    NONE = 0,
+    ARROW
+}
+
+export function headsymmetric(h: Head) {
+    switch (h) {
+    case Head.NONE: return true;
+    case Head.ARROW: return false;
+    }
+}
+
+
 export type ShapeSpec = {
     shape: Shape,
     fill: number | undefined,
@@ -35,8 +48,26 @@ export type ShapeSpec = {
     size: number
 }
 
+export type EdgeSpec = {
+    color: number,
+    thickness: number,
+    head: Head
+}
+
 export function sheq(a: ShapeSpec, b: ShapeSpec) {
     return a.shape === b.shape && a.size === b.size;
+}
+
+export function edeq(a: EdgeSpec, b: EdgeSpec) {
+    return a.head === b.head && a.color === b.color && a.thickness === b.thickness;
+}
+
+export function edgeeq([spec1, dir1]: [EdgeSpec, boolean], [spec2, dir2]: [EdgeSpec, boolean]) {
+    if (!edeq(spec1, spec2)) return false;
+    switch (spec1.head) {
+        case Head.NONE: return true;
+        case Head.ARROW: return dir1 === dir2;
+    }
 }
 
 export class Item {
@@ -63,6 +94,8 @@ const SHAPE_BITS = 6;
 const COLOR_BITS = 6;
 const SIZE_BITS = 3;
 const VLQ_CHUNK = 4;
+const HEAD_BITS = 3;
+const THICKNESS_BITS = 3;
 
 const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
 
@@ -74,8 +107,11 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
         bs.write(COLOR_BITS, data);
     },
 
-    [Obj.EDGE]: (bs: BitStream, data: number) => {
-        bs.write(COLOR_BITS, data);
+    [Obj.EDGE]: (bs: BitStream, data: EdgeSpec) => {
+            bs.write(HEAD_BITS, data.head);
+            if (data.color === undefined) bs.write(1, 0);
+            else { bs.write(1, 1); bs.write(COLOR_BITS, data.color); }
+            bs.write(THICKNESS_BITS, data.thickness);
     },
 
     [Obj.SHAPE]: (bs: BitStream, data: ShapeSpec[]) => {

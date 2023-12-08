@@ -104,7 +104,13 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     switch (el.dataset.tool) {
     case 'surface': resolve(new Tools.SurfaceTool(parseInt(args[0], 10))); break;
     case 'line': resolve(new Tools.LineTool(parseInt(args[0], 10))); break;
-    case 'edge': resolve(new Tools.EdgeTool(parseInt(args[0], 10))); break;
+    case 'edge':
+        resolve(new Tools.EdgeTool({
+            color: parseInt(args[0]),
+            thickness: parseInt(args[1]),
+            head: parseInt(args[2])
+        }));
+        break;
     case 'shape':
         if (!(parseInt(args[1], 10) >= 1 && parseInt(args[1], 10) <= 5)) {
             MenuManager.alert('shape size should be between 1 and 5');
