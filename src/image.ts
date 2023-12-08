@@ -33,7 +33,7 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
         const g = image.draw(undefined, 'g', {
             transform: `
                 translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})
-                rotate(${90 * (y%2) + (reversed ? 180 : 0)})
+                rotate(${(y%2===0 ? 0 : 90) + (reversed ? 180 : 0)})
                 `
         });
         const stroke = Color.colors[spec.color];

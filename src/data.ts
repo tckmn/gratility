@@ -107,11 +107,12 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
         bs.write(COLOR_BITS, data);
     },
 
-    [Obj.EDGE]: (bs: BitStream, data: EdgeSpec) => {
-            bs.write(HEAD_BITS, data.head);
-            if (data.color === undefined) bs.write(1, 0);
-            else { bs.write(1, 1); bs.write(COLOR_BITS, data.color); }
-            bs.write(THICKNESS_BITS, data.thickness);
+    [Obj.EDGE]: (bs: BitStream, [spec, dir]: [EdgeSpec, boolean]) => {
+            if (spec.color === undefined) bs.write(1, 0);
+            else { bs.write(1, 1); bs.write(COLOR_BITS, spec.color); }
+            bs.write(THICKNESS_BITS, spec.thickness);
+            bs.write(HEAD_BITS, spec.head);
+            bs.write(1, dir ? 1 : 0);
     },
 
     [Obj.SHAPE]: (bs: BitStream, data: ShapeSpec[]) => {
@@ -143,7 +144,11 @@ const deserializefns = {
     },
 
     [Obj.EDGE]: (bs: BitStream): any => {
-        return bs.read(COLOR_BITS);
+        const color = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+        const thickness = bs.read(THICKNESS_BITS);
+        const head = bs.read(HEAD_BITS);
+        const dir = bs.read(1) === 1;
+        return [{color, thickness, head}, dir];
     },
 
     [Obj.SHAPE]: (bs: BitStream): any => {
