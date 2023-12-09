@@ -49,6 +49,7 @@ export type ShapeSpec = {
 }
 
 export type EdgeSpec = {
+    isEdge: boolean,
     color: number,
     thickness: number,
     head: Head
@@ -59,7 +60,8 @@ export function sheq(a: ShapeSpec, b: ShapeSpec) {
 }
 
 export function edeq(a: EdgeSpec, b: EdgeSpec) {
-    return a.head === b.head && a.color === b.color && a.thickness === b.thickness;
+    return a.isEdge === b.isEdge && a.head === b.head
+        && a.color === b.color && a.thickness === b.thickness;
 }
 
 export function edgeeq([spec1, dir1]: [EdgeSpec, boolean], [spec2, dir2]: [EdgeSpec, boolean]) {
@@ -84,7 +86,8 @@ export class Change {
         public readonly obj: Obj,
         public readonly pre: any,
         public readonly post: any,
-        public readonly linked: boolean = false
+        public readonly linked: boolean = false,
+        public readonly layer?: Obj
     ) {}
 }
 
@@ -108,6 +111,7 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
     },
 
     [Obj.EDGE]: (bs: BitStream, [spec, dir]: [EdgeSpec, boolean]) => {
+            bs.write(1, spec.isEdge ? 1 : 0);
             if (spec.color === undefined) bs.write(1, 0);
             else { bs.write(1, 1); bs.write(COLOR_BITS, spec.color); }
             bs.write(THICKNESS_BITS, spec.thickness);
@@ -144,6 +148,7 @@ const deserializefns = {
     },
 
     [Obj.EDGE]: (bs: BitStream): any => {
+        const isEdge = bs.read(1) === 1;
         const color = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
@@ -223,17 +228,18 @@ export function undo(isUndo: boolean) {
         const change = history[isUndo ? --histpos : histpos++];
         const pre = isUndo ? change.post : change.pre;
         const post = isUndo ? change.pre : change.post;
+        const layer : Obj = change.layer === undefined ? change.obj : change.layer;
 
         if (pre !== undefined) {
 
             // TODO undefined cases here should never happen
             // delete the drawing
-            const elt = drawn.get(change.n)?.get(change.obj);
-            if (elt !== undefined) img.obj(change.obj).removeChild(elt);
+            const elt = drawn.get(change.n)?.get(layer);
+            if (elt !== undefined) img.obj(layer).removeChild(elt);
 
             // delete item
             const hc = halfcells.get(change.n);
-            hc?.delete(change.obj);
+            hc?.delete(layer);
             if (hc?.size === 0) halfcells.delete(change.n);
 
         }
@@ -242,16 +248,16 @@ export function undo(isUndo: boolean) {
 
             // create item
             if (!halfcells.has(change.n)) halfcells.set(change.n, new Map());
-            halfcells.get(change.n)!.set(change.obj, post);
+            halfcells.get(change.n)!.set(layer, post);
 
             // draw it
             const [x, y] = decode(change.n);
             const elt = img.objdraw(change.obj, x, y, post);
-            img.obj(change.obj).appendChild(elt);
+            img.obj(layer).appendChild(elt);
 
             // save the element
             if (!drawn.has(change.n)) drawn.set(change.n, new Map());
-            drawn.get(change.n)?.set(change.obj, elt);
+            drawn.get(change.n)?.set(layer, elt);
 
         }
     } while (history[histpos-1]?.linked);

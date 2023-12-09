@@ -15,6 +15,7 @@ export default class Toolbox {
         this.bindKey('s', new Tools.SurfaceTool(0));
         this.bindKey('d', new Tools.LineTool(8));
         this.bindKey('e', new Tools.EdgeTool({
+            isEdge: true,
             head: Data.Head.NONE,
             color: 0,
             thickness: 2
@@ -29,16 +30,19 @@ export default class Toolbox {
 
         // temporary
         this.bindKey('\'', new Tools.EdgeTool({
+            isEdge: true,
             head: Data.Head.ARROW,
             color: 7,
             thickness: 2
         }));
         this.bindKey(',', new Tools.EdgeTool({
+            isEdge: true,
             head: Data.Head.ARROW,
             color: 10,
             thickness: 1
         }));
         this.bindKey('.', new Tools.EdgeTool({
+            isEdge: false,
             head: Data.Head.ARROW,
             color: 13,
             thickness: 3

@@ -106,9 +106,10 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'line': resolve(new Tools.LineTool(parseInt(args[0], 10))); break;
     case 'edge':
         resolve(new Tools.EdgeTool({
-            color: parseInt(args[0]),
-            thickness: parseInt(args[1]),
-            head: parseInt(args[2])
+            isEdge: parseInt(args[0]) === 1,
+            color: parseInt(args[1]),
+            thickness: parseInt(args[2]),
+            head: parseInt(args[3]),
         }));
         break;
     case 'shape':
