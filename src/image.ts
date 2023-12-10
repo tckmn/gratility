@@ -19,30 +19,28 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
     [Data.Obj.LINE]: (image: Image, x: number, y: number, [spec, reversed]: [Data.LineSpec, boolean]) => {
         const g = image.draw(undefined, 'g', {
             transform: `
-                translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})
-                rotate(${((y%2===0) == spec.isEdge ? 0 : 90) + (reversed ? 180 : 0)})
+                rotate(${((y%2===0) == spec.isEdge ? 0 : 90) + (reversed ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
                 `
         });
         const stroke = Color.colors[spec.color];
         const strokeLinecap = 'round'
+        const strokeWidth = Measure.LINE * spec.thickness;
+        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(spec.thickness));
         image.draw(g, 'line', {
-            x1: Measure.HALFCELL,
-            x2: -Measure.HALFCELL,
-            y1: 0,
-            y2: 0,
-            strokeWidth: Measure.LINE * spec.thickness,
-            stroke, strokeLinecap
+            x1: adjust(x+1,0),
+            x2: adjust(x-1,0),
+            y1: adjust(y,0),
+            y2: adjust(y,0),
+            stroke, strokeLinecap, strokeWidth
         });
         switch (spec.head) {
         case Data.Head.NONE:
             break;
         case Data.Head.ARROW:
             image.draw(g, 'path', {
-                d: 'M 3 5 L -2 0 L 3 -5',
+                d: `M ${adjust(x,3)} ${adjust(y,5)} L ${adjust(x,-2)} ${adjust(y,0)} L ${adjust(x,3)} ${adjust(y,-5)}`,
                 fill: 'none',
-                strokeWidth: Measure.LINE * Math.sqrt(spec.thickness),
-                transform: `scale(${Math.sqrt(spec.thickness)})`,
-                stroke, strokeLinecap
+                stroke, strokeLinecap, strokeWidth
             });
         }
         return g;
