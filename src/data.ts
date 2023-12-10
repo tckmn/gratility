@@ -21,6 +21,15 @@ export const enum Obj {
     TEXT,
 }
 
+export const enum Layer {
+    SURFACE = 0,
+    PATH,
+    EDGE,
+    SHAPE,
+    TEXT,
+}
+
+
 export const enum Shape {
     CIRCLE = 0,
     SQUARE,
@@ -72,27 +81,34 @@ export function edgeeq([spec1, dir1]: [EdgeSpec, boolean], [spec2, dir2]: [EdgeS
     }
 }
 
+export class Element {
+    public constructor(
+        public readonly obj: Obj,
+        public readonly data: any,
+    ) {}
+}
+
 export class Item {
     public constructor(
         public readonly n: number,
-        public readonly obj: Obj,
-        public readonly data: any
+        public readonly layer: Layer,
+        public readonly elt: Element
     ) {}
 }
 
 export class Change {
     public constructor(
         public readonly n: number,
-        public readonly obj: Obj,
-        public readonly pre: any,
-        public readonly post: any,
+        public readonly layer: Layer,
+        public readonly pre: Element | undefined,
+        public readonly post: Element | undefined,
         public readonly linked: boolean = false,
-        public readonly layer?: Obj
     ) {}
 }
 
 const N_BITS = 32;
 const OBJ_BITS = 6;
+const LAYER_BITS = 6;
 const SHAPE_BITS = 6;
 const COLOR_BITS = 6;
 const SIZE_BITS = 3;
@@ -182,8 +198,9 @@ export function serialize(stamp: Array<Item>): Uint8Array {
 
     for (const item of stamp) {
         bs.write(N_BITS, item.n);
-        bs.write(OBJ_BITS, item.obj);
-        serializefns[item.obj](bs, item.data as never);
+        bs.write(OBJ_BITS, item.elt.obj);
+        bs.write(LAYER_BITS, item.layer);
+        serializefns[item.elt.obj](bs, item.elt.data as never);
     }
 
     return bs.cut();
@@ -203,14 +220,15 @@ export function deserialize(arr: Uint8Array): Array<Item> {
         const n = bs.read(N_BITS);
         if (!bs.inbounds()) break;
         const obj = bs.read(OBJ_BITS) as Obj;
-        stamp.push(new Item(n, obj, deserializefns[obj](bs)));
+        const layer = bs.read(LAYER_BITS) as Layer;
+        stamp.push(new Item(n, layer, new Element(obj, deserializefns[obj](bs))));
     }
 
     return stamp;
 }
 
-export const halfcells = new Map<number, Map<Obj, any>>();
-const drawn = new Map<number, Map<Obj, SVGElement>>();
+export const halfcells = new Map<number, Map<Layer, Element>>();
+const drawn = new Map<number, Map<Layer, SVGElement>>();
 
 const history = new Array<Change>();
 let histpos = 0;
@@ -228,18 +246,17 @@ export function undo(isUndo: boolean) {
         const change = history[isUndo ? --histpos : histpos++];
         const pre = isUndo ? change.post : change.pre;
         const post = isUndo ? change.pre : change.post;
-        const layer : Obj = change.layer === undefined ? change.obj : change.layer;
 
         if (pre !== undefined) {
 
             // TODO undefined cases here should never happen
             // delete the drawing
-            const elt = drawn.get(change.n)?.get(layer);
-            if (elt !== undefined) img.obj(layer).removeChild(elt);
+            const elt = drawn.get(change.n)?.get(change.layer);
+            if (elt !== undefined) img.obj(change.layer).removeChild(elt);
 
             // delete item
             const hc = halfcells.get(change.n);
-            hc?.delete(layer);
+            hc?.delete(change.layer);
             if (hc?.size === 0) halfcells.delete(change.n);
 
         }
@@ -248,16 +265,16 @@ export function undo(isUndo: boolean) {
 
             // create item
             if (!halfcells.has(change.n)) halfcells.set(change.n, new Map());
-            halfcells.get(change.n)!.set(layer, post);
+            halfcells.get(change.n)!.set(change.layer, post);
 
             // draw it
             const [x, y] = decode(change.n);
-            const elt = img.objdraw(change.obj, x, y, post);
-            img.obj(layer).appendChild(elt);
+            const elt = img.objdraw(post, x, y);
+            img.obj(change.layer).appendChild(elt);
 
             // save the element
             if (!drawn.has(change.n)) drawn.set(change.n, new Map());
-            drawn.get(change.n)?.set(layer, elt);
+            drawn.get(change.n)?.set(change.layer, elt);
 
         }
     } while (history[histpos-1]?.linked);

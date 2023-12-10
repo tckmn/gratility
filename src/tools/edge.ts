@@ -11,21 +11,21 @@ export default class EdgeTool implements Tool {
         return image.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(Data.Obj.EDGE, 0, 1, [this.spec, false])
+                image.objdraw(new Data.Element(Data.Obj.EDGE, [this.spec, false]), 0, 1)
             ]
         });
     }
 
     constructor(private spec: Data.EdgeSpec) {
         this.HC_WEIGHT = spec.isEdge ? 0.35 : 0;
-        this.LAYER = spec.isEdge ? Data.Obj.EDGE : Data.Obj.LINE;
+        this.LAYER = spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH;
     }
 
     private isDrawing: boolean | undefined = undefined;
     private x = 0;
     private y = 0;
     private HC_WEIGHT : number;
-    private LAYER : Data.Obj;
+    private LAYER : Data.Layer;
 
     public ondown(x: number, y: number) {
         this.x = Measure.hc(x, this.HC_WEIGHT);
@@ -72,19 +72,20 @@ export default class EdgeTool implements Tool {
         const n = Data.encode(cx, cy)
 
         const oldline = Data.halfcells.get(n)?.get(this.LAYER);
-        const newline : [Data.EdgeSpec, boolean] = [this.spec, dir === -1]
+        const newline = new Data.Element(Data.Obj.EDGE,
+                                         [this.spec, dir === -1] as [Data.EdgeSpec, boolean])
 
         if (this.isDrawing === undefined) {
-            this.isDrawing = oldline === undefined || !Data.edgeeq(oldline, newline);
+            this.isDrawing = oldline === undefined || !Data.edgeeq(oldline.data, newline.data);
         }
 
         if (this.isDrawing) {
-            if (oldline === undefined || !Data.edgeeq(oldline, newline)) {
-                Data.add(new Data.Change(n, Data.Obj.EDGE, oldline, newline, false, this.LAYER));
+            if (oldline === undefined || !Data.edgeeq(oldline.data, newline.data)) {
+                Data.add(new Data.Change(n, this.LAYER, oldline, newline));
             }
         } else {
             if (oldline !== undefined) {
-                Data.add(new Data.Change(n, Data.Obj.EDGE, oldline, undefined, false, this.LAYER));
+                Data.add(new Data.Change(n, this.LAYER, oldline, undefined));
             }
         }
     }

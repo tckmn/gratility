@@ -11,14 +11,17 @@ export default class LineTool implements Tool {
         return image.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(Data.Obj.LINE, 0, 1, this.color)
+                image.objdraw(this.element, 0, 1)
             ]
         });
     }
 
-    constructor(private color: number) {}
+    constructor(private color: number) {
+        this.element = new Data.Element(Data.Obj.LINE, this.color);
+    }
 
     private isDrawing: boolean | undefined = undefined;
+    private element : Data.Element;
     private x = 0;
     private y = 0;
 
@@ -41,7 +44,7 @@ export default class LineTool implements Tool {
         if (!(dx === 0 && dy === 1 || dx === 1 && dy === 0)) return;
 
         const n = dx > 0 ? Data.encode(lx*2+2, ly*2+1) : Data.encode(lx*2+1, ly*2+2);
-        const line = Data.halfcells.get(n)?.get(Data.Obj.LINE);
+        const line = Data.halfcells.get(n)?.get(Data.Layer.PATH);
 
         if (this.isDrawing === undefined) {
             this.isDrawing = line === undefined;
@@ -49,11 +52,11 @@ export default class LineTool implements Tool {
 
         if (line === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.LINE, line, this.color));
+                Data.add(new Data.Change(n, Data.Layer.PATH, line, this.element));
             }
         } else {
             if (!this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.LINE, line, undefined));
+                Data.add(new Data.Change(n, Data.Layer.PATH, line, undefined));
             }
         }
     }

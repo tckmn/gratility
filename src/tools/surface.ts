@@ -11,25 +11,29 @@ export default class SurfaceTool implements Tool {
         return image.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(Data.Obj.SURFACE, 1, 1, this.color)
+                image.objdraw(this.element, 1, 1)
             ]
         });
     }
 
-    constructor(private color: number) {}
+    constructor(private color: number) {
+        this.element = new Data.Element(Data.Obj.SURFACE, this.color);
+    }
 
     private isDrawing = false;
+    private element : Data.Element;
 
     public ondown(x: number, y: number) {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);
-        const surface = Data.halfcells.get(n)?.get(Data.Obj.SURFACE);
+        const surface = Data.halfcells.get(n)?.get(Data.Layer.SURFACE);
         if (surface === undefined) {
-            Data.add(new Data.Change(n, Data.Obj.SURFACE, surface, this.color));
+            Data.add(new Data.Change(n, Data.Layer.SURFACE, surface,
+                                     new Data.Element(Data.Obj.SURFACE, this.color)));
             this.isDrawing = true;
         } else {
-            Data.add(new Data.Change(n, Data.Obj.SURFACE, surface, undefined));
+            Data.add(new Data.Change(n, Data.Layer.SURFACE, surface, undefined));
             this.isDrawing = false;
         }
     }
@@ -38,14 +42,14 @@ export default class SurfaceTool implements Tool {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);
-        const surface = Data.halfcells.get(n)?.get(Data.Obj.SURFACE);
+        const surface = Data.halfcells.get(n)?.get(Data.Layer.SURFACE);
         if (surface === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.SURFACE, surface, this.color));
+                Data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.element));
             }
         } else {
             if (!this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.SURFACE, surface, undefined));
+                Data.add(new Data.Change(n, Data.Layer.SURFACE, surface, undefined));
             }
         }
     }

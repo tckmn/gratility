@@ -131,7 +131,7 @@ export default class Image {
     public readonly root:      SVGElement;
     public readonly gridlines: SVGElement;
     public readonly surface:   SVGElement;
-    public readonly line:      SVGElement;
+    public readonly path:      SVGElement;
     public readonly edge:      SVGElement;
     public readonly shape:     SVGElement;
     public readonly textInd:   SVGElement;
@@ -143,7 +143,7 @@ export default class Image {
         this.root      = this.draw(svg, 'g');
         this.gridlines = this.draw(this.root, 'g', { stroke: Measure.GRIDCOLOR, strokeWidth: Measure.GRIDLINE });
         this.surface   = this.draw(this.root, 'g');
-        this.line      = this.draw(this.root, 'g');
+        this.path      = this.draw(this.root, 'g');
         this.edge      = this.draw(this.root, 'g');
         this.shape     = this.draw(this.root, 'g');
         this.textInd   = this.draw(this.root, 'g');
@@ -167,18 +167,18 @@ export default class Image {
         return elt;
     }
 
-    public obj(obj: Data.Obj): SVGElement {
+    public obj(obj: Data.Layer): SVGElement {
         switch (obj) {
-        case Data.Obj.SURFACE: return this.surface;
-        case Data.Obj.LINE:    return this.line;
-        case Data.Obj.EDGE:    return this.edge;
-        case Data.Obj.SHAPE:   return this.shape;
-        case Data.Obj.TEXT:    return this.text;
+        case Data.Layer.SURFACE: return this.surface;
+        case Data.Layer.PATH:    return this.path;
+        case Data.Layer.EDGE:    return this.edge;
+        case Data.Layer.SHAPE:   return this.shape;
+        case Data.Layer.TEXT:    return this.text;
         }
     }
 
-    public objdraw(obj: Data.Obj, x: number, y: number, data: any) {
-        return drawfns[obj](this, x, y, data as never);
+    public objdraw(elt: Data.Element, x: number, y: number) {
+        return drawfns[elt.obj](this, x, y, elt.data as never);
     }
 
     public grid(xmin: number, xmax: number, ymin: number, ymax: number) {

@@ -20,9 +20,9 @@ class Stamp {
             const [x, y] = Data.decode(cell.n);
             const newn = Data.encode(x - this.xoff + xoff, y - this.yoff + yoff);
 
-            const pre = Data.halfcells.get(newn)?.get(cell.obj);
-            if (pre !== cell.data) {
-                Data.add(new Data.Change(newn, cell.obj, pre, cell.data, i !== this.cells.length-1));
+            const pre = Data.halfcells.get(newn)?.get(cell.layer);
+            if (pre !== cell.elt.data) {
+                Data.add(new Data.Change(newn, cell.layer, pre, cell.elt, i !== this.cells.length-1));
             }
         }
     }
@@ -60,7 +60,7 @@ export function add(cells: Array<Data.Item>) {
 
     img.stamps.replaceChildren(...cells.map(cell => {
         const [x, y] = Data.decode(cell.n);
-        return img.objdraw(cell.obj, x - stamp.xoff, y - stamp.yoff, cell.data);
+        return img.objdraw(cell.elt, x - stamp.xoff, y - stamp.yoff);
     }));
 }
 
