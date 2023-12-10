@@ -160,7 +160,7 @@ const deserializefns = {
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return [{color, thickness, head}, dir];
+        return [{isEdge, color, thickness, head}, dir];
     },
 
     [Obj.SHAPE]: (bs: BitStream): any => {
