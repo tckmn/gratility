@@ -103,7 +103,6 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
 
     switch (el.dataset.tool) {
     case 'surface': resolve(new Tools.SurfaceTool(parseInt(args[0], 10))); break;
-    case 'line': resolve(new Tools.LineTool(parseInt(args[0], 10))); break;
     case 'edge':
         resolve(new Tools.EdgeTool({
             isEdge: parseInt(args[0]) === 1,

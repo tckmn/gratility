@@ -13,7 +13,12 @@ export default class Toolbox {
         this.bindMouse(1, new Tools.PanTool());
         this.bindKey(' ', new Tools.PanTool());
         this.bindKey('s', new Tools.SurfaceTool(0));
-        this.bindKey('d', new Tools.LineTool(8));
+        this.bindKey('d', new Tools.EdgeTool({
+            isEdge: false,
+            head: Data.Head.NONE,
+            color: 8,
+            thickness: 2
+        }));
         this.bindKey('e', new Tools.EdgeTool({
             isEdge: true,
             head: Data.Head.NONE,
