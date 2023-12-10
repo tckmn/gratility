@@ -16,7 +16,6 @@ export function decode(n: number): [number, number] {
 export const enum Obj {
     SURFACE = 0,
     LINE,
-    EDGE,
     SHAPE,
     TEXT,
 }
@@ -57,7 +56,7 @@ export type ShapeSpec = {
     size: number
 }
 
-export type EdgeSpec = {
+export type LineSpec = {
     isEdge: boolean,
     color: number,
     thickness: number,
@@ -68,13 +67,13 @@ export function sheq(a: ShapeSpec, b: ShapeSpec) {
     return a.shape === b.shape && a.size === b.size;
 }
 
-export function edeq(a: EdgeSpec, b: EdgeSpec) {
+export function linedateq(a: LineSpec, b: LineSpec) {
     return a.isEdge === b.isEdge && a.head === b.head
         && a.color === b.color && a.thickness === b.thickness;
 }
 
-export function edgeeq([spec1, dir1]: [EdgeSpec, boolean], [spec2, dir2]: [EdgeSpec, boolean]) {
-    if (!edeq(spec1, spec2)) return false;
+export function lineeq([spec1, dir1]: [LineSpec, boolean], [spec2, dir2]: [LineSpec, boolean]) {
+    if (!linedateq(spec1, spec2)) return false;
     switch (spec1.head) {
         case Head.NONE: return true;
         case Head.ARROW: return dir1 === dir2;
@@ -122,11 +121,7 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
         bs.write(COLOR_BITS, data);
     },
 
-    [Obj.LINE]: (bs: BitStream, data: number) => {
-        bs.write(COLOR_BITS, data);
-    },
-
-    [Obj.EDGE]: (bs: BitStream, [spec, dir]: [EdgeSpec, boolean]) => {
+    [Obj.LINE]: (bs: BitStream, [spec, dir]: [LineSpec, boolean]) => {
             bs.write(1, spec.isEdge ? 1 : 0);
             if (spec.color === undefined) bs.write(1, 0);
             else { bs.write(1, 1); bs.write(COLOR_BITS, spec.color); }
@@ -160,10 +155,6 @@ const deserializefns = {
     },
 
     [Obj.LINE]: (bs: BitStream): any => {
-        return bs.read(COLOR_BITS);
-    },
-
-    [Obj.EDGE]: (bs: BitStream): any => {
         const isEdge = bs.read(1) === 1;
         const color = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
         const thickness = bs.read(THICKNESS_BITS);

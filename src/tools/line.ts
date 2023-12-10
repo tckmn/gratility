@@ -3,20 +3,20 @@ import Image from '../image.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
-export default class EdgeTool implements Tool {
+export default class LineTool implements Tool {
 
     public readonly repeat = false;
-    public name(): string { return 'Edge'; }
+    public name(): string { return 'Line'; }
     public icon(image: Image): SVGElement {
         return image.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(new Data.Element(Data.Obj.EDGE, [this.spec, false]), 0, 1)
+                image.objdraw(new Data.Element(Data.Obj.LINE, [this.spec, false]), 0, 1)
             ]
         });
     }
 
-    constructor(private spec: Data.EdgeSpec) {
+    constructor(private spec: Data.LineSpec) {
         this.HC_WEIGHT = spec.isEdge ? 0.35 : 0;
         this.LAYER = spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH;
     }
@@ -72,15 +72,15 @@ export default class EdgeTool implements Tool {
         const n = Data.encode(cx, cy)
 
         const oldline = Data.halfcells.get(n)?.get(this.LAYER);
-        const newline = new Data.Element(Data.Obj.EDGE,
-                                         [this.spec, dir === -1] as [Data.EdgeSpec, boolean])
+        const newline = new Data.Element(Data.Obj.LINE,
+                                         [this.spec, dir === -1] as [Data.LineSpec, boolean])
 
         if (this.isDrawing === undefined) {
-            this.isDrawing = oldline === undefined || !Data.edgeeq(oldline.data, newline.data);
+            this.isDrawing = oldline === undefined || !Data.lineeq(oldline.data, newline.data);
         }
 
         if (this.isDrawing) {
-            if (oldline === undefined || !Data.edgeeq(oldline.data, newline.data)) {
+            if (oldline === undefined || !Data.lineeq(oldline.data, newline.data)) {
                 Data.add(new Data.Change(n, this.LAYER, oldline, newline));
             }
         } else {

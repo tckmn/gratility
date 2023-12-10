@@ -16,20 +16,7 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
         });
     },
 
-    [Data.Obj.LINE]: (image: Image, x: number, y: number, data: number) => {
-        const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
-        return image.draw(undefined, 'line', {
-            x1: (x - horiz) * Measure.HALFCELL,
-            x2: (x + horiz) * Measure.HALFCELL,
-            y1: (y - (1-horiz)) * Measure.HALFCELL,
-            y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: Color.colors[data],
-            strokeWidth: Measure.LINE,
-            strokeLinecap: 'round'
-        });
-    },
-
-    [Data.Obj.EDGE]: (image: Image, x: number, y: number, [spec, reversed]: [Data.EdgeSpec, boolean]) => {
+    [Data.Obj.LINE]: (image: Image, x: number, y: number, [spec, reversed]: [Data.LineSpec, boolean]) => {
         const g = image.draw(undefined, 'g', {
             transform: `
                 translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})
@@ -43,7 +30,7 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
             x2: -Measure.HALFCELL,
             y1: 0,
             y2: 0,
-            strokeWidth: Measure.EDGE * spec.thickness,
+            strokeWidth: Measure.LINE * spec.thickness,
             stroke, strokeLinecap
         });
         switch (spec.head) {
@@ -53,7 +40,7 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
             image.draw(g, 'path', {
                 d: 'M 3 5 L -2 0 L 3 -5',
                 fill: 'none',
-                strokeWidth: Measure.EDGE * Math.sqrt(spec.thickness),
+                strokeWidth: Measure.LINE * Math.sqrt(spec.thickness),
                 transform: `scale(${Math.sqrt(spec.thickness)})`,
                 stroke, strokeLinecap
             });

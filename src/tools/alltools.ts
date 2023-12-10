@@ -1,5 +1,5 @@
 export { default as CopyTool    } from './copy.js';
-export { default as EdgeTool    } from './edge.js';
+export { default as LineTool    } from './line.js';
 export { default as PanTool     } from './pan.js';
 export { default as PasteTool   } from './paste.js';
 export { default as ShapeTool   } from './shape.js';
