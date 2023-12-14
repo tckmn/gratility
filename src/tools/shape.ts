@@ -33,7 +33,7 @@ export default class ShapeTool implements Tool {
         return image.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(Data.Obj.SHAPE, 1, 1, [this.spec])
+                image.objdraw(new Data.Element(Data.Obj.SHAPE, [this.spec]), 1, 1)
             ]
         });
     }
@@ -48,16 +48,20 @@ export default class ShapeTool implements Tool {
     public ondown(x: number, y: number) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = Data.halfcells.get(n)?.get(Data.Obj.SHAPE) as Data.ShapeSpec[] | undefined;
-        if (shape === undefined) {
-            Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, [this.spec]));
+        const shape = Data.halfcells.get(n)?.get(Data.Layer.SHAPE);
+        const shapelst = shape?.data as Data.ShapeSpec[] | undefined;
+        if (shapelst === undefined) {
+            Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                     new Data.Element(Data.Obj.SHAPE, [this.spec])));
             this.isDrawing = true;
-        } else if (!shape.some(sh => Data.sheq(sh, this.spec))) {
-            Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, shape.concat(this.spec)));
+        } else if (!shapelst.some(sh => Data.sheq(sh, this.spec))) {
+            Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                     new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
             this.isDrawing = true;
         } else {
-            const remaining = shape.filter(sh => !Data.sheq(sh, this.spec));
-            Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, remaining.length === 0 ? undefined : remaining));
+            const remaining = shapelst.filter(sh => !Data.sheq(sh, this.spec));
+            Data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined
+                                     : new Data.Element(Data.Obj.SHAPE, remaining)));
             this.isDrawing = false;
         }
     }
@@ -65,19 +69,23 @@ export default class ShapeTool implements Tool {
     public onmove(x: number, y: number) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = Data.halfcells.get(n)?.get(Data.Obj.SHAPE) as Data.ShapeSpec[] | undefined;
-        if (shape === undefined) {
+        const shape = Data.halfcells.get(n)?.get(Data.Layer.SHAPE);
+        const shapelst = shape?.data as Data.ShapeSpec[] | undefined;
+        if (shapelst === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, [this.spec]));
+                Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                         new Data.Element(Data.Obj.SHAPE, [this.spec])));
             }
-        } else if (!shape.some(sh => Data.sheq(sh, this.spec))) {
+        } else if (!shapelst.some(sh => Data.sheq(sh, this.spec))) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, shape.concat(this.spec)));
+                Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                         new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
             }
         } else {
             if (!this.isDrawing) {
-                const remaining = shape.filter(sh => !Data.sheq(sh, this.spec));
-                Data.add(new Data.Change(n, Data.Obj.SHAPE, shape, remaining.length === 0 ? undefined : remaining));
+                const remaining = shapelst.filter(sh => !Data.sheq(sh, this.spec));
+                Data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined :
+                                         new Data.Element(Data.Obj.SHAPE, remaining)));
             }
         }
     }

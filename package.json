@@ -2,7 +2,7 @@
     "name": "gratility",
     "version": "0.0.1",
     "dependencies": {
-        "jsdom": "^23.0.0"
+        "jsdom": "^23.0.1"
     },
     "devDependencies": {
         "@types/jsdom": "^21.1.6"

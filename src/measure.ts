@@ -3,8 +3,7 @@ export const GRIDLINE = 1;
 
 export const HALFCELL = 20;
 export const ZOOMTICK = 1.1;
-export const LINE = 5;
-export const EDGE = 2;
+export const LINE = 2;
 
 export const CELL = 2*HALFCELL;
 

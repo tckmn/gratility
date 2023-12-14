@@ -11,49 +11,81 @@ export default class LineTool implements Tool {
         return image.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(Data.Obj.LINE, 0, 1, this.color)
+                image.objdraw(new Data.Element(Data.Obj.LINE, [this.spec, false]), 0, 1)
             ]
         });
     }
 
-    constructor(private color: number) {}
+    constructor(private spec: Data.LineSpec) {
+        this.HC_WEIGHT = spec.isEdge ? 0.35 : 0;
+        this.LAYER = spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH;
+    }
 
     private isDrawing: boolean | undefined = undefined;
     private x = 0;
     private y = 0;
+    private HC_WEIGHT : number;
+    private LAYER : Data.Layer;
 
     public ondown(x: number, y: number) {
-        this.x = Measure.cell(x);
-        this.y = Measure.cell(y);
+        this.x = Measure.hc(x, this.HC_WEIGHT);
+        this.y = Measure.hc(y, this.HC_WEIGHT);
     }
 
     public onmove(x: number, y: number) {
-        x = Measure.cell(x);
-        y = Measure.cell(y);
+        x = Measure.hc(x, this.HC_WEIGHT);
+        y = Measure.hc(y, this.HC_WEIGHT);
         if (x === this.x && y === this.y) return;
 
-        const dx = Math.abs(this.x - x);
-        const dy = Math.abs(this.y - y);
+        let dx = this.x - x;
+        let dy = this.y - y;
         const lx = Math.min(x, this.x);
         const ly = Math.min(y, this.y);
         this.x = x;
         this.y = y;
-        if (!(dx === 0 && dy === 1 || dx === 1 && dy === 0)) return;
+        let cx, cy, dir;
 
-        const n = dx > 0 ? Data.encode(lx*2+2, ly*2+1) : Data.encode(lx*2+1, ly*2+2);
-        const line = Data.halfcells.get(n)?.get(Data.Obj.LINE);
-
-        if (this.isDrawing === undefined) {
-            this.isDrawing = line === undefined;
+        if (!this.spec.isEdge) {
+            dx = dx/2;
+            dy = dy/2;
         }
 
-        if (line === undefined) {
-            if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.LINE, line, this.color));
+        dir = dx + dy;
+
+        if (dx**2 + dy**2 !== 1) return;
+
+        if (this.spec.isEdge) {
+            if (dx === 0) {
+                if (x%2 !== 0) return;
+                cx = x;
+                cy = y%2 ? y : y+dy;
+            } else {
+                if (y%2 !== 0) return;
+                cy = y;
+                cx = x%2 ? x : x+dx;
             }
         } else {
-            if (!this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.LINE, line, undefined));
+            cx = x + dx;
+            cy = y + dy;
+        }
+
+        const n = Data.encode(cx, cy)
+
+        const oldline = Data.halfcells.get(n)?.get(this.LAYER);
+        const newline = new Data.Element(Data.Obj.LINE,
+                                         [this.spec, dir === -1] as [Data.LineSpec, boolean])
+
+        if (this.isDrawing === undefined) {
+            this.isDrawing = oldline === undefined || !Data.lineeq(oldline.data, newline.data);
+        }
+
+        if (this.isDrawing) {
+            if (oldline === undefined || !Data.lineeq(oldline.data, newline.data)) {
+                Data.add(new Data.Change(n, this.LAYER, oldline, newline));
+            }
+        } else {
+            if (oldline !== undefined) {
+                Data.add(new Data.Change(n, this.LAYER, oldline, undefined));
             }
         }
     }

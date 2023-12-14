@@ -16,46 +16,31 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
         });
     },
 
-    [Data.Obj.LINE]: (image: Image, x: number, y: number, data: number) => {
-        const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 1 : 0;
-        return image.draw(undefined, 'line', {
-            x1: (x - horiz) * Measure.HALFCELL,
-            x2: (x + horiz) * Measure.HALFCELL,
-            y1: (y - (1-horiz)) * Measure.HALFCELL,
-            y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: Color.colors[data],
-            strokeWidth: Measure.LINE,
-            strokeLinecap: 'round'
-        });
-    },
-
-    [Data.Obj.EDGE]: (image: Image, x: number, y: number, [spec, reversed]: [Data.EdgeSpec, boolean]) => {
+    [Data.Obj.LINE]: (image: Image, x: number, y: number, [spec, reversed]: [Data.LineSpec, boolean]) => {
         const g = image.draw(undefined, 'g', {
             transform: `
-                translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})
-                rotate(${(y%2===0 ? 0 : 90) + (reversed ? 180 : 0)})
+                rotate(${((y%2===0) == spec.isEdge ? 0 : 90) + (reversed ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
                 `
         });
         const stroke = Color.colors[spec.color];
         const strokeLinecap = 'round'
+        const strokeWidth = Measure.LINE * spec.thickness;
+        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(spec.thickness));
         image.draw(g, 'line', {
-            x1: Measure.HALFCELL,
-            x2: -Measure.HALFCELL,
-            y1: 0,
-            y2: 0,
-            strokeWidth: Measure.EDGE * spec.thickness,
-            stroke, strokeLinecap
+            x1: adjust(x+1,0),
+            x2: adjust(x-1,0),
+            y1: adjust(y,0),
+            y2: adjust(y,0),
+            stroke, strokeLinecap, strokeWidth
         });
         switch (spec.head) {
         case Data.Head.NONE:
             break;
         case Data.Head.ARROW:
             image.draw(g, 'path', {
-                d: 'M 3 5 L -2 0 L 3 -5',
+                d: `M ${adjust(x,3)} ${adjust(y,5)} L ${adjust(x,-2)} ${adjust(y,0)} L ${adjust(x,3)} ${adjust(y,-5)}`,
                 fill: 'none',
-                strokeWidth: Measure.EDGE * Math.sqrt(spec.thickness),
-                transform: `scale(${Math.sqrt(spec.thickness)})`,
-                stroke, strokeLinecap
+                stroke, strokeLinecap, strokeWidth
             });
         }
         return g;
@@ -131,7 +116,7 @@ export default class Image {
     public readonly root:      SVGElement;
     public readonly gridlines: SVGElement;
     public readonly surface:   SVGElement;
-    public readonly line:      SVGElement;
+    public readonly path:      SVGElement;
     public readonly edge:      SVGElement;
     public readonly shape:     SVGElement;
     public readonly textInd:   SVGElement;
@@ -143,7 +128,7 @@ export default class Image {
         this.root      = this.draw(svg, 'g');
         this.gridlines = this.draw(this.root, 'g', { stroke: Measure.GRIDCOLOR, strokeWidth: Measure.GRIDLINE });
         this.surface   = this.draw(this.root, 'g');
-        this.line      = this.draw(this.root, 'g');
+        this.path      = this.draw(this.root, 'g');
         this.edge      = this.draw(this.root, 'g');
         this.shape     = this.draw(this.root, 'g');
         this.textInd   = this.draw(this.root, 'g');
@@ -167,18 +152,18 @@ export default class Image {
         return elt;
     }
 
-    public obj(obj: Data.Obj): SVGElement {
+    public obj(obj: Data.Layer): SVGElement {
         switch (obj) {
-        case Data.Obj.SURFACE: return this.surface;
-        case Data.Obj.LINE:    return this.line;
-        case Data.Obj.EDGE:    return this.edge;
-        case Data.Obj.SHAPE:   return this.shape;
-        case Data.Obj.TEXT:    return this.text;
+        case Data.Layer.SURFACE: return this.surface;
+        case Data.Layer.PATH:    return this.path;
+        case Data.Layer.EDGE:    return this.edge;
+        case Data.Layer.SHAPE:   return this.shape;
+        case Data.Layer.TEXT:    return this.text;
         }
     }
 
-    public objdraw(obj: Data.Obj, x: number, y: number, data: any) {
-        return drawfns[obj](this, x, y, data as never);
+    public objdraw(elt: Data.Element, x: number, y: number) {
+        return drawfns[elt.obj](this, x, y, elt.data as never);
     }
 
     public grid(xmin: number, xmax: number, ymin: number, ymax: number) {

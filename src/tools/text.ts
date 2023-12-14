@@ -19,12 +19,13 @@ export default class TextTool implements Tool {
     public ondown(x: number, y: number) {
         if (this.preset !== '') {
             const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-            const text = Data.halfcells.get(n)?.get(Data.Obj.TEXT);
-            if (text === this.preset) {
-                Data.add(new Data.Change(n, Data.Obj.TEXT, text, undefined));
+            const text = Data.halfcells.get(n)?.get(Data.Layer.TEXT);
+            if (text && text.data === this.preset) {
+                Data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
                 this.isDrawing = false;
             } else {
-                Data.add(new Data.Change(n, Data.Obj.TEXT, text, this.preset));
+                Data.add(new Data.Change(n, Data.Layer.TEXT, text,
+                                         new Data.Element(Data.Obj.TEXT, this.preset)));
                 this.isDrawing = true;
             }
         } else if (Event.keyeater.ref === undefined) {
@@ -42,13 +43,15 @@ export default class TextTool implements Tool {
     }
 
     private onkey(e: KeyboardEvent) {
-        const text = Data.halfcells.get(this.n)?.get(Data.Obj.TEXT);
+        const text = Data.halfcells.get(this.n)?.get(Data.Layer.TEXT);
         if (e.key === 'Enter' || e.key === 'Escape') {
             this.deselect();
         } else if (e.key === 'Backspace') {
-            Data.add(new Data.Change(this.n, Data.Obj.TEXT, text, (text ?? '').slice(0, (text ?? '').length-1)));
+            Data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
+                                     new Data.Element(Data.Obj.TEXT, (text?.data ?? '').slice(0, (text?.data ?? '').length-1))));
         } else if (e.key.length === 1) {
-            Data.add(new Data.Change(this.n, Data.Obj.TEXT, text, (text ?? '') + e.key));
+            Data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
+                                     new Data.Element(Data.Obj.TEXT, (text?.data ?? '') + e.key)));
         }
     }
 
@@ -60,14 +63,15 @@ export default class TextTool implements Tool {
     public onmove(x: number, y: number) {
         if (this.preset === '') return;
         const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-        const text = Data.halfcells.get(n)?.get(Data.Obj.TEXT);
-        if (text === this.preset) {
+        const text = Data.halfcells.get(n)?.get(Data.Layer.TEXT);
+        if (text && text.data === this.preset) {
             if (!this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.TEXT, text, undefined));
+                Data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
             }
         } else {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.TEXT, text, this.preset));
+                Data.add(new Data.Change(n, Data.Layer.TEXT, text,
+                                         new Data.Element(Data.Obj.TEXT, this.preset)));
             }
         }
     }

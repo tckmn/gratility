@@ -16,10 +16,18 @@ export function decode(n: number): [number, number] {
 export const enum Obj {
     SURFACE = 0,
     LINE,
+    SHAPE,
+    TEXT,
+}
+
+export const enum Layer {
+    SURFACE = 0,
+    PATH,
     EDGE,
     SHAPE,
     TEXT,
 }
+
 
 export const enum Shape {
     CIRCLE = 0,
@@ -48,7 +56,8 @@ export type ShapeSpec = {
     size: number
 }
 
-export type EdgeSpec = {
+export type LineSpec = {
+    isEdge: boolean,
     color: number,
     thickness: number,
     head: Head
@@ -58,38 +67,47 @@ export function sheq(a: ShapeSpec, b: ShapeSpec) {
     return a.shape === b.shape && a.size === b.size;
 }
 
-export function edeq(a: EdgeSpec, b: EdgeSpec) {
-    return a.head === b.head && a.color === b.color && a.thickness === b.thickness;
+export function linedateq(a: LineSpec, b: LineSpec) {
+    return a.isEdge === b.isEdge && a.head === b.head
+        && a.color === b.color && a.thickness === b.thickness;
 }
 
-export function edgeeq([spec1, dir1]: [EdgeSpec, boolean], [spec2, dir2]: [EdgeSpec, boolean]) {
-    if (!edeq(spec1, spec2)) return false;
+export function lineeq([spec1, dir1]: [LineSpec, boolean], [spec2, dir2]: [LineSpec, boolean]) {
+    if (!linedateq(spec1, spec2)) return false;
     switch (spec1.head) {
         case Head.NONE: return true;
         case Head.ARROW: return dir1 === dir2;
     }
 }
 
+export class Element {
+    public constructor(
+        public readonly obj: Obj,
+        public readonly data: any,
+    ) {}
+}
+
 export class Item {
     public constructor(
         public readonly n: number,
-        public readonly obj: Obj,
-        public readonly data: any
+        public readonly layer: Layer,
+        public readonly elt: Element
     ) {}
 }
 
 export class Change {
     public constructor(
         public readonly n: number,
-        public readonly obj: Obj,
-        public readonly pre: any,
-        public readonly post: any,
-        public readonly linked: boolean = false
+        public readonly layer: Layer,
+        public readonly pre: Element | undefined,
+        public readonly post: Element | undefined,
+        public readonly linked: boolean = false,
     ) {}
 }
 
 const N_BITS = 32;
 const OBJ_BITS = 6;
+const LAYER_BITS = 6;
 const SHAPE_BITS = 6;
 const COLOR_BITS = 6;
 const SIZE_BITS = 3;
@@ -103,11 +121,8 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
         bs.write(COLOR_BITS, data);
     },
 
-    [Obj.LINE]: (bs: BitStream, data: number) => {
-        bs.write(COLOR_BITS, data);
-    },
-
-    [Obj.EDGE]: (bs: BitStream, [spec, dir]: [EdgeSpec, boolean]) => {
+    [Obj.LINE]: (bs: BitStream, [spec, dir]: [LineSpec, boolean]) => {
+            bs.write(1, spec.isEdge ? 1 : 0);
             if (spec.color === undefined) bs.write(1, 0);
             else { bs.write(1, 1); bs.write(COLOR_BITS, spec.color); }
             bs.write(THICKNESS_BITS, spec.thickness);
@@ -140,15 +155,12 @@ const deserializefns = {
     },
 
     [Obj.LINE]: (bs: BitStream): any => {
-        return bs.read(COLOR_BITS);
-    },
-
-    [Obj.EDGE]: (bs: BitStream): any => {
+        const isEdge = bs.read(1) === 1;
         const color = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return [{color, thickness, head}, dir];
+        return [{isEdge, color, thickness, head}, dir];
     },
 
     [Obj.SHAPE]: (bs: BitStream): any => {
@@ -177,8 +189,9 @@ export function serialize(stamp: Array<Item>): Uint8Array {
 
     for (const item of stamp) {
         bs.write(N_BITS, item.n);
-        bs.write(OBJ_BITS, item.obj);
-        serializefns[item.obj](bs, item.data as never);
+        bs.write(OBJ_BITS, item.elt.obj);
+        bs.write(LAYER_BITS, item.layer);
+        serializefns[item.elt.obj](bs, item.elt.data as never);
     }
 
     return bs.cut();
@@ -198,14 +211,15 @@ export function deserialize(arr: Uint8Array): Array<Item> {
         const n = bs.read(N_BITS);
         if (!bs.inbounds()) break;
         const obj = bs.read(OBJ_BITS) as Obj;
-        stamp.push(new Item(n, obj, deserializefns[obj](bs)));
+        const layer = bs.read(LAYER_BITS) as Layer;
+        stamp.push(new Item(n, layer, new Element(obj, deserializefns[obj](bs))));
     }
 
     return stamp;
 }
 
-export const halfcells = new Map<number, Map<Obj, any>>();
-const drawn = new Map<number, Map<Obj, SVGElement>>();
+export const halfcells = new Map<number, Map<Layer, Element>>();
+const drawn = new Map<number, Map<Layer, SVGElement>>();
 
 const history = new Array<Change>();
 let histpos = 0;
@@ -228,12 +242,12 @@ export function undo(isUndo: boolean) {
 
             // TODO undefined cases here should never happen
             // delete the drawing
-            const elt = drawn.get(change.n)?.get(change.obj);
-            if (elt !== undefined) img.obj(change.obj).removeChild(elt);
+            const elt = drawn.get(change.n)?.get(change.layer);
+            if (elt !== undefined) img.obj(change.layer).removeChild(elt);
 
             // delete item
             const hc = halfcells.get(change.n);
-            hc?.delete(change.obj);
+            hc?.delete(change.layer);
             if (hc?.size === 0) halfcells.delete(change.n);
 
         }
@@ -242,16 +256,16 @@ export function undo(isUndo: boolean) {
 
             // create item
             if (!halfcells.has(change.n)) halfcells.set(change.n, new Map());
-            halfcells.get(change.n)!.set(change.obj, post);
+            halfcells.get(change.n)!.set(change.layer, post);
 
             // draw it
             const [x, y] = decode(change.n);
-            const elt = img.objdraw(change.obj, x, y, post);
-            img.obj(change.obj).appendChild(elt);
+            const elt = img.objdraw(post, x, y);
+            img.obj(change.layer).appendChild(elt);
 
             // save the element
             if (!drawn.has(change.n)) drawn.set(change.n, new Map());
-            drawn.get(change.n)?.set(change.obj, elt);
+            drawn.get(change.n)?.set(change.layer, elt);
 
         }
     } while (history[histpos-1]?.linked);

@@ -13,8 +13,14 @@ export default class Toolbox {
         this.bindMouse(1, new Tools.PanTool());
         this.bindKey(' ', new Tools.PanTool());
         this.bindKey('s', new Tools.SurfaceTool(0));
-        this.bindKey('d', new Tools.LineTool(8));
-        this.bindKey('e', new Tools.EdgeTool({
+        this.bindKey('d', new Tools.LineTool({
+            isEdge: false,
+            head: Data.Head.NONE,
+            color: 8,
+            thickness: 2
+        }));
+        this.bindKey('e', new Tools.LineTool({
+            isEdge: true,
             head: Data.Head.NONE,
             color: 0,
             thickness: 2
@@ -28,17 +34,20 @@ export default class Toolbox {
         this.bindWheel(false, new Tools.ZoomTool(-1));
 
         // temporary
-        this.bindKey('\'', new Tools.EdgeTool({
+        this.bindKey('\'', new Tools.LineTool({
+            isEdge: true,
             head: Data.Head.ARROW,
             color: 7,
             thickness: 2
         }));
-        this.bindKey(',', new Tools.EdgeTool({
+        this.bindKey(',', new Tools.LineTool({
+            isEdge: true,
             head: Data.Head.ARROW,
             color: 10,
             thickness: 1
         }));
-        this.bindKey('.', new Tools.EdgeTool({
+        this.bindKey('.', new Tools.LineTool({
+            isEdge: false,
             head: Data.Head.ARROW,
             color: 13,
             thickness: 3
