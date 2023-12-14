@@ -14,7 +14,11 @@ export default class Toolbox {
         this.bindKey(' ', new Tools.PanTool());
         this.bindKey('s', new Tools.SurfaceTool(0));
         this.bindKey('d', new Tools.LineTool(8));
-        this.bindKey('e', new Tools.EdgeTool(0));
+        this.bindKey('e', new Tools.EdgeTool({
+            head: Data.Head.NONE,
+            color: 0,
+            thickness: 2
+        }));
         this.bindKey('t', new Tools.TextTool(image, ''));
         this.bindKey('z', new Tools.UndoTool(true));
         this.bindKey('x', new Tools.UndoTool(false));
@@ -24,6 +28,21 @@ export default class Toolbox {
         this.bindWheel(false, new Tools.ZoomTool(-1));
 
         // temporary
+        this.bindKey('\'', new Tools.EdgeTool({
+            head: Data.Head.ARROW,
+            color: 7,
+            thickness: 2
+        }));
+        this.bindKey(',', new Tools.EdgeTool({
+            head: Data.Head.ARROW,
+            color: 10,
+            thickness: 1
+        }));
+        this.bindKey('.', new Tools.EdgeTool({
+            head: Data.Head.ARROW,
+            color: 13,
+            thickness: 3
+        }));
         for (let i = 1; i <= 9; ++i) {
             this.bindKey(i.toString(), new Tools.TextTool(image, i.toString()));
         }

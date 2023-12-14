@@ -29,17 +29,37 @@ const drawfns: { [obj in Data.Obj]: (image: Image, x: number, y: number, data: n
         });
     },
 
-    [Data.Obj.EDGE]: (image: Image, x: number, y: number, data: number) => {
-        const horiz = Measure.hctype(x, y) === Measure.HC.EVERT ? 0 : 1;
-        return image.draw(undefined, 'line', {
-            x1: (x - horiz) * Measure.HALFCELL,
-            x2: (x + horiz) * Measure.HALFCELL,
-            y1: (y - (1-horiz)) * Measure.HALFCELL,
-            y2: (y + (1-horiz)) * Measure.HALFCELL,
-            stroke: Color.colors[data],
-            strokeWidth: Measure.EDGE,
-            strokeLinecap: 'round'
+    [Data.Obj.EDGE]: (image: Image, x: number, y: number, [spec, reversed]: [Data.EdgeSpec, boolean]) => {
+        const g = image.draw(undefined, 'g', {
+            transform: `
+                translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})
+                rotate(${(y%2===0 ? 0 : 90) + (reversed ? 180 : 0)})
+                `
         });
+        const stroke = Color.colors[spec.color];
+        const strokeLinecap = 'round'
+        image.draw(g, 'line', {
+            x1: Measure.HALFCELL,
+            x2: -Measure.HALFCELL,
+            y1: 0,
+            y2: 0,
+            strokeWidth: Measure.EDGE * spec.thickness,
+            stroke, strokeLinecap
+        });
+        switch (spec.head) {
+        case Data.Head.NONE:
+            break;
+        case Data.Head.ARROW:
+            image.draw(g, 'path', {
+                d: 'M 3 5 L -2 0 L 3 -5',
+                fill: 'none',
+                strokeWidth: Measure.EDGE * Math.sqrt(spec.thickness),
+                transform: `scale(${Math.sqrt(spec.thickness)})`,
+                stroke, strokeLinecap
+            });
+        }
+        return g;
+
     },
 
     [Data.Obj.SHAPE]: (image: Image, x: number, y: number, data: Data.ShapeSpec[]) => {

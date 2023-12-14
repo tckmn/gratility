@@ -13,12 +13,12 @@ export default class EdgeTool implements Tool {
         return image.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(Data.Obj.EDGE, 0, 1, this.color)
+                image.objdraw(Data.Obj.EDGE, 0, 1, [this.spec, false])
             ]
         });
     }
 
-    constructor(private color: number) {}
+    constructor(private spec: Data.EdgeSpec) {}
 
     private isDrawing: boolean | undefined = undefined;
     private x = 0;
@@ -34,27 +34,43 @@ export default class EdgeTool implements Tool {
         y = Measure.hc(y, HC_WEIGHT);
         if (x === this.x && y === this.y) return;
 
-        const dx = Math.abs(this.x - x);
-        const dy = Math.abs(this.y - y);
+        const dx = this.x - x;
+        const dy = this.y - y;
         const lx = Math.min(x, this.x);
         const ly = Math.min(y, this.y);
         this.x = x;
         this.y = y;
-        if (!(dx === 0 && dy === 1 && lx % 2 === 0 || dx === 1 && dy === 0 && ly % 2 === 0)) return;
 
-        const n = dx > 0 ? Data.encode(lx+(lx%2===0 ? 1 : 0), ly) : Data.encode(lx, ly+(ly%2===0 ? 1 : 0));
-        const edge = Data.halfcells.get(n)?.get(Data.Obj.EDGE);
-
-        if (this.isDrawing === undefined) {
-            this.isDrawing = edge === undefined;
+        let cx, cy, dir;
+        if (dx**2 + dy**2 !== 1) return;
+        if (dx === 0) {
+            if (x%2 !== 0) return;
+            cx = x;
+            cy = y%2 ? y : y+dy;
+            dir = dy;
+        } else {
+            if (y%2 !== 0) return;
+            cy = y;
+            cx = x%2 ? x : x+dx;
+            dir = dx;
         }
 
-        if (edge === undefined) {
-            if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Obj.EDGE, edge, this.color));
+        const n = Data.encode(cx, cy)
+
+        const edge = Data.halfcells.get(n)?.get(Data.Obj.EDGE);
+        const newedge : [Data.EdgeSpec, boolean] = [this.spec, dir === -1]
+
+        if (this.isDrawing === undefined) {
+            this.isDrawing = edge === undefined || !Data.edgeeq(edge, newedge);
+            console.log(this.isDrawing);
+        }
+
+        if (this.isDrawing) {
+            if (edge === undefined || !Data.edgeeq(edge, newedge)) {
+                Data.add(new Data.Change(n, Data.Obj.EDGE, edge, newedge));
             }
         } else {
-            if (!this.isDrawing) {
+            if (edge !== undefined) {
                 Data.add(new Data.Change(n, Data.Obj.EDGE, edge, undefined));
             }
         }
