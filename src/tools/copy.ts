@@ -16,14 +16,12 @@ export default class CopyTool implements Tool {
     private ty = 0;
     private elt: SVGElement | undefined;
 
-    constructor (private image: Image) {}
-
-    public ondown(x: number, y: number) {
+    public ondown(x: number, y: number, image: Image) {
         this.sx = x;
         this.sy = y;
         this.tx = x;
         this.ty = y;
-        this.elt = this.image.draw(this.image.copypaste, 'rect', {
+        this.elt = image.draw(image.copypaste, 'rect', {
             x: x,
             y: y,
             width: 0,
@@ -50,8 +48,8 @@ export default class CopyTool implements Tool {
         }
     }
 
-    public onup() {
-        if (this.elt !== undefined) this.image.copypaste.removeChild(this.elt);
+    public onup(image: Image) {
+        if (this.elt !== undefined) image.copypaste.removeChild(this.elt);
 
         const sx = Measure.hc(Math.min(this.sx, this.tx));
         const sy = Measure.hc(Math.min(this.sy, this.ty));

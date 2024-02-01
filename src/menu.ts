@@ -131,11 +131,11 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
             outline: args[4] === '' ? undefined : parseInt(args[4], 10)
         }, args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0)));
         break;
-    case 'text': resolve(new Tools.TextTool(manager.image, args[0])); break;
+    case 'text': resolve(new Tools.TextTool(args[0])); break;
     case 'pan': resolve(new Tools.PanTool()); break;
     case 'zoomin': resolve(new Tools.ZoomTool(1)); break;
     case 'zoomout': resolve(new Tools.ZoomTool(-1)); break;
-    case 'copy': resolve(new Tools.CopyTool(manager.image)); break;
+    case 'copy': resolve(new Tools.CopyTool()); break;
     case 'paste': resolve(new Tools.PasteTool()); break;
     case 'undo': resolve(new Tools.UndoTool(true)); break;
     case 'redo': resolve(new Tools.UndoTool(false)); break;

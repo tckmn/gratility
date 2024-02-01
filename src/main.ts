@@ -18,7 +18,7 @@ const menu = new MenuManager(
     image
 );
 
-Event.initialize(svg, document.body, toolbox, menu);
+Event.initialize(image, svg, document.body, toolbox, menu);
 View.initialize(image);
 Stamp.initialize(image);
 Data.initialize(image);

@@ -25,10 +25,10 @@ export default class Toolbox {
             color: 0,
             thickness: 2
         }));
-        this.bindKey('t', new Tools.TextTool(image, ''));
+        this.bindKey('t', new Tools.TextTool(''));
         this.bindKey('z', new Tools.UndoTool(true));
         this.bindKey('x', new Tools.UndoTool(false));
-        this.bindKey('c', new Tools.CopyTool(image));
+        this.bindKey('c', new Tools.CopyTool());
         this.bindKey('v', new Tools.PasteTool());
         this.bindWheel(true, new Tools.ZoomTool(1));
         this.bindWheel(false, new Tools.ZoomTool(-1));
@@ -53,7 +53,7 @@ export default class Toolbox {
             thickness: 3
         }));
         for (let i = 1; i <= 9; ++i) {
-            this.bindKey(i.toString(), new Tools.TextTool(image, i.toString()));
+            this.bindKey(i.toString(), new Tools.TextTool(i.toString()));
         }
         this.bindKey('q', new Tools.ShapeTool({
             shape: Data.Shape.FLAG,

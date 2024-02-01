@@ -1,4 +1,5 @@
 import Tool from './tools/tool.js';
+import Image from './image.js';
 import Toolbox from './toolbox.js';
 import MenuManager from './menu.js';
 import * as View from './view.js';
@@ -6,7 +7,7 @@ import * as View from './view.js';
 export const onmove: Array<(x: number, y: number) => void> = [];
 export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref: undefined };
 
-export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager) {
+export function initialize(image: Image, svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager) {
 
     const activeTools = new Set<Tool>();
     const rect = svg.getBoundingClientRect();
@@ -23,7 +24,7 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox,
     svg.addEventListener('pointermove', e => {
         if (menu.isOpen()) return;
         upd(e);
-        for (const t of activeTools) t.onmove(lastX, lastY);
+        for (const t of activeTools) t.onmove(lastX, lastY, image);
         for (const f of onmove) f(lastX, lastY);
     });
 
@@ -32,7 +33,7 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox,
         upd(e);
         const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        t.ondown(lastX, lastY);
+        t.ondown(lastX, lastY, image);
         activeTools.add(t);
     });
 
@@ -40,12 +41,12 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox,
         if (menu.isOpen()) return;
         const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        t.onup();
+        t.onup(image);
         activeTools.delete(t);
     });
 
     svg.addEventListener('pointerleave', e => {
-        for (const t of activeTools) t.onup();
+        for (const t of activeTools) t.onup(image);
         activeTools.clear();
     });
 
@@ -61,7 +62,7 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox,
         const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         if (e.repeat && !t.repeat) return;
-        t.ondown(lastX, lastY);
+        t.ondown(lastX, lastY, image);
         activeTools.add(t);
     });
 
@@ -69,7 +70,7 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox,
         if (menu.isOpen()) return;
         const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
-        t.onup();
+        t.onup(image);
         activeTools.delete(t);
     });
 
@@ -77,8 +78,8 @@ export function initialize(svg: SVGElement, page: HTMLElement, toolbox: Toolbox,
         if (menu.isOpen()) return;
         const t = toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
-        t.ondown(lastX, lastY);
-        t.onup();
+        t.ondown(lastX, lastY, image);
+        t.onup(image);
     });
 
 }

@@ -10,13 +10,13 @@ export default class TextTool implements Tool {
     public name(): string { return 'Text'; }
     public icon(image: Image) {}
 
-    constructor(private image: Image, private preset: string) {}
+    constructor(private preset: string) {}
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;
     private isDrawing: boolean = false;
 
-    public ondown(x: number, y: number) {
+    public ondown(x: number, y: number, image: Image) {
         if (this.preset !== '') {
             const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
             const text = Data.halfcells.get(n)?.get(Data.Layer.TEXT);
@@ -32,7 +32,7 @@ export default class TextTool implements Tool {
             const cx = Measure.cell(x)*2, cy = Measure.cell(y)*2;
             this.n = Data.encode(cx+1, cy+1);
             // TODO some of this goes somewhere else
-            this.elt = this.image.draw(this.image.textInd, 'rect', {
+            this.elt = image.draw(image.textInd, 'rect', {
                 x: cx*Measure.HALFCELL, y: cy*Measure.HALFCELL, width: Measure.CELL, height: Measure.CELL,
                 fill: '#ccc',
                 stroke: '#f88',
