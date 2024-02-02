@@ -7,8 +7,11 @@ import * as Stamp from '../stamp.js';
 export default class CopyTool implements Tool {
 
     public readonly repeat = false;
+    public readonly tid = 'copy';
     public name(): string { return 'Copy'; }
     public icon(image: Image) {}
+    public save() { return ''; }
+    public static load(_: string) { return new CopyTool(); }
 
     private sx = 0;
     private sy = 0;

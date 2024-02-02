@@ -32,41 +32,6 @@ export default class Toolbox {
         this.bindKey('v', new Tools.PasteTool());
         this.bindWheel(true, new Tools.ZoomTool(1));
         this.bindWheel(false, new Tools.ZoomTool(-1));
-
-        // temporary
-        this.bindKey('\'', new Tools.LineTool({
-            isEdge: true,
-            head: Data.Head.ARROW,
-            color: 7,
-            thickness: 2
-        }));
-        this.bindKey(',', new Tools.LineTool({
-            isEdge: true,
-            head: Data.Head.ARROW,
-            color: 10,
-            thickness: 1
-        }));
-        this.bindKey('.', new Tools.LineTool({
-            isEdge: false,
-            head: Data.Head.ARROW,
-            color: 13,
-            thickness: 3
-        }));
-        for (let i = 1; i <= 9; ++i) {
-            this.bindKey(i.toString(), new Tools.TextTool(i.toString()));
-        }
-        this.bindKey('q', new Tools.ShapeTool({
-            shape: Data.Shape.FLAG,
-            fill: 13,
-            outline: undefined,
-            size: 5
-        }, 0b100));
-        this.bindKey('w', new Tools.ShapeTool({
-            shape: Data.Shape.FLAG,
-            fill: 3,
-            outline: 6,
-            size: 5
-        }, 0b100));
     }
 
     private toolDisplay(tool: Tool, txt: string, delcb: () => void) {
@@ -121,6 +86,24 @@ export default class Toolbox {
             this.wheelTools.delete(dir);
         });
         return true;
+    }
+
+    public save(): string {
+        // the delimiter is :: to avoid any confusion about keybinds to Space
+        // maybe i should just globally turn ' ' into 'Space' everywhere,
+        // but whatever
+        return [
+            ...Array.from(this.mouseTools.entries()).map(([btn, tool]) => `m${btn}::${tool.tid}:${tool.save()}`),
+            ...Array.from(this.keyTools.entries()).map(([key, tool]) => `k${key}::${tool.tid}:${tool.save()}`),
+            ...Array.from(this.wheelTools.entries()).map(([dir, tool]) => `w${+dir}::${tool.tid}:${tool.save()}`)
+        ].join('\n');
+    }
+
+    public clear() {
+        while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
+        this.mouseTools.clear();
+        this.keyTools.clear();
+        this.wheelTools.clear();
     }
 
 }

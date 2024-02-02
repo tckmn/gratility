@@ -5,8 +5,11 @@ import * as View from '../view.js';
 export default class PanTool implements Tool {
 
     public readonly repeat = false;
+    public readonly tid = 'pan';
     public name(): string { return 'Pan'; }
     public icon(image: Image) {}
+    public save() { return ''; }
+    public static load() { return new PanTool(); }
 
     private mx = 0;
     private my = 0;

@@ -7,8 +7,11 @@ import * as Event from '../event.js';
 export default class TextTool implements Tool {
 
     public readonly repeat = false;
+    public readonly tid = 'text';
     public name(): string { return 'Text'; }
     public icon(image: Image) {}
+    public save() { return this.preset; }
+    public static load(s: string) { return new TextTool(s); }
 
     constructor(private preset: string) {}
 

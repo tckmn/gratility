@@ -6,6 +6,7 @@ import * as Measure from '../measure.js';
 export default class SurfaceTool implements Tool {
 
     public readonly repeat = false;
+    public readonly tid = 'surface';
     public name(): string { return 'Surface'; }
     public icon(image: Image): SVGElement {
         return image.draw(undefined, 'svg', {
@@ -15,6 +16,8 @@ export default class SurfaceTool implements Tool {
             ]
         });
     }
+    public save() { return this.color.toString(); }
+    public static load(s: string) { return new SurfaceTool(parseInt(s, 10)); }
 
     constructor(private color: number) {
         this.element = new Data.Element(Data.Obj.SURFACE, this.color);

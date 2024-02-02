@@ -6,6 +6,7 @@ import * as Measure from '../measure.js';
 export default class LineTool implements Tool {
 
     public readonly repeat = false;
+    public readonly tid = 'line';
     public name(): string { return 'Line'; }
     public icon(image: Image): SVGElement {
         return image.draw(undefined, 'svg', {
@@ -13,6 +14,21 @@ export default class LineTool implements Tool {
             children: [
                 image.objdraw(new Data.Element(Data.Obj.LINE, [this.spec, false]), 0, 1)
             ]
+        });
+    }
+    public save() { return [
+        this.spec.isEdge ? 'E' : 'L',
+        this.spec.color.toString(),
+        this.spec.thickness.toString(),
+        this.spec.head.toString()
+    ].join(' '); }
+    public static load(s: string) {
+        const ss = s.split(' '), ns = ss.map(x => parseInt(x, 10));
+        return new LineTool({
+            isEdge: ss[0] === 'E',
+            color: ns[1],
+            thickness: ns[2],
+            head: ns[3]
         });
     }
 

@@ -167,6 +167,45 @@ menuevents.set('stamp-key', (manager: MenuManager, menu: Menu, e: KeyboardEvent)
     if (e.key === 'Enter') manager.menuevent(menu, 'go');
 });
 
+// ###### TOOLBOX MENU ###### //
+
+menuevents.set('toolbox-open', (manager: MenuManager, menu: Menu) => {
+    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
+    elt.value = manager.toolbox.save();
+    elt.focus();
+    elt.select();
+});
+
+function onesplit(s: string, delim: string): [string, string | undefined] {
+    const parts = s.split(delim);
+    return parts.length === 1 ? [s, undefined] : [parts[0], parts.slice(1).join(delim)];
+}
+menuevents.set('toolbox-go', (manager: MenuManager, menu: Menu) => {
+    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
+    manager.toolbox.clear();
+    for (const line of elt.value.split('\n')) {
+        const [bind, rest] = onesplit(line, '::');
+        if (rest === undefined) continue;
+        const [tid, spec] = onesplit(rest, ':');
+        if (spec === undefined) continue;
+        const toolfn = Tools.tidtotool.get(tid);
+        if (toolfn === undefined) continue;
+        const bindtype = bind[0];
+        const bindval = bind.slice(1);
+        const tool = toolfn(spec);
+        switch (bindtype) {
+        case 'm': manager.toolbox.bindMouse(parseInt(bindval, 10), tool); break;
+        case 'k': manager.toolbox.bindKey(bindval, tool); break;
+        case 'w': manager.toolbox.bindWheel(bindval === '1', tool); break;
+        }
+    }
+    manager.close();
+});
+
+menuevents.set('toolbox-key', (manager: MenuManager, menu: Menu, e: KeyboardEvent) => {
+    if (e.key === 'Enter') manager.menuevent(menu, 'go');
+});
+
 
 class Menu {
     constructor(
