@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Image from '../image.js';
+import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
@@ -8,11 +8,11 @@ export default class SurfaceTool implements Tool {
     public readonly repeat = false;
     public readonly tid = 'surface';
     public name(): string { return 'Surface'; }
-    public icon(image: Image): SVGElement {
-        return image.draw(undefined, 'svg', {
+    public icon(): SVGElement {
+        return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(this.element, 1, 1)
+                Draw.objdraw(this.element, 1, 1)
             ]
         });
     }

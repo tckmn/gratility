@@ -1,5 +1,6 @@
 import Tool from './tool.js';
 import Image from '../image.js';
+import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 import * as Stamp from '../stamp.js';
@@ -9,7 +10,7 @@ export default class CopyTool implements Tool {
     public readonly repeat = false;
     public readonly tid = 'copy';
     public name(): string { return 'Copy'; }
-    public icon(image: Image) {}
+    public icon() {}
     public save() { return ''; }
     public static load(_: string) { return new CopyTool(); }
 
@@ -24,7 +25,7 @@ export default class CopyTool implements Tool {
         this.sy = y;
         this.tx = x;
         this.ty = y;
-        this.elt = image.draw(image.copypaste, 'rect', {
+        this.elt = Draw.draw(image.copypaste, 'rect', {
             x: x,
             y: y,
             width: 0,

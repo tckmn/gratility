@@ -9,7 +9,7 @@ export default class PasteTool implements Tool {
     public readonly repeat = false;
     public readonly tid = 'paste';
     public name(): string { return 'Paste'; }
-    public icon(image: Image) {}
+    public icon() {}
     public save() { return ''; }
     public static load() { return new PasteTool(); }
 

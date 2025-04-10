@@ -44,7 +44,7 @@ export default class Toolbox {
         this.container.appendChild(name);
 
         const icon = document.createElement('div');
-        const maybeIcon = tool.icon(this.image);
+        const maybeIcon = tool.icon();
         if (maybeIcon !== undefined) icon.appendChild(maybeIcon);
         this.container.appendChild(icon);
 

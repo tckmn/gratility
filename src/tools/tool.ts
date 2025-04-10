@@ -4,7 +4,7 @@ export default interface Tool {
     readonly repeat: boolean;
     readonly tid: string;
     name(): string;
-    icon(image: Image): SVGElement | void;
+    icon(): SVGElement | void;
     save(): string;
     // static load(s: string): Tool;
     ondown(x: number, y: number, image: Image): void;

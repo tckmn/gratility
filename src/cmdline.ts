@@ -1,3 +1,4 @@
+import * as Draw from './draw.js';
 import * as Data from './data.js';
 import * as Stamp from './stamp.js';
 import * as Measure from './measure.js';
@@ -80,6 +81,6 @@ svg.setAttribute('version', '1.1');
 svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
 // TODO add an option for this
-image.root.prepend(image.draw(undefined, 'rect', { fill: '#fff', x: vx, y: vy, w: vw, h: vh }));
+image.root.prepend(Draw.draw(undefined, 'rect', { fill: '#fff', x: vx, y: vy, w: vw, h: vh }));
 
 fs.writeFileSync(outname(positionals[0]), svg.outerHTML, { flag: 'wx' });

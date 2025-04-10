@@ -3,13 +3,16 @@ import * as View from './view.js';
 import * as Stamp from './stamp.js';
 import * as Color from './color.js';
 import * as Data from './data.js';
+import * as Draw from './draw.js';
 import MenuManager from './menu.js';
 import Toolbox from './toolbox.js';
 import Image from './image.js';
 
+
 // TODO make this better i guess
+Draw.initialize(document);
 const svg = document.getElementById('grid') as unknown as SVGElement;
-const image = new Image(document, svg);
+const image = new Image(svg);
 const toolbox = new Toolbox(image, document.getElementById('toolbox')!);
 const menu = new MenuManager(
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,

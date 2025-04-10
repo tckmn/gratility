@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Image from '../image.js';
+import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
@@ -8,11 +8,11 @@ export default class LineTool implements Tool {
     public readonly repeat = false;
     public readonly tid = 'line';
     public name(): string { return 'Line'; }
-    public icon(image: Image): SVGElement {
-        return image.draw(undefined, 'svg', {
+    public icon(): SVGElement {
+        return Draw.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(new Data.Element(Data.Obj.LINE, [this.spec, false]), 0, 1)
+                Draw.objdraw(new Data.Element(Data.Obj.LINE, [this.spec, false]), 0, 1)
             ]
         });
     }

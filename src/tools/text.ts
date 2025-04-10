@@ -1,5 +1,6 @@
 import Tool from './tool.js';
 import Image from '../image.js';
+import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 import * as Event from '../event.js';
@@ -9,7 +10,7 @@ export default class TextTool implements Tool {
     public readonly repeat = false;
     public readonly tid = 'text';
     public name(): string { return 'Text'; }
-    public icon(image: Image) {}
+    public icon() {}
     public save() { return this.preset; }
     public static load(s: string) { return new TextTool(s); }
 
@@ -35,7 +36,7 @@ export default class TextTool implements Tool {
             const cx = Measure.cell(x)*2, cy = Measure.cell(y)*2;
             this.n = Data.encode(cx+1, cy+1);
             // TODO some of this goes somewhere else
-            this.elt = image.draw(image.textInd, 'rect', {
+            this.elt = Draw.draw(image.textInd, 'rect', {
                 x: cx*Measure.HALFCELL, y: cy*Measure.HALFCELL, width: Measure.CELL, height: Measure.CELL,
                 fill: '#ccc',
                 stroke: '#f88',

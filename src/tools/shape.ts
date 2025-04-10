@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Image from '../image.js';
+import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
@@ -30,11 +30,11 @@ export default class ShapeTool implements Tool {
     public readonly repeat = false;
     public readonly tid = 'shape';
     public name(): string { return 'Shape'; }
-    public icon(image: Image) {
-        return image.draw(undefined, 'svg', {
+    public icon() {
+        return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                image.objdraw(new Data.Element(Data.Obj.SHAPE, [this.spec]), 1, 1)
+                Draw.objdraw(new Data.Element(Data.Obj.SHAPE, [this.spec]), 1, 1)
             ]
         });
     }

@@ -1,3 +1,4 @@
+import * as Draw from './draw.js';
 import * as Data from './data.js';
 import * as Event from './event.js';
 import * as Measure from './measure.js';
@@ -60,7 +61,7 @@ export function add(cells: Array<Data.Item>) {
 
     img.stamps.replaceChildren(...cells.map(cell => {
         const [x, y] = Data.decode(cell.n);
-        return img.objdraw(cell.elt, x - stamp.xoff, y - stamp.yoff);
+        return Draw.objdraw(cell.elt, x - stamp.xoff, y - stamp.yoff);
     }));
 }
 

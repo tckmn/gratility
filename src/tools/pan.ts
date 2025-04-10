@@ -7,7 +7,7 @@ export default class PanTool implements Tool {
     public readonly repeat = false;
     public readonly tid = 'pan';
     public name(): string { return 'Pan'; }
-    public icon(image: Image) {}
+    public icon() {}
     public save() { return ''; }
     public static load() { return new PanTool(); }
 
