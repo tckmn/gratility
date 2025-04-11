@@ -1,4 +1,5 @@
 import Tool from './tool.js';
+import Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -26,33 +27,33 @@ export default class SurfaceTool implements Tool {
     private isDrawing = false;
     private element : Data.Element;
 
-    public ondown(x: number, y: number) {
+    public ondown(x: number, y: number, g: Gratility) {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);
-        const surface = Data.halfcells.get(n)?.get(Data.Layer.SURFACE);
+        const surface = g.data.halfcells.get(n)?.get(Data.Layer.SURFACE);
         if (surface === undefined) {
-            Data.add(new Data.Change(n, Data.Layer.SURFACE, surface,
+            g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface,
                                      new Data.Element(Data.Obj.SURFACE, this.color)));
             this.isDrawing = true;
         } else {
-            Data.add(new Data.Change(n, Data.Layer.SURFACE, surface, undefined));
+            g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, undefined));
             this.isDrawing = false;
         }
     }
 
-    public onmove(x: number, y: number) {
+    public onmove(x: number, y: number, g: Gratility) {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);
-        const surface = Data.halfcells.get(n)?.get(Data.Layer.SURFACE);
+        const surface = g.data.halfcells.get(n)?.get(Data.Layer.SURFACE);
         if (surface === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.element));
+                g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.element));
             }
         } else {
             if (!this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Layer.SURFACE, surface, undefined));
+                g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, undefined));
             }
         }
     }

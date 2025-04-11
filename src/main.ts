@@ -15,8 +15,9 @@ Draw.initialize(document);
 const svg = document.getElementById('grid') as unknown as SVGElement;
 
 const image = new Image(svg);
+const data = new Data.DataManager(image);
 const view = new ViewManager(image);
-const gratility = new Gratility(image, view);
+const gratility = new Gratility(image, data, view);
 
 const toolbox = new Toolbox(document.getElementById('toolbox')!);
 const menu = new MenuManager(
@@ -28,7 +29,6 @@ const menu = new MenuManager(
 
 Event.initialize(gratility, svg, document.body, toolbox, menu, view);
 Stamp.initialize(image);
-Data.initialize(image);
 
 // TODO better
 image.grid(-500, 500, -500, 500);

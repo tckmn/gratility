@@ -73,7 +73,7 @@ export default class CopyTool implements Tool {
         for (let x = sx; x <= tx; ++x) {
             for (let y = sy; y <= ty; ++y) {
                 const n = Data.encode(x, y);
-                const hc = Data.halfcells.get(n);
+                const hc = g.data.halfcells.get(n);
                 if (hc !== undefined) {
                     stamp.push(...Array.from(hc.entries()).map(([k,v]) => {
                         return new Data.Item(n, k, v);

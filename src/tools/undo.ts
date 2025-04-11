@@ -1,4 +1,5 @@
 import Tool from './tool.js';
+import Gratility from '../gratility.js';
 import * as Data from '../data.js';
 
 export default class UndoTool implements Tool {
@@ -12,7 +13,7 @@ export default class UndoTool implements Tool {
 
     public constructor(private isUndo: boolean) {}
 
-    public ondown() { Data.undo(this.isUndo); }
+    public ondown(x: number, y: number, g: Gratility) { g.data.undo(this.isUndo); }
     public onmove() {}
     public onup() {}
 

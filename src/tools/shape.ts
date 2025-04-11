@@ -1,4 +1,5 @@
 import Tool from './tool.js';
+import Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -62,47 +63,47 @@ export default class ShapeTool implements Tool {
 
     private isDrawing = false;
 
-    public ondown(x: number, y: number) {
+    public ondown(x: number, y: number, g: Gratility) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = Data.halfcells.get(n)?.get(Data.Layer.SHAPE);
+        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE);
         const shapelst = shape?.data as Data.ShapeSpec[] | undefined;
         if (shapelst === undefined) {
-            Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                     new Data.Element(Data.Obj.SHAPE, [this.spec])));
+            g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                       new Data.Element(Data.Obj.SHAPE, [this.spec])));
             this.isDrawing = true;
         } else if (!shapelst.some(sh => Data.sheq(sh, this.spec))) {
-            Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                     new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
+            g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                       new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
             this.isDrawing = true;
         } else {
             const remaining = shapelst.filter(sh => !Data.sheq(sh, this.spec));
-            Data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined
-                                     : new Data.Element(Data.Obj.SHAPE, remaining)));
+            g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined
+                                       : new Data.Element(Data.Obj.SHAPE, remaining)));
             this.isDrawing = false;
         }
     }
 
-    public onmove(x: number, y: number) {
+    public onmove(x: number, y: number, g: Gratility) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = Data.halfcells.get(n)?.get(Data.Layer.SHAPE);
+        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE);
         const shapelst = shape?.data as Data.ShapeSpec[] | undefined;
         if (shapelst === undefined) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                         new Data.Element(Data.Obj.SHAPE, [this.spec])));
+                g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                           new Data.Element(Data.Obj.SHAPE, [this.spec])));
             }
         } else if (!shapelst.some(sh => Data.sheq(sh, this.spec))) {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                         new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
+                g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
+                                           new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
             }
         } else {
             if (!this.isDrawing) {
                 const remaining = shapelst.filter(sh => !Data.sheq(sh, this.spec));
-                Data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined :
-                                         new Data.Element(Data.Obj.SHAPE, remaining)));
+                g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined :
+                                           new Data.Element(Data.Obj.SHAPE, remaining)));
             }
         }
     }

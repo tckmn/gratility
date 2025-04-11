@@ -23,13 +23,13 @@ export default class TextTool implements Tool {
     public ondown(x: number, y: number, g: Gratility) {
         if (this.preset !== '') {
             const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-            const text = Data.halfcells.get(n)?.get(Data.Layer.TEXT);
+            const text = g.data.halfcells.get(n)?.get(Data.Layer.TEXT);
             if (text && text.data === this.preset) {
-                Data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
                 this.isDrawing = false;
             } else {
-                Data.add(new Data.Change(n, Data.Layer.TEXT, text,
-                                         new Data.Element(Data.Obj.TEXT, this.preset)));
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, text,
+                                           new Data.Element(Data.Obj.TEXT, this.preset)));
                 this.isDrawing = true;
             }
         } else if (Event.keyeater.ref === undefined) {
@@ -42,21 +42,23 @@ export default class TextTool implements Tool {
                 stroke: '#f88',
                 strokeWidth: Measure.HALFCELL/5
             });
-            Event.keyeater.ref = this.onkey.bind(this);
+            Event.keyeater.ref = this.onkey(g).bind(this);
         }
     }
 
-    private onkey(e: KeyboardEvent) {
-        const text = Data.halfcells.get(this.n)?.get(Data.Layer.TEXT);
-        if (e.key === 'Enter' || e.key === 'Escape') {
-            this.deselect();
-        } else if (e.key === 'Backspace') {
-            Data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
-                                     new Data.Element(Data.Obj.TEXT, (text?.data ?? '').slice(0, (text?.data ?? '').length-1))));
-        } else if (e.key.length === 1) {
-            Data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
-                                     new Data.Element(Data.Obj.TEXT, (text?.data ?? '') + e.key)));
-        }
+    private onkey(g: Gratility) {
+        return (e: KeyboardEvent) => {
+            const text = g.data.halfcells.get(this.n)?.get(Data.Layer.TEXT);
+            if (e.key === 'Enter' || e.key === 'Escape') {
+                this.deselect();
+            } else if (e.key === 'Backspace') {
+                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
+                                           new Data.Element(Data.Obj.TEXT, (text?.data ?? '').slice(0, (text?.data ?? '').length-1))));
+            } else if (e.key.length === 1) {
+                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
+                                           new Data.Element(Data.Obj.TEXT, (text?.data ?? '') + e.key)));
+            }
+        };
     }
 
     private deselect() {
@@ -64,18 +66,18 @@ export default class TextTool implements Tool {
         if (this.elt !== undefined) this.elt.parentNode!.removeChild(this.elt);
     }
 
-    public onmove(x: number, y: number) {
+    public onmove(x: number, y: number, g: Gratility) {
         if (this.preset === '') return;
         const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-        const text = Data.halfcells.get(n)?.get(Data.Layer.TEXT);
+        const text = g.data.halfcells.get(n)?.get(Data.Layer.TEXT);
         if (text && text.data === this.preset) {
             if (!this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
             }
         } else {
             if (this.isDrawing) {
-                Data.add(new Data.Change(n, Data.Layer.TEXT, text,
-                                         new Data.Element(Data.Obj.TEXT, this.preset)));
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, text,
+                                           new Data.Element(Data.Obj.TEXT, this.preset)));
             }
         }
     }

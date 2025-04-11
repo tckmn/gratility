@@ -1,4 +1,5 @@
 import Tool from './tool.js';
+import Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -48,7 +49,7 @@ export default class LineTool implements Tool {
         this.y = Measure.hc(y, this.HC_WEIGHT);
     }
 
-    public onmove(x: number, y: number) {
+    public onmove(x: number, y: number, g: Gratility) {
         x = Measure.hc(x, this.HC_WEIGHT);
         y = Measure.hc(y, this.HC_WEIGHT);
         if (x === this.x && y === this.y) return;
@@ -87,7 +88,7 @@ export default class LineTool implements Tool {
 
         const n = Data.encode(cx, cy)
 
-        const oldline = Data.halfcells.get(n)?.get(this.LAYER);
+        const oldline = g.data.halfcells.get(n)?.get(this.LAYER);
         const newline = new Data.Element(Data.Obj.LINE,
                                          [this.spec, dir === -1] as [Data.LineSpec, boolean])
 
@@ -97,11 +98,11 @@ export default class LineTool implements Tool {
 
         if (this.isDrawing) {
             if (oldline === undefined || !Data.lineeq(oldline.data, newline.data)) {
-                Data.add(new Data.Change(n, this.LAYER, oldline, newline));
+                g.data.add(new Data.Change(n, this.LAYER, oldline, newline));
             }
         } else {
             if (oldline !== undefined) {
-                Data.add(new Data.Change(n, this.LAYER, oldline, undefined));
+                g.data.add(new Data.Change(n, this.LAYER, oldline, undefined));
             }
         }
     }

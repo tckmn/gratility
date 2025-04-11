@@ -219,59 +219,61 @@ export function deserialize(arr: Uint8Array): Array<Item> {
     return stamp;
 }
 
-export const halfcells = new Map<number, Map<Layer, Element>>();
-const drawn = new Map<number, Map<Layer, SVGElement>>();
+export class DataManager {
 
-const history = new Array<Change>();
-let histpos = 0;
+    public readonly halfcells = new Map<number, Map<Layer, Element>>();
+    private readonly drawn = new Map<number, Map<Layer, SVGElement>>();
 
-export function add(change: Change) {
-    if (histpos < history.length) history.splice(histpos, history.length);
-    history.push(change);
-    undo(false);
-}
+    private readonly history = new Array<Change>();
+    private histpos = 0;
 
-export function undo(isUndo: boolean) {
-    do {
-        if (isUndo ? (histpos <= 0) : (histpos >= history.length)) return;
+    public constructor(private image: Image) {}
 
-        const change = history[isUndo ? --histpos : histpos++];
-        const pre = isUndo ? change.post : change.pre;
-        const post = isUndo ? change.pre : change.post;
+    public add(change: Change) {
+        if (this.histpos < this.history.length) this.history.splice(this.histpos, this.history.length);
+        this.history.push(change);
+        this.undo(false);
+    }
 
-        if (pre !== undefined) {
+    public undo(isUndo: boolean) {
+        do {
+            if (isUndo ? (this.histpos <= 0) : (this.histpos >= this.history.length)) return;
 
-            // TODO undefined cases here should never happen
-            // delete the drawing
-            const elt = drawn.get(change.n)?.get(change.layer);
-            if (elt !== undefined) img.obj(change.layer).removeChild(elt);
+            const change = this.history[isUndo ? --this.histpos : this.histpos++];
+            const pre = isUndo ? change.post : change.pre;
+            const post = isUndo ? change.pre : change.post;
 
-            // delete item
-            const hc = halfcells.get(change.n);
-            hc?.delete(change.layer);
-            if (hc?.size === 0) halfcells.delete(change.n);
+            if (pre !== undefined) {
 
-        }
+                // TODO undefined cases here should never happen
+                // delete the drawing
+                const elt = this.drawn.get(change.n)?.get(change.layer);
+                if (elt !== undefined) img.obj(change.layer).removeChild(elt);
 
-        if (post !== undefined) {
+                // delete item
+                const hc = this.halfcells.get(change.n);
+                hc?.delete(change.layer);
+                if (hc?.size === 0) this.halfcells.delete(change.n);
 
-            // create item
-            if (!halfcells.has(change.n)) halfcells.set(change.n, new Map());
-            halfcells.get(change.n)!.set(change.layer, post);
+            }
 
-            // draw it
-            const [x, y] = decode(change.n);
-            const elt = Draw.objdraw(post, x, y);
-            img.obj(change.layer).appendChild(elt);
+            if (post !== undefined) {
 
-            // save the element
-            if (!drawn.has(change.n)) drawn.set(change.n, new Map());
-            drawn.get(change.n)?.set(change.layer, elt);
+                // create item
+                if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Map());
+                this.halfcells.get(change.n)!.set(change.layer, post);
 
-        }
-    } while (history[histpos-1]?.linked);
-}
+                // draw it
+                const [x, y] = decode(change.n);
+                const elt = Draw.objdraw(post, x, y);
+                img.obj(change.layer).appendChild(elt);
 
-export function initialize(image: Image) {
-    img = image;
+                // save the element
+                if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());
+                this.drawn.get(change.n)?.set(change.layer, elt);
+
+            }
+        } while (this.history[this.histpos-1]?.linked);
+    }
+
 }
