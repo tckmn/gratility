@@ -162,8 +162,9 @@ const deserializefns = {
     },
 
     [Obj.SHAPE]: (bs: BitStream): any => {
-        // TODO don't allow maliciously constructed encodings lol
-        const len = bs.readVLQ(VLQ_CHUNK);
+        // check to make sure this isn't unreasonably large
+        // (maybe should do something if it is?)
+        const len = Math.min(bs.readVLQ(VLQ_CHUNK), 16);
         const arr = [];
         for (let i = 0; i < len; ++i) {
             const shape = bs.read(SHAPE_BITS) as Shape;
