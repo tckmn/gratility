@@ -16,19 +16,19 @@ const svg = document.getElementById('grid') as unknown as SVGElement;
 
 const image = new Image(svg);
 const data = new Data.DataManager(image);
+const stamp = new Stamp.StampManager(image);
 const view = new ViewManager(image);
-const gratility = new Gratility(image, data, view);
+const gratility = new Gratility(image, data, stamp, view);
 
 const toolbox = new Toolbox(document.getElementById('toolbox')!);
 const menu = new MenuManager(
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
-    toolbox,
-    image
+    gratility,
+    toolbox
 );
 
 Event.initialize(gratility, svg, document.body, toolbox, menu, view);
-Stamp.initialize(image);
 
 // TODO better
 image.grid(-500, 500, -500, 500);

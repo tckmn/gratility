@@ -1,4 +1,4 @@
-import Image from './image.js';
+import Gratility from './gratility.js';
 import * as Stamp from './stamp.js';
 import * as Data from './data.js';
 import Tool from './tools/tool.js';
@@ -6,14 +6,14 @@ import Toolbox from './toolbox.js';
 import * as Tools from './tools/alltools.js';
 
 
-const menuactions: Map<string, () => void> = new Map([
+const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
 
     ['dark', () => {
         document.body.classList.toggle('dark');
     }],
 
-    ['dlstamp', () => {
-        const stamp = Stamp.current();
+    ['dlstamp', (manager: MenuManager) => {
+        const stamp = manager.g.stamp.current();
         if (stamp === undefined) return;
         const blob = new Blob([Data.serialize(stamp.cells)], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
@@ -150,7 +150,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
 menuevents.set('stamp-open', (manager: MenuManager, menu: Menu) => {
     // TODO this whole function is awful
     const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    const stamp = Stamp.current();
+    const stamp = manager.g.stamp.current();
     elt.value = stamp === undefined ? '' :
         btoa(String.fromCharCode.apply(null, Data.serialize(stamp.cells) as unknown as number[]));
     elt.focus();
@@ -159,7 +159,7 @@ menuevents.set('stamp-open', (manager: MenuManager, menu: Menu) => {
 
 menuevents.set('stamp-go', (manager: MenuManager, menu: Menu) => {
     const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    Stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
+    manager.g.stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
     manager.close();
 });
 
@@ -255,7 +255,7 @@ export default class MenuManager {
 
     private readonly menus: Map<string, Menu> = new Map();
 
-    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public toolbox: Toolbox, public image: Image) {
+    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
                 const menu = this.menus.get(btn.dataset.menu as string);
@@ -263,7 +263,7 @@ export default class MenuManager {
                     this.open(menu);
                 } else {
                     const fn = menuactions.get(btn.dataset.menu as string);
-                    if (fn !== undefined) fn();
+                    if (fn !== undefined) fn(this);
                 }
             });
         }

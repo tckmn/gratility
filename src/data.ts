@@ -4,9 +4,6 @@ import BitStream from './bitstream.js';
 import Image from './image.js';
 import * as Draw from './draw.js';
 
-// TODO this is absolutely an extremely temporary bandaid lol
-let img: Image;
-
 export function encode(x: number, y: number): number {
     return (x << 16) | (y & 0xffff);
 }
@@ -248,7 +245,7 @@ export class DataManager {
                 // TODO undefined cases here should never happen
                 // delete the drawing
                 const elt = this.drawn.get(change.n)?.get(change.layer);
-                if (elt !== undefined) img.obj(change.layer).removeChild(elt);
+                if (elt !== undefined) this.image.obj(change.layer).removeChild(elt);
 
                 // delete item
                 const hc = this.halfcells.get(change.n);
@@ -266,7 +263,7 @@ export class DataManager {
                 // draw it
                 const [x, y] = decode(change.n);
                 const elt = Draw.objdraw(post, x, y);
-                img.obj(change.layer).appendChild(elt);
+                this.image.obj(change.layer).appendChild(elt);
 
                 // save the element
                 if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());

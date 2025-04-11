@@ -3,7 +3,6 @@ import Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
-import * as Stamp from '../stamp.js';
 
 export default class CopyTool implements Tool {
 
@@ -61,7 +60,7 @@ export default class CopyTool implements Tool {
         const ty = Measure.hc(Math.max(this.sy, this.ty));
 
         if (sx === tx && sy === ty) {
-            Stamp.deselect();
+            g.stamp.deselect();
             return;
         }
 
@@ -82,7 +81,7 @@ export default class CopyTool implements Tool {
             }
         }
 
-        Stamp.add(stamp);
+        g.stamp.add(stamp);
     }
 
 }
