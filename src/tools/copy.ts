@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Image from '../image.js';
+import Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -20,12 +20,12 @@ export default class CopyTool implements Tool {
     private ty = 0;
     private elt: SVGElement | undefined;
 
-    public ondown(x: number, y: number, image: Image) {
+    public ondown(x: number, y: number, g: Gratility) {
         this.sx = x;
         this.sy = y;
         this.tx = x;
         this.ty = y;
-        this.elt = Draw.draw(image.copypaste, 'rect', {
+        this.elt = Draw.draw(g.image.copypaste, 'rect', {
             x: x,
             y: y,
             width: 0,
@@ -52,8 +52,8 @@ export default class CopyTool implements Tool {
         }
     }
 
-    public onup(image: Image) {
-        if (this.elt !== undefined) image.copypaste.removeChild(this.elt);
+    public onup(g: Gratility) {
+        if (this.elt !== undefined) g.image.copypaste.removeChild(this.elt);
 
         const sx = Measure.hc(Math.min(this.sx, this.tx));
         const sy = Measure.hc(Math.min(this.sy, this.ty));

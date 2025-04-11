@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Image from '../image.js';
+import Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -20,7 +20,7 @@ export default class TextTool implements Tool {
     private elt: SVGElement | undefined = undefined;
     private isDrawing: boolean = false;
 
-    public ondown(x: number, y: number, image: Image) {
+    public ondown(x: number, y: number, g: Gratility) {
         if (this.preset !== '') {
             const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
             const text = Data.halfcells.get(n)?.get(Data.Layer.TEXT);
@@ -36,7 +36,7 @@ export default class TextTool implements Tool {
             const cx = Measure.cell(x)*2, cy = Measure.cell(y)*2;
             this.n = Data.encode(cx+1, cy+1);
             // TODO some of this goes somewhere else
-            this.elt = Draw.draw(image.textInd, 'rect', {
+            this.elt = Draw.draw(g.image.textInd, 'rect', {
                 x: cx*Measure.HALFCELL, y: cy*Measure.HALFCELL, width: Measure.CELL, height: Measure.CELL,
                 fill: '#ccc',
                 stroke: '#f88',

@@ -1,4 +1,4 @@
-import Image from '../image.js';
+import Gratility from '../gratility.js';
 
 export default interface Tool {
     readonly repeat: boolean;
@@ -7,7 +7,7 @@ export default interface Tool {
     icon(): SVGElement | void;
     save(): string;
     // static load(s: string): Tool;
-    ondown(x: number, y: number, image: Image): void;
-    onmove(x: number, y: number, image: Image): void;
-    onup(image: Image): void;
+    ondown(x: number, y: number, g: Gratility): void;
+    onmove(x: number, y: number, g: Gratility): void;
+    onup(g: Gratility): void;
 }

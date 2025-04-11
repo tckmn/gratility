@@ -1,19 +1,24 @@
 import * as Event from './event.js';
-import * as View from './view.js';
 import * as Stamp from './stamp.js';
 import * as Color from './color.js';
 import * as Data from './data.js';
 import * as Draw from './draw.js';
 import MenuManager from './menu.js';
+import ViewManager from './view.js';
 import Toolbox from './toolbox.js';
 import Image from './image.js';
+import Gratility from './gratility.js';
 
 
 // TODO make this better i guess
 Draw.initialize(document);
 const svg = document.getElementById('grid') as unknown as SVGElement;
+
 const image = new Image(svg);
-const toolbox = new Toolbox(image, document.getElementById('toolbox')!);
+const view = new ViewManager(image);
+const gratility = new Gratility(image, view);
+
+const toolbox = new Toolbox(document.getElementById('toolbox')!);
 const menu = new MenuManager(
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
@@ -21,8 +26,7 @@ const menu = new MenuManager(
     image
 );
 
-Event.initialize(image, svg, document.body, toolbox, menu);
-View.initialize(image);
+Event.initialize(gratility, svg, document.body, toolbox, menu, view);
 Stamp.initialize(image);
 Data.initialize(image);
 

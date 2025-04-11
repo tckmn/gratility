@@ -1,5 +1,4 @@
 import Tool from './tool.js';
-import Image from '../image.js';
 import * as Data from '../data.js';
 import * as Stamp from '../stamp.js';
 import * as Measure from '../measure.js';

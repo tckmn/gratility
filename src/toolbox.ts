@@ -1,5 +1,4 @@
 import Tool from './tools/tool.js';
-import Image from './image.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
 
@@ -9,7 +8,7 @@ export default class Toolbox {
     public readonly keyTools = new Map<string, Tool>();
     public readonly wheelTools = new Map<boolean, Tool>();
 
-    constructor(private image: Image, private container: HTMLElement) {
+    constructor(private container: HTMLElement) {
         this.bindMouse(1, new Tools.PanTool());
         this.bindKey(' ', new Tools.PanTool());
         this.bindKey('s', new Tools.SurfaceTool(0));

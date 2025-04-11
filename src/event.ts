@@ -1,13 +1,13 @@
 import Tool from './tools/tool.js';
-import Image from './image.js';
 import Toolbox from './toolbox.js';
 import MenuManager from './menu.js';
-import * as View from './view.js';
+import ViewManager from './view.js';
+import Gratility from './gratility.js';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
 export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref: undefined };
 
-export function initialize(image: Image, svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager) {
+export function initialize(g: Gratility, svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager, view: ViewManager) {
 
     const activeTools = new Set<Tool>();
     const rect = svg.getBoundingClientRect();
@@ -15,8 +15,8 @@ export function initialize(image: Image, svg: SVGElement, page: HTMLElement, too
     let lastX = 0;
     let lastY = 0;
     let upd = (e: PointerEvent) => {
-        lastX = (e.clientX - rect.left) / View.zoom() - View.x;
-        lastY = (e.clientY - rect.top) / View.zoom() - View.y;
+        lastX = (e.clientX - rect.left) / view.zoom() - view.x;
+        lastY = (e.clientY - rect.top) / view.zoom() - view.y;
     };
 
     svg.addEventListener('contextmenu', e => e.preventDefault());
@@ -24,7 +24,7 @@ export function initialize(image: Image, svg: SVGElement, page: HTMLElement, too
     svg.addEventListener('pointermove', e => {
         if (menu.isOpen()) return;
         upd(e);
-        for (const t of activeTools) t.onmove(lastX, lastY, image);
+        for (const t of activeTools) t.onmove(lastX, lastY, g);
         for (const f of onmove) f(lastX, lastY);
     });
 
@@ -33,7 +33,7 @@ export function initialize(image: Image, svg: SVGElement, page: HTMLElement, too
         upd(e);
         const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        t.ondown(lastX, lastY, image);
+        t.ondown(lastX, lastY, g);
         activeTools.add(t);
     });
 
@@ -41,12 +41,12 @@ export function initialize(image: Image, svg: SVGElement, page: HTMLElement, too
         if (menu.isOpen()) return;
         const t = toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        t.onup(image);
+        t.onup(g);
         activeTools.delete(t);
     });
 
     svg.addEventListener('pointerleave', e => {
-        for (const t of activeTools) t.onup(image);
+        for (const t of activeTools) t.onup(g);
         activeTools.clear();
     });
 
@@ -62,7 +62,7 @@ export function initialize(image: Image, svg: SVGElement, page: HTMLElement, too
         const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         if (e.repeat && !t.repeat) return;
-        t.ondown(lastX, lastY, image);
+        t.ondown(lastX, lastY, g);
         activeTools.add(t);
     });
 
@@ -70,7 +70,7 @@ export function initialize(image: Image, svg: SVGElement, page: HTMLElement, too
         if (menu.isOpen()) return;
         const t = toolbox.keyTools.get(e.key);
         if (t === undefined) return;
-        t.onup(image);
+        t.onup(g);
         activeTools.delete(t);
     });
 
@@ -78,8 +78,8 @@ export function initialize(image: Image, svg: SVGElement, page: HTMLElement, too
         if (menu.isOpen()) return;
         const t = toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
-        t.ondown(lastX, lastY, image);
-        t.onup(image);
+        t.ondown(lastX, lastY, g);
+        t.onup(g);
     });
 
 }

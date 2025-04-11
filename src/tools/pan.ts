@@ -1,6 +1,5 @@
 import Tool from './tool.js';
-import Image from '../image.js';
-import * as View from '../view.js';
+import Gratility from '../gratility.js';
 
 export default class PanTool implements Tool {
 
@@ -19,10 +18,10 @@ export default class PanTool implements Tool {
         this.my = y;
     }
 
-    public onmove(x: number, y: number) {
-        View.setX(View.x - this.mx + x);
-        View.setY(View.y - this.my + y);
-        View.update();
+    public onmove(x: number, y: number, g: Gratility) {
+        g.view.x += x - this.mx;
+        g.view.y += y - this.my;
+        g.view.update();
     }
 
     public onup() {}
