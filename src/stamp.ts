@@ -29,6 +29,24 @@ class Stamp {
     }
 }
 
+export function render(cells: Array<Data.Item>): Stamp {
+    const [xtmp, ytmp] = Data.decode(cells[0].n);
+    let xmin = xtmp, xmax = xtmp, ymin = ytmp, ymax = ytmp;
+    for (const cell of cells) {
+        const [x, y] = Data.decode(cell.n);
+        if (x < xmin) xmin = x;
+        if (x > xmax) xmax = x;
+        if (y < ymin) ymin = y;
+        if (y > ymax) ymax = y;
+    }
+
+    const xoff = Measure.round((xmin + xmax) / 2, 2);
+    const yoff = Measure.round((ymin + ymax) / 2, 2);
+
+    const stamp = new Stamp(cells, xoff, yoff, xmin-xoff, xmax-xoff, ymin-yoff, ymax-yoff);
+    return stamp;
+}
+
 export class StampManager {
 
     public readonly stamps = new Array<Stamp>();
@@ -42,29 +60,10 @@ export class StampManager {
         });
     }
 
-    // TODO does not need to be method
-    public render(cells: Array<Data.Item>): Stamp {
-        const [xtmp, ytmp] = Data.decode(cells[0].n);
-        let xmin = xtmp, xmax = xtmp, ymin = ytmp, ymax = ytmp;
-        for (const cell of cells) {
-            const [x, y] = Data.decode(cell.n);
-            if (x < xmin) xmin = x;
-            if (x > xmax) xmax = x;
-            if (y < ymin) ymin = y;
-            if (y > ymax) ymax = y;
-        }
-
-        const xoff = Measure.round((xmin + xmax) / 2, 2);
-        const yoff = Measure.round((ymin + ymax) / 2, 2);
-
-        const stamp = new Stamp(cells, xoff, yoff, xmin-xoff, xmax-xoff, ymin-yoff, ymax-yoff);
-        return stamp;
-    }
-
     public add(cells: Array<Data.Item>) {
         if (cells.length === 0) return;
 
-        const stamp = this.render(cells);
+        const stamp = render(cells);
         this.stamps.push(stamp);
         this.stamppos = this.stamps.length-1;
 
