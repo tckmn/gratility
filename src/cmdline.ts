@@ -47,14 +47,6 @@ function outname(s: string) {
 }
 
 
-const imgpad = 1;
-const gridpad = 0;
-
-const dom = new JSDOM('<svg id="grid"></svg>');
-const svg = dom.window.document.getElementById('grid') as unknown as SVGElement;
-const image = new Image(dom.window.document, svg);
-Data.initialize(image);
-
 const stamp = interpret(positionals[0]);
 if (values.script) {
     // TODO check if outname exists before running script
@@ -63,24 +55,10 @@ if (values.script) {
     fs.writeFileSync(outname(positionals[0]), Data.serialize(stamp.cells), { flag: 'wx' });
     process.exit();
 }
-stamp.apply(0, 0);
 
-const xmin = Math.floor(stamp.xmin/2)*2;
-const ymin = Math.floor(stamp.ymin/2)*2;
-const xmax = Math.ceil(stamp.xmax/2)*2;
-const ymax = Math.ceil(stamp.ymax/2)*2;
-image.grid(xmin-gridpad, xmax+gridpad, ymin-gridpad, ymax+gridpad);
-const vx = Measure.HALFCELL*(xmin-imgpad);
-const vy = Measure.HALFCELL*(ymin-imgpad);
-const vw = Measure.HALFCELL*(xmax-xmin+2*imgpad);
-const vh = Measure.HALFCELL*(ymax-ymin+2*imgpad);
-
-image.text.setAttribute('transform', 'translate(0 2.5)');
-svg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
-svg.setAttribute('version', '1.1');
-svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-
-// TODO add an option for this
-image.root.prepend(Draw.draw(undefined, 'rect', { fill: '#fff', x: vx, y: vy, w: vw, h: vh }));
+const dom = new JSDOM('<svg id="grid"></svg>');
+Draw.initialize(dom.window.document);
+const svg = dom.window.document.getElementById('grid') as unknown as SVGElement;
+stamp.toSVG(svg); // TODO flags for optional args
 
 fs.writeFileSync(outname(positionals[0]), svg.outerHTML, { flag: 'wx' });

@@ -1,10 +1,24 @@
 import Gratility from './gratility.js';
 import * as Stamp from './stamp.js';
 import * as Data from './data.js';
+import * as Draw from './draw.js';
 import Tool from './tools/tool.js';
 import Toolbox from './toolbox.js';
 import * as Tools from './tools/alltools.js';
 
+
+function download(fname: string, data: Uint8Array | string, contenttype: string) {
+    const blob = new Blob([data], { type: contenttype });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', fname);
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
 
 const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
 
@@ -15,16 +29,15 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     ['dlstamp', (manager: MenuManager) => {
         const stamp = manager.g.stamp.current();
         if (stamp === undefined) return;
-        const blob = new Blob([Data.serialize(stamp.cells)], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('href', url);
-        a.setAttribute('download', 'gratility.stamp');
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        download('gratility.stamp', Data.serialize(stamp.cells), 'application/octet-stream');
+    }],
+
+    ['dlsvg', (manager: MenuManager) => {
+        const stamp = manager.g.stamp.current();
+        if (stamp === undefined) return;
+        const svg = Draw.draw(undefined, 'svg');
+        stamp.toSVG(svg);
+        download('gratility.svg', svg.outerHTML, 'image/svg+xml;charset=utf-8');
     }]
 
 ]);

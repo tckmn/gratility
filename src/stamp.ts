@@ -27,6 +27,31 @@ class Stamp {
             }
         }
     }
+
+    public toSVG(svg: SVGElement, bgcolor: string | undefined = '#fff', imgpad: number = 1, gridpad: number = 0) {
+        const image = new Image(svg);
+        const data = new Data.DataManager(image);
+        this.apply(data, 0, 0);
+
+        const xmin = Math.floor(this.xmin/2)*2;
+        const ymin = Math.floor(this.ymin/2)*2;
+        const xmax = Math.ceil(this.xmax/2)*2;
+        const ymax = Math.ceil(this.ymax/2)*2;
+        image.grid(xmin-gridpad, xmax+gridpad, ymin-gridpad, ymax+gridpad);
+        const vx = Measure.HALFCELL*(xmin-imgpad);
+        const vy = Measure.HALFCELL*(ymin-imgpad);
+        const vw = Measure.HALFCELL*(xmax-xmin+2*imgpad);
+        const vh = Measure.HALFCELL*(ymax-ymin+2*imgpad);
+
+        image.text.setAttribute('transform', 'translate(0 2.5)');
+        svg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+        svg.setAttribute('version', '1.1');
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+        if (bgcolor !== undefined) {
+            image.root.prepend(Draw.draw(undefined, 'rect', { fill: bgcolor, x: vx, y: vy, w: vw, h: vh }));
+        }
+    }
 }
 
 export function render(cells: Array<Data.Item>): Stamp {
