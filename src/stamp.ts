@@ -15,7 +15,7 @@ export class Stamp {
         public ymax: number
     ) {}
 
-    public apply(data: Data.DataManager, xoff: number, yoff: number) {
+    public apply(data: Data.DataManager, xoff: number, yoff: number, noUndo: boolean = false) {
         for (let i = 0; i < this.cells.length; ++i) {
             const cell = this.cells[i];
             const [x, y] = Data.decode(cell.n);
@@ -23,7 +23,9 @@ export class Stamp {
 
             const pre = data.halfcells.get(newn)?.get(cell.layer);
             if (pre !== cell.elt.data) {
-                data.add(new Data.Change(newn, cell.layer, pre, cell.elt, i !== this.cells.length-1));
+                const ch = new Data.Change(newn, cell.layer, pre, cell.elt, i !== this.cells.length-1);
+                if (noUndo) data.perform(ch);
+                else data.add(ch);
             }
         }
     }

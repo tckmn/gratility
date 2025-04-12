@@ -1,4 +1,4 @@
-import { WebSocketServer } from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 import fs from 'node:fs';
 
 import * as Data from './data.js';
@@ -16,6 +16,11 @@ export function serve() {
                 for (const ch of Data.deserializeChanges(msg as Buffer)) {
                     data.add(ch);
                 }
+                wss.clients.forEach(client => {
+                    if (client !== ws && client.readyState === WebSocket.OPEN) {
+                        client.send(msg, { binary: true });
+                    }
+                });
             } else {
                 console.log(msg);
             }

@@ -102,6 +102,7 @@ export class Change {
         public readonly post: Element | undefined,
         public readonly linked: boolean = false,
     ) {}
+    public rev() { return new Change(this.n, this.layer, this.post, this.pre, this.linked); }
 }
 
 const N_BITS = 32;
@@ -275,6 +276,7 @@ export class DataManager {
     private histpos = 0;
 
     private ws: WebSocket | undefined = undefined;
+    private hasReceivedDocument = false;
 
     public constructor(private image: Image | undefined = undefined) {}
 
@@ -291,8 +293,15 @@ export class DataManager {
 
     private message(msg: MessageEvent<any>) {
         msg.data.arrayBuffer().then((buf: ArrayBuffer) => {
-            // TODO kinda bad
-            new Stamp.Stamp(deserializeStamp(new Uint8Array(buf)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+            if (this.hasReceivedDocument) {
+                for (const ch of deserializeChanges(new Uint8Array(buf))) {
+                    this.perform(ch);
+                }
+            } else {
+                // TODO kinda bad
+                new Stamp.Stamp(deserializeStamp(new Uint8Array(buf)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+                this.hasReceivedDocument = true;
+            }
         });
     }
 
@@ -300,54 +309,55 @@ export class DataManager {
         if (this.histpos < this.history.length) this.history.splice(this.histpos, this.history.length);
         this.history.push(change);
         this.undo(false);
-        if (this.ws !== undefined) {
-            this.ws.send(serializeChanges([change]));
-        }
     }
 
     public undo(isUndo: boolean) {
         do {
             if (isUndo ? (this.histpos <= 0) : (this.histpos >= this.history.length)) return;
-
             const change = this.history[isUndo ? --this.histpos : this.histpos++];
-            const pre = isUndo ? change.post : change.pre;
-            const post = isUndo ? change.pre : change.post;
-
-            if (pre !== undefined) {
-
-                // TODO undefined cases here should never happen
-                if (this.image !== undefined) {
-                    // delete the drawing
-                    const elt = this.drawn.get(change.n)?.get(change.layer);
-                    if (elt !== undefined) this.image.obj(change.layer).removeChild(elt);
-                }
-
-                // delete item
-                const hc = this.halfcells.get(change.n);
-                hc?.delete(change.layer);
-                if (hc?.size === 0) this.halfcells.delete(change.n);
-
+            const real = isUndo ? change.rev() : change;
+            if (this.ws !== undefined && this.hasReceivedDocument) {
+                this.ws.send(serializeChanges([real]));
             }
-
-            if (post !== undefined) {
-
-                // create item
-                if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Map());
-                this.halfcells.get(change.n)!.set(change.layer, post);
-
-                if (this.image !== undefined) {
-                    // draw it
-                    const [x, y] = decode(change.n);
-                    const elt = Draw.objdraw(post, x, y);
-                    this.image.obj(change.layer).appendChild(elt);
-
-                    // save the element
-                    if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());
-                    this.drawn.get(change.n)?.set(change.layer, elt);
-                }
-
-            }
+            this.perform(real);
         } while (this.history[this.histpos-1]?.linked);
+    }
+
+    public perform(change: Change) {
+        if (change.pre !== undefined) {
+
+            // TODO undefined cases here should never happen
+            if (this.image !== undefined) {
+                // delete the drawing
+                const elt = this.drawn.get(change.n)?.get(change.layer);
+                if (elt !== undefined) this.image.obj(change.layer).removeChild(elt);
+            }
+
+            // delete item
+            const hc = this.halfcells.get(change.n);
+            hc?.delete(change.layer);
+            if (hc?.size === 0) this.halfcells.delete(change.n);
+
+        }
+
+        if (change.post !== undefined) {
+
+            // create item
+            if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Map());
+            this.halfcells.get(change.n)!.set(change.layer, change.post);
+
+            if (this.image !== undefined) {
+                // draw it
+                const [x, y] = decode(change.n);
+                const elt = Draw.objdraw(change.post, x, y);
+                this.image.obj(change.layer).appendChild(elt);
+
+                // save the element
+                if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());
+                this.drawn.get(change.n)?.set(change.layer, elt);
+            }
+
+        }
     }
 
     public listcells(): Array<Item> {
