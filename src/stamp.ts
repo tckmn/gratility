@@ -4,7 +4,7 @@ import * as Event from './event.js';
 import * as Measure from './measure.js';
 import Image from './image.js';
 
-class Stamp {
+export class Stamp {
     public constructor(
         public cells: Array<Data.Item>,
         public xoff: number,

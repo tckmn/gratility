@@ -4,6 +4,8 @@ import * as Stamp from './stamp.js';
 import * as Measure from './measure.js';
 import Image from './image.js';
 
+import { serve } from './server.js';
+
 import { JSDOM } from 'jsdom';
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -23,6 +25,7 @@ if (values.help || positionals.length !== 1) {
     console.log('INPUT can be:');
     console.log('  a filename (containing binary stamp data)');
     console.log('  a base64-encoded string');
+    console.log('  the literal string "serve" to start the websocket server');
     console.log('options:');
     console.log('  --help|-h          show this message');
     console.log('  --out|-o FILE      specify output filename (derived from input by default)');
@@ -33,9 +36,9 @@ if (values.help || positionals.length !== 1) {
 
 function interpret(s: string) {
     try {
-        return Stamp.render(Data.deserialize(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
+        return Stamp.render(Data.deserializeStamp(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
     } catch (e) {
-        return Stamp.render(Data.deserialize(fs.readFileSync(s)));
+        return Stamp.render(Data.deserializeStamp(fs.readFileSync(s)));
     }
 }
 
@@ -47,18 +50,26 @@ function outname(s: string) {
 }
 
 
-const stamp = interpret(positionals[0]);
-if (values.script) {
-    // TODO check if outname exists before running script
-    // TODO also add a flag -f probably that overwrites
-    require(values.script).runScript(stamp, { Data, Stamp, Measure });
-    fs.writeFileSync(outname(positionals[0]), Data.serialize(stamp.cells), { flag: 'wx' });
-    process.exit();
+if (positionals[0] === 'serve') {
+
+    serve();
+
+} else {
+
+    const stamp = interpret(positionals[0]);
+    if (values.script) {
+        // TODO check if outname exists before running script
+        // TODO also add a flag -f probably that overwrites
+        require(values.script).runScript(stamp, { Data, Stamp, Measure });
+        fs.writeFileSync(outname(positionals[0]), Data.serializeStamp(stamp.cells), { flag: 'wx' });
+        process.exit();
+    }
+
+    const dom = new JSDOM('<svg id="grid"></svg>');
+    Draw.initialize(dom.window.document);
+    const svg = dom.window.document.getElementById('grid') as unknown as SVGElement;
+    stamp.toSVG(svg); // TODO flags for optional args
+
+    fs.writeFileSync(outname(positionals[0]), svg.outerHTML, { flag: 'wx' });
+
 }
-
-const dom = new JSDOM('<svg id="grid"></svg>');
-Draw.initialize(dom.window.document);
-const svg = dom.window.document.getElementById('grid') as unknown as SVGElement;
-stamp.toSVG(svg); // TODO flags for optional args
-
-fs.writeFileSync(outname(positionals[0]), svg.outerHTML, { flag: 'wx' });

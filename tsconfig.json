@@ -8,5 +8,5 @@
         "skipLibCheck": true
     },
     "include": ["src/**/*.ts"],
-    "exclude": ["src/cmdline.ts"]
+    "exclude": ["src/cmdline.ts", "src/server.ts"]
 }

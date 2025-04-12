@@ -3,6 +3,7 @@ import MenuManager from './menu.js'; // TODO no
 import BitStream from './bitstream.js';
 import Image from './image.js';
 import * as Draw from './draw.js';
+import * as Stamp from './stamp.js';
 
 export function encode(x: number, y: number): number {
     return (x << 16) | (y & 0xffff);
@@ -182,7 +183,7 @@ const deserializefns = {
 
 };
 
-export function serialize(stamp: Array<Item>): Uint8Array {
+export function serializeStamp(stamp: Array<Item>): Uint8Array {
     const bs = BitStream.empty();
     bs.write(1, 0);
 
@@ -196,7 +197,7 @@ export function serialize(stamp: Array<Item>): Uint8Array {
     return bs.cut();
 }
 
-export function deserialize(arr: Uint8Array): Array<Item> {
+export function deserializeStamp(arr: Uint8Array): Array<Item> {
     const stamp = new Array<Item>();
     const bs = BitStream.fromArr(arr);
 
@@ -217,6 +218,54 @@ export function deserialize(arr: Uint8Array): Array<Item> {
     return stamp;
 }
 
+export function serializeChanges(changes: Array<Change>): Uint8Array {
+    const bs = BitStream.empty();
+    bs.write(1, 0);
+
+    for (const ch of changes) {
+        bs.write(N_BITS, ch.n);
+        bs.write(LAYER_BITS, ch.layer);
+        if (ch.pre === undefined) {
+            bs.write(OBJ_BITS, (1<<OBJ_BITS)-1);
+        } else {
+            bs.write(OBJ_BITS, ch.pre.obj);
+            serializefns[ch.pre.obj](bs, ch.pre.data as never);
+        }
+        if (ch.post === undefined) {
+            bs.write(OBJ_BITS, (1<<OBJ_BITS)-1);
+        } else {
+            bs.write(OBJ_BITS, ch.post.obj);
+            serializefns[ch.post.obj](bs, ch.post.data as never);
+        }
+    }
+
+    return bs.cut();
+}
+
+export function deserializeChanges(arr: Uint8Array): Array<Change> {
+    const changes = [];
+    const bs = BitStream.fromArr(arr);
+
+    const version = bs.read(1);
+    if (version !== 0) {
+        MenuManager.alert('deserialize: invalid version number');
+        return [];
+    }
+
+    while (1) {
+        const n = bs.read(N_BITS);
+        if (!bs.inbounds()) break;
+        const layer = bs.read(LAYER_BITS) as Layer;
+        const preobj = bs.read(OBJ_BITS);
+        const pre = preobj === (1<<OBJ_BITS)-1 ? undefined : new Element(preobj, deserializefns[preobj as Obj](bs));
+        const postobj = bs.read(OBJ_BITS);
+        const post = postobj === (1<<OBJ_BITS)-1 ? undefined : new Element(postobj, deserializefns[postobj as Obj](bs));
+        changes.push(new Change(n, layer, pre, post));
+    }
+
+    return changes;
+}
+
 export class DataManager {
 
     public readonly halfcells = new Map<number, Map<Layer, Element>>();
@@ -225,12 +274,35 @@ export class DataManager {
     private readonly history = new Array<Change>();
     private histpos = 0;
 
-    public constructor(private image: Image) {}
+    private ws: WebSocket | undefined = undefined;
+
+    public constructor(private image: Image | undefined = undefined) {}
+
+    public connect(url: string) {
+        this.ws = new WebSocket(url);
+        this.ws.addEventListener('open', () => {
+            MenuManager.alert('connected to server');
+        });
+        this.ws.addEventListener('error', () => {
+            MenuManager.alert('server connection failed');
+        });
+        this.ws.addEventListener('message', this.message.bind(this));
+    }
+
+    private message(msg: MessageEvent<any>) {
+        msg.data.arrayBuffer().then((buf: ArrayBuffer) => {
+            // TODO kinda bad
+            new Stamp.Stamp(deserializeStamp(new Uint8Array(buf)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+        });
+    }
 
     public add(change: Change) {
         if (this.histpos < this.history.length) this.history.splice(this.histpos, this.history.length);
         this.history.push(change);
         this.undo(false);
+        if (this.ws !== undefined) {
+            this.ws.send(serializeChanges([change]));
+        }
     }
 
     public undo(isUndo: boolean) {
@@ -244,9 +316,11 @@ export class DataManager {
             if (pre !== undefined) {
 
                 // TODO undefined cases here should never happen
-                // delete the drawing
-                const elt = this.drawn.get(change.n)?.get(change.layer);
-                if (elt !== undefined) this.image.obj(change.layer).removeChild(elt);
+                if (this.image !== undefined) {
+                    // delete the drawing
+                    const elt = this.drawn.get(change.n)?.get(change.layer);
+                    if (elt !== undefined) this.image.obj(change.layer).removeChild(elt);
+                }
 
                 // delete item
                 const hc = this.halfcells.get(change.n);
@@ -261,17 +335,29 @@ export class DataManager {
                 if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Map());
                 this.halfcells.get(change.n)!.set(change.layer, post);
 
-                // draw it
-                const [x, y] = decode(change.n);
-                const elt = Draw.objdraw(post, x, y);
-                this.image.obj(change.layer).appendChild(elt);
+                if (this.image !== undefined) {
+                    // draw it
+                    const [x, y] = decode(change.n);
+                    const elt = Draw.objdraw(post, x, y);
+                    this.image.obj(change.layer).appendChild(elt);
 
-                // save the element
-                if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());
-                this.drawn.get(change.n)?.set(change.layer, elt);
+                    // save the element
+                    if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());
+                    this.drawn.get(change.n)?.set(change.layer, elt);
+                }
 
             }
         } while (this.history[this.histpos-1]?.linked);
+    }
+
+    public listcells(): Array<Item> {
+        const cells = new Array<Item>();
+        for (const [n, hc] of this.halfcells) {
+            cells.push(...Array.from(hc.entries()).map(([k,v]) => {
+                return new Item(n, k, v);
+            }));
+        }
+        return cells;
     }
 
 }

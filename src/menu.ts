@@ -29,7 +29,7 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     ['dlstamp', (manager: MenuManager) => {
         const stamp = manager.g.stamp.current();
         if (stamp === undefined) return;
-        download('gratility.stamp', Data.serialize(stamp.cells), 'application/octet-stream');
+        download('gratility.stamp', Data.serializeStamp(stamp.cells), 'application/octet-stream');
     }],
 
     ['dlsvg', (manager: MenuManager) => {
@@ -165,14 +165,14 @@ menuevents.set('stamp-open', (manager: MenuManager, menu: Menu) => {
     const elt = menu.inputs.get('value') as HTMLTextAreaElement;
     const stamp = manager.g.stamp.current();
     elt.value = stamp === undefined ? '' :
-        btoa(String.fromCharCode.apply(null, Data.serialize(stamp.cells) as unknown as number[]));
+        btoa(String.fromCharCode.apply(null, Data.serializeStamp(stamp.cells) as unknown as number[]));
     elt.focus();
     elt.select();
 });
 
 menuevents.set('stamp-go', (manager: MenuManager, menu: Menu) => {
     const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    manager.g.stamp.add(Data.deserialize(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
+    manager.g.stamp.add(Data.deserializeStamp(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
     manager.close();
 });
 

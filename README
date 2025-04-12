@@ -6,3 +6,10 @@ to build command line version:
   npm i
   tsc -p cmdline.json
   ./gratility --help
+
+to run server:
+  npm i
+  tsc -p cmdline.json
+  mkdir serverdata
+  echo 1234 > serverdata/port
+  ./gratility serve

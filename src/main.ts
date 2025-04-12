@@ -30,6 +30,9 @@ const menu = new MenuManager(
 
 Event.initialize(gratility, svg, document.body, toolbox, menu, view);
 
+// TODO extraordinarily temporary
+data.connect('ws://localhost:4784');
+
 // TODO better
 image.grid(-500, 500, -500, 500);
 
