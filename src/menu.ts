@@ -219,6 +219,13 @@ menuevents.set('toolbox-key', (manager: MenuManager, menu: Menu, e: KeyboardEven
     if (e.key === 'Enter') manager.menuevent(menu, 'go');
 });
 
+// ###### SERVER MENU ###### //
+
+menuevents.set('server-go', (manager: MenuManager, menu: Menu) => {
+    manager.g.data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/');
+    manager.close();
+});
+
 
 class Menu {
     constructor(
