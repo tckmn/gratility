@@ -1,5 +1,5 @@
 import * as Measure from './measure.js';
-import MenuManager from './menu.js'; // TODO no
+import * as Courier from './courier.js';
 import BitStream from './bitstream.js';
 import Image from './image.js';
 import * as Draw from './draw.js';
@@ -204,7 +204,7 @@ export function deserializeStamp(arr: Uint8Array): Array<Item> {
 
     const version = bs.read(1);
     if (version !== 0) {
-        MenuManager.alert('deserialize: invalid version number');
+        Courier.alert('deserialize: invalid version number');
         return [];
     }
 
@@ -249,7 +249,7 @@ export function deserializeChanges(arr: Uint8Array): Array<Change> {
 
     const version = bs.read(1);
     if (version !== 0) {
-        MenuManager.alert('deserialize: invalid version number');
+        Courier.alert('deserialize: invalid version number');
         return [];
     }
 
@@ -280,29 +280,33 @@ export class DataManager {
 
     public constructor(private image: Image | undefined = undefined) {}
 
-    public connect(url: string) {
+    public connect(url: string, onopen: any) {
         this.ws = new WebSocket(url);
+        this.ws.binaryType = 'arraybuffer';
         this.ws.addEventListener('open', () => {
-            MenuManager.alert('connected to server');
+            Courier.alert('connected to server');
+            if (onopen !== undefined) this.ws?.send(JSON.stringify(onopen));
         });
         this.ws.addEventListener('error', () => {
-            MenuManager.alert('server connection failed');
+            Courier.alert('server connection failed');
         });
         this.ws.addEventListener('message', this.message.bind(this));
     }
 
     private message(msg: MessageEvent<any>) {
-        msg.data.arrayBuffer().then((buf: ArrayBuffer) => {
-            if (this.hasReceivedDocument) {
-                for (const ch of deserializeChanges(new Uint8Array(buf))) {
-                    this.perform(ch);
-                }
-            } else {
-                // TODO kinda bad
-                new Stamp.Stamp(deserializeStamp(new Uint8Array(buf)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
-                this.hasReceivedDocument = true;
+        if (!(msg.data instanceof ArrayBuffer)) {
+            const json = JSON.parse(msg.data);
+            if (json.alert !== undefined) Courier.alert(json.alert);
+            if (json.token !== undefined) localStorage.token = json.token;
+        } else if (this.hasReceivedDocument) {
+            for (const ch of deserializeChanges(new Uint8Array(msg.data))) {
+                this.perform(ch);
             }
-        });
+        } else {
+            // TODO kinda bad
+            new Stamp.Stamp(deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+            this.hasReceivedDocument = true;
+        }
     }
 
     public add(change: Change) {

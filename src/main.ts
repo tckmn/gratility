@@ -30,6 +30,13 @@ const menu = new MenuManager(
 
 Event.initialize(gratility, svg, document.body, toolbox, menu, view);
 
+// TODO Blegh
+if (localStorage.token) {
+    data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+        m: 'token', token: localStorage.token
+    });
+}
+
 // TODO better
 image.grid(-500, 500, -500, 500);
 

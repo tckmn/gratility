@@ -128,7 +128,12 @@
             </div>
 
             <div data-menu='server' class='small'>
-                <button class='menuinput' data-menu='go' data-event='click=go'>connect</button>
+                <label>username: <input class='menuinput' data-menu='username'></label>
+                <label>password: <input class='menuinput' data-menu='password' type='password'></label>
+                <div>
+                    <button class='menuinput' data-menu='login' data-event='click=login'>login</button>
+                    <button class='menuinput' data-menu='register' data-event='click=register'>register</button>
+                </div>
             </div>
 
         </div>

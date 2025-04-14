@@ -5,6 +5,7 @@ import * as Draw from './draw.js';
 import Tool from './tools/tool.js';
 import Toolbox from './toolbox.js';
 import * as Tools from './tools/alltools.js';
+import * as Courier from './courier.js';
 
 
 function download(fname: string, data: Uint8Array | string, contenttype: string) {
@@ -94,13 +95,13 @@ menuevents.set('addtool-settool', (manager: MenuManager, menu: Menu, e: Event, t
 
 menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     if (resolve === undefined) {
-        MenuManager.alert('please pick an available binding for this tool');
+        Courier.alert('please pick an available binding for this tool');
         return;
     }
 
     const el = document.getElementsByClassName('addtool-active')[0] as HTMLElement | undefined;
     if (el === undefined) {
-        MenuManager.alert('please pick an action for this tool');
+        Courier.alert('please pick an action for this tool');
         return;
     }
 
@@ -126,15 +127,15 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
         break;
     case 'shape':
         if (!(parseInt(args[1], 10) >= 1 && parseInt(args[1], 10) <= 5)) {
-            MenuManager.alert('shape size should be between 1 and 5');
+            Courier.alert('shape size should be between 1 and 5');
             return;
         }
         if (args[2] === '') {
-            MenuManager.alert('shape should be placeable in at least one location');
+            Courier.alert('shape should be placeable in at least one location');
             return;
         }
         if (args[3] === '' && args[4] === '') {
-            MenuManager.alert('shape should should have at least one of fill or outline');
+            Courier.alert('shape should should have at least one of fill or outline');
             return;
         }
         resolve(new Tools.ShapeTool({
@@ -152,7 +153,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'paste': resolve(new Tools.PasteTool()); break;
     case 'undo': resolve(new Tools.UndoTool(true)); break;
     case 'redo': resolve(new Tools.UndoTool(false)); break;
-    default: MenuManager.alert('unknown tool??'); return;
+    default: Courier.alert('unknown tool??'); return;
     }
 
     manager.close();
@@ -221,10 +222,24 @@ menuevents.set('toolbox-key', (manager: MenuManager, menu: Menu, e: KeyboardEven
 
 // ###### SERVER MENU ###### //
 
-menuevents.set('server-go', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/');
+menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
+    manager.g.data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+        m: 'login',
+        username: (menu.inputs.get('username') as HTMLInputElement).value,
+        password: (menu.inputs.get('password') as HTMLInputElement).value
+    });
     manager.close();
 });
+
+menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
+    manager.g.data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+        m: 'register',
+        username: (menu.inputs.get('username') as HTMLInputElement).value,
+        password: (menu.inputs.get('password') as HTMLInputElement).value
+    });
+    manager.close();
+});
+
 
 
 class Menu {
@@ -256,21 +271,6 @@ export default class MenuManager {
             this.activeMenu = undefined;
             this.menuevent(menu, 'close');
         }
-    }
-
-    // TODO
-    public static alert(msg: string) {
-        const alerts = document.getElementById('alerts')!;
-
-        const elt = document.createElement('div');
-        elt.textContent = msg;
-        const rm = () => {
-            alerts.removeChild(elt);
-        };
-        elt.addEventListener('click', rm);
-        setTimeout(rm, Math.max(3000, 250*msg.length));
-
-        alerts.insertBefore(elt, alerts.firstChild);
     }
 
     private readonly menus: Map<string, Menu> = new Map();
