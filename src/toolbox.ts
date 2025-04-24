@@ -12,7 +12,7 @@ export default class Toolbox {
         this.bindMouse(1, new Tools.PanTool());
         this.bindKey(' ', new Tools.PanTool());
         this.bindKey('s', new Tools.SurfaceTool(0));
-        this.bindKey('d', new Tools.LineTool({
+        this.bindKey('r', new Tools.LineTool({
             isEdge: false,
             head: Data.Head.NONE,
             color: 8,
@@ -27,7 +27,8 @@ export default class Toolbox {
         this.bindKey('t', new Tools.TextTool(''));
         this.bindKey('z', new Tools.UndoTool(true));
         this.bindKey('x', new Tools.UndoTool(false));
-        this.bindKey('c', new Tools.CopyTool());
+        this.bindKey('c', new Tools.CopyTool(false));
+        this.bindKey('d', new Tools.CopyTool(true));
         this.bindKey('v', new Tools.PasteTool());
         this.bindWheel(true, new Tools.ZoomTool(1));
         this.bindWheel(false, new Tools.ZoomTool(-1));

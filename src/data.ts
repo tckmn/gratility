@@ -100,7 +100,7 @@ export class Change {
         public readonly layer: Layer,
         public readonly pre: Element | undefined,
         public readonly post: Element | undefined,
-        public readonly linked: boolean = false,
+        public linked: boolean = false,
     ) {}
     public rev() { return new Change(this.n, this.layer, this.post, this.pre, this.linked); }
 }
@@ -313,6 +313,10 @@ export class DataManager {
         if (this.histpos < this.history.length) this.history.splice(this.histpos, this.history.length);
         this.history.push(change);
         this.undo(false);
+    }
+
+    public breakLink() {
+        this.history[this.histpos-1].linked = false;
     }
 
     public undo(isUndo: boolean) {

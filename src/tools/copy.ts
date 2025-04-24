@@ -8,16 +8,18 @@ export default class CopyTool implements Tool {
 
     public readonly repeat = false;
     public readonly tid = 'copy';
-    public name(): string { return 'Copy'; }
+    public name(): string { return this.isCut ? 'Cut' : 'Copy'; }
     public icon() {}
-    public save() { return ''; }
-    public static load(_: string) { return new CopyTool(); }
+    public save() { return this.isCut ? 'x' : 'c'; }
+    public static load(s: string) { return new CopyTool(s === 'x'); }
 
     private sx = 0;
     private sy = 0;
     private tx = 0;
     private ty = 0;
     private elt: SVGElement | undefined;
+
+    public constructor(private isCut: boolean) {}
 
     public ondown(x: number, y: number, g: Gratility) {
         this.sx = x;
@@ -69,17 +71,24 @@ export default class CopyTool implements Tool {
 
         const stamp = new Array<Data.Item>();
 
+        let shouldBreak = false;
         for (let x = sx; x <= tx; ++x) {
             for (let y = sy; y <= ty; ++y) {
                 const n = Data.encode(x, y);
                 const hc = g.data.halfcells.get(n);
                 if (hc !== undefined) {
-                    stamp.push(...Array.from(hc.entries()).map(([k,v]) => {
+                    const arr = Array.from(hc.entries());
+                    stamp.push(...arr.map(([k,v], i) => {
+                        if (this.isCut) {
+                            shouldBreak = true;
+                            g.data.add(new Data.Change(n, k, v, undefined, true));
+                        }
                         return new Data.Item(n, k, v);
                     }));
                 }
             }
         }
+        if (shouldBreak) g.data.breakLink();
 
         g.stamp.add(stamp);
     }

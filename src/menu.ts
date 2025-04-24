@@ -149,7 +149,8 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'pan': resolve(new Tools.PanTool()); break;
     case 'zoomin': resolve(new Tools.ZoomTool(1)); break;
     case 'zoomout': resolve(new Tools.ZoomTool(-1)); break;
-    case 'copy': resolve(new Tools.CopyTool()); break;
+    case 'copy': resolve(new Tools.CopyTool(false)); break;
+    case 'cut': resolve(new Tools.CopyTool(true)); break;
     case 'paste': resolve(new Tools.PasteTool()); break;
     case 'undo': resolve(new Tools.UndoTool(true)); break;
     case 'redo': resolve(new Tools.UndoTool(false)); break;
