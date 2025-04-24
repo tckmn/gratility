@@ -277,6 +277,7 @@ export class DataManager {
 
     private ws: WebSocket | undefined = undefined;
     private hasReceivedDocument = false;
+    private lsto: ReturnType<typeof setTimeout> | undefined = undefined;
 
     public constructor(private image: Image | undefined = undefined) {}
 
@@ -289,6 +290,7 @@ export class DataManager {
         });
         this.ws.addEventListener('error', () => {
             Courier.alert('server connection failed');
+            this.ws = undefined;
         });
         this.ws.addEventListener('message', this.message.bind(this));
     }
@@ -324,10 +326,20 @@ export class DataManager {
             if (isUndo ? (this.histpos <= 0) : (this.histpos >= this.history.length)) return;
             const change = this.history[isUndo ? --this.histpos : this.histpos++];
             const real = isUndo ? change.rev() : change;
-            if (this.ws !== undefined && this.hasReceivedDocument) {
-                this.ws.send(serializeChanges([real]));
-            }
             this.perform(real);
+            if (this.ws !== undefined) {
+                if (this.hasReceivedDocument) this.ws.send(serializeChanges([real]));
+            } else {
+                if (this.lsto === undefined) this.lsto = setTimeout(() => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const res = reader.result as string;
+                        localStorage.docdata = res.slice(res.indexOf(',')+1);
+                        this.lsto = undefined;
+                    };
+                    reader.readAsDataURL(new Blob([serializeStamp(this.listcells())]));
+                }, 1000);
+            }
         } while (this.history[this.histpos-1]?.linked);
     }
 
@@ -376,6 +388,10 @@ export class DataManager {
             }));
         }
         return cells;
+    }
+
+    public pending(): boolean {
+        return this.ws === undefined && this.lsto !== undefined;
     }
 
 }
