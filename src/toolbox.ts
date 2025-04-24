@@ -2,6 +2,12 @@ import Tool from './tools/tool.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
 
+// for load()
+function onesplit(s: string, delim: string): [string, string | undefined] {
+    const parts = s.split(delim);
+    return parts.length === 1 ? [s, undefined] : [parts[0], parts.slice(1).join(delim)];
+}
+
 export default class Toolbox {
 
     public readonly mouseTools = new Map<number, Tool>();
@@ -9,29 +15,33 @@ export default class Toolbox {
     public readonly wheelTools = new Map<boolean, Tool>();
 
     constructor(private container: HTMLElement) {
-        this.bindMouse(1, new Tools.PanTool());
-        this.bindKey(' ', new Tools.PanTool());
-        this.bindKey('s', new Tools.SurfaceTool(0));
-        this.bindKey('r', new Tools.LineTool({
-            isEdge: false,
-            head: Data.Head.NONE,
-            color: 8,
-            thickness: 2
-        }));
-        this.bindKey('e', new Tools.LineTool({
-            isEdge: true,
-            head: Data.Head.NONE,
-            color: 0,
-            thickness: 2
-        }));
-        this.bindKey('t', new Tools.TextTool(''));
-        this.bindKey('z', new Tools.UndoTool(true));
-        this.bindKey('x', new Tools.UndoTool(false));
-        this.bindKey('c', new Tools.CopyTool(false));
-        this.bindKey('d', new Tools.CopyTool(true));
-        this.bindKey('v', new Tools.PasteTool());
-        this.bindWheel(true, new Tools.ZoomTool(1));
-        this.bindWheel(false, new Tools.ZoomTool(-1));
+        if (localStorage.toolbox) {
+            this.load(localStorage.toolbox);
+        } else {
+            this.bindMouse(1, new Tools.PanTool());
+            this.bindKey(' ', new Tools.PanTool());
+            this.bindKey('s', new Tools.SurfaceTool(0));
+            this.bindKey('r', new Tools.LineTool({
+                isEdge: false,
+                head: Data.Head.NONE,
+                color: 8,
+                thickness: 2
+            }));
+            this.bindKey('e', new Tools.LineTool({
+                isEdge: true,
+                head: Data.Head.NONE,
+                color: 0,
+                thickness: 2
+            }));
+            this.bindKey('t', new Tools.TextTool(''));
+            this.bindKey('z', new Tools.UndoTool(true));
+            this.bindKey('x', new Tools.UndoTool(false));
+            this.bindKey('c', new Tools.CopyTool(false));
+            this.bindKey('d', new Tools.CopyTool(true));
+            this.bindKey('v', new Tools.PasteTool());
+            this.bindWheel(true, new Tools.ZoomTool(1));
+            this.bindWheel(false, new Tools.ZoomTool(-1));
+        }
     }
 
     private toolDisplay(tool: Tool, txt: string, delcb: () => void) {
@@ -59,6 +69,7 @@ export default class Toolbox {
             this.container.removeChild(delbtn);
         });
         this.container.appendChild(delbtn);
+        localStorage.toolbox = this.save();
     }
 
     public bindMouse(btn: number, tool: Tool): boolean {
@@ -97,6 +108,26 @@ export default class Toolbox {
             ...Array.from(this.keyTools.entries()).map(([key, tool]) => `k${key}::${tool.tid}:${tool.save()}`),
             ...Array.from(this.wheelTools.entries()).map(([dir, tool]) => `w${+dir}::${tool.tid}:${tool.save()}`)
         ].join('\n');
+    }
+
+    public load(s: string) {
+        for (const line of s.split('\n')) {
+            const [bind, rest] = onesplit(line, '::');
+            if (rest === undefined) continue;
+            const [tid, spec] = onesplit(rest, ':');
+            if (spec === undefined) continue;
+            const toolfn = Tools.tidtotool.get(tid);
+            if (toolfn === undefined) continue;
+            const bindtype = bind[0];
+            const bindval = bind.slice(1);
+            const tool = toolfn(spec);
+            switch (bindtype) {
+            case 'm': this.bindMouse(parseInt(bindval, 10), tool); break;
+            case 'k': this.bindKey(bindval, tool); break;
+            case 'w': this.bindWheel(bindval === '1', tool); break;
+            }
+        }
+        localStorage.toolbox = this.save();
     }
 
     public clear() {
