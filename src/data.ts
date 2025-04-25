@@ -277,22 +277,54 @@ export class DataManager {
 
     private ws: WebSocket | undefined = undefined;
     private hasReceivedDocument = false;
-    private lsto: ReturnType<typeof setTimeout> | undefined = undefined;
+    private db: IDBDatabase | undefined = undefined;
+    private dburl: string | undefined = undefined;
+    private dbto: ReturnType<typeof setTimeout> | undefined = undefined;
 
     public constructor(private image: Image | undefined = undefined) {}
 
-    public connect(url: string, onopen: any) {
+    public connectWS(url: string, initmsg: any, onopen?: (() => void), onclose?: (() => void)) {
         this.ws = new WebSocket(url);
         this.ws.binaryType = 'arraybuffer';
         this.ws.addEventListener('open', () => {
             Courier.alert('connected to server');
-            if (onopen !== undefined) this.ws?.send(JSON.stringify(onopen));
+            if (initmsg !== undefined) this.ws?.send(JSON.stringify(initmsg));
+            if (onopen !== undefined) onopen();
         });
         this.ws.addEventListener('error', () => {
             Courier.alert('server connection failed');
             this.ws = undefined;
+            if (onclose !== undefined) onclose();
+        });
+        this.ws.addEventListener('close', () => {
+            Courier.alert('server connection lost');
+            this.ws = undefined;
+            if (onclose !== undefined) onclose();
         });
         this.ws.addEventListener('message', this.message.bind(this));
+    }
+
+    public connectDB(url: string, onopen?: (() => void), onclose?: (() => void)) {
+        this.dburl = url;
+        const req = window.indexedDB.open('gratility', 1);
+        req.onsuccess = (ev) => {
+            this.db = (ev.target as IDBRequest).result;
+            this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(url).onsuccess = (ev: Event) => {
+                // TODO kinda bad
+                new Stamp.Stamp(deserializeStamp((ev.target as IDBRequest).result), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+                this.hasReceivedDocument = true;
+            };
+            if (onopen !== undefined) onopen();
+        };
+        req.onerror = () => {
+            Courier.alert('local database connection failed');
+            this.db = undefined;
+            if (onclose !== undefined) onclose();
+        };
+        req.onupgradeneeded = (ev: IDBVersionChangeEvent) => {
+            this.db = (ev.target as IDBRequest).result;
+            this.db!.createObjectStore('docs');
+        };
     }
 
     private message(msg: MessageEvent<any>) {
@@ -327,18 +359,18 @@ export class DataManager {
             const change = this.history[isUndo ? --this.histpos : this.histpos++];
             const real = isUndo ? change.rev() : change;
             this.perform(real);
-            if (this.ws !== undefined) {
-                if (this.hasReceivedDocument) this.ws.send(serializeChanges([real]));
-            } else {
-                if (this.lsto === undefined) this.lsto = setTimeout(() => {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const res = reader.result as string;
-                        localStorage.docdata = res.slice(res.indexOf(',')+1);
-                        this.lsto = undefined;
-                    };
-                    reader.readAsDataURL(new Blob([serializeStamp(this.listcells())]));
-                }, 1000);
+            if (this.hasReceivedDocument) {
+                if (this.ws !== undefined) {
+                    this.ws.send(serializeChanges([real]));
+                } else if (this.db !== undefined) {
+                    console.log('hi');
+                    if (this.dbto === undefined) this.dbto = setTimeout(() => {
+                        const tr = this.db!.transaction(['docs'], 'readwrite');
+                        tr.oncomplete = () => { this.dbto = undefined; };
+                        const os = tr.objectStore('docs');
+                        os.put(serializeStamp(this.listcells()), this.dburl);
+                    }, 3000);
+                }
             }
         } while (this.history[this.histpos-1]?.linked);
     }
@@ -391,7 +423,7 @@ export class DataManager {
     }
 
     public pending(): boolean {
-        return this.ws === undefined && this.lsto !== undefined;
+        return this.ws === undefined && this.dbto !== undefined;
     }
 
 }

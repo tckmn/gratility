@@ -32,18 +32,11 @@ Event.initialize(gratility, svg, document.body, toolbox, menu, view);
 
 // TODO blegh
 if (localStorage.token) {
-    data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    data.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'token', token: localStorage.token
     });
 } else if (localStorage.docdata) {
-    // TODO maybe use something like https://github.com/niklasvh/base64-arraybuffer/blob/master/src/index.ts?
-    // but really should just indexeddb
-    fetch('data:application/octet-binary;base64,' + localStorage.docdata)
-        .then(res => res.arrayBuffer())
-        .then(buf => {
-            // TODO kinda bad
-            new Stamp.Stamp(Data.deserializeStamp(new Uint8Array(buf)), 0, 0, 0, 0, 0, 0).apply(data, 0, 0);
-        });
+    data.connectDB('untitled');
 }
 
 // TODO better

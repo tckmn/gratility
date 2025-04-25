@@ -191,3 +191,12 @@ div#actions div.settool > label, div#actions div.settool > span {
     padding: 5px 10px;
     margin-left: 20px;
 }
+
+div#file {
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    font-family: monospace;
+    padding: 0.5rem;
+    cursor: pointer;
+}

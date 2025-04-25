@@ -205,7 +205,7 @@ menuevents.set('toolbox-key', (manager: MenuManager, menu: Menu, e: KeyboardEven
 // ###### SERVER MENU ###### //
 
 menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.g.data.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'login',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -214,7 +214,7 @@ menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.connect(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.g.data.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'register',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
