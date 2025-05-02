@@ -59,8 +59,8 @@ const drawfns: { [obj in Data.Obj]: (x: number, y: number, data: never) => SVGEl
         for (const spec of data) {
             const r = Measure.HALFCELL * (spec.size/6);
             const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(spec.size/12));
-            const fill = spec.fill === undefined ? 'transparent' : Color.colors[spec.fill];
-            const stroke = spec.outline === undefined ? 'transparent' : Color.colors[spec.outline];
+            const fill = spec.fill === undefined ? 'none' : Color.colors[spec.fill];
+            const stroke = spec.outline === undefined ? 'none' : Color.colors[spec.outline];
 
             switch (spec.shape) {
             case Data.Shape.CIRCLE:
