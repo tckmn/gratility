@@ -1,13 +1,12 @@
 import Tool from './tools/tool.js';
 import Toolbox from './toolbox.js';
 import MenuManager from './menu.js';
-import ViewManager from './view.js';
 import Gratility from './gratility.js';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
 export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref: undefined };
 
-export function initialize(g: Gratility, svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager, view: ViewManager) {
+export function initialize(g: Gratility, svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager) {
 
     const activeTools = new Set<Tool>();
     const rect = svg.getBoundingClientRect();
@@ -15,8 +14,8 @@ export function initialize(g: Gratility, svg: SVGElement, page: HTMLElement, too
     let lastX = 0;
     let lastY = 0;
     let upd = (e: PointerEvent) => {
-        lastX = (e.clientX - rect.left) / view.zoom() - view.x;
-        lastY = (e.clientY - rect.top) / view.zoom() - view.y;
+        lastX = (e.clientX - rect.left) / g.view.zoom() - g.view.x;
+        lastY = (e.clientY - rect.top) / g.view.zoom() - g.view.y;
     };
 
     svg.addEventListener('contextmenu', e => e.preventDefault());

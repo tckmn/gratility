@@ -276,50 +276,47 @@ export class DataManager {
     private histpos = 0;
 
     private ws: WebSocket | undefined = undefined;
-    private hasReceivedDocument = false;
+    private wscb: (_: boolean) => void = _=>{};
     private db: IDBDatabase | undefined = undefined;
-    private dburl: string | undefined = undefined;
     private dbto: ReturnType<typeof setTimeout> | undefined = undefined;
+
+    private hasLocalDocument = false;
+    private hasRemoteDocument = false;
+    private localName: string | undefined = undefined;
 
     public constructor(private image: Image | undefined = undefined) {}
 
-    public connectWS(url: string, initmsg: any, onopen?: (() => void), onclose?: (() => void)) {
+    public connectWS(url: string, initmsg: any, onopen: (() => void), onclose: (() => void)) {
         this.ws = new WebSocket(url);
         this.ws.binaryType = 'arraybuffer';
         this.ws.addEventListener('open', () => {
             Courier.alert('connected to server');
-            if (initmsg !== undefined) this.ws?.send(JSON.stringify(initmsg));
-            if (onopen !== undefined) onopen();
+            this.ws?.send(JSON.stringify(initmsg));
+            onopen();
         });
         this.ws.addEventListener('error', () => {
             Courier.alert('server connection failed');
             this.ws = undefined;
-            if (onclose !== undefined) onclose();
+            onclose();
         });
         this.ws.addEventListener('close', () => {
             Courier.alert('server connection lost');
             this.ws = undefined;
-            if (onclose !== undefined) onclose();
+            onclose();
         });
         this.ws.addEventListener('message', this.message.bind(this));
     }
 
-    public connectDB(url: string, onopen?: (() => void), onclose?: (() => void)) {
-        this.dburl = url;
+    public connectDB(onopen: (() => void), onclose: (() => void)) {
         const req = window.indexedDB.open('gratility', 1);
         req.onsuccess = (ev) => {
             this.db = (ev.target as IDBRequest).result;
-            this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(url).onsuccess = (ev: Event) => {
-                // TODO kinda bad
-                new Stamp.Stamp(deserializeStamp((ev.target as IDBRequest).result), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
-                this.hasReceivedDocument = true;
-            };
-            if (onopen !== undefined) onopen();
+            onopen();
         };
         req.onerror = () => {
             Courier.alert('local database connection failed');
             this.db = undefined;
-            if (onclose !== undefined) onclose();
+            onclose();
         };
         req.onupgradeneeded = (ev: IDBVersionChangeEvent) => {
             this.db = (ev.target as IDBRequest).result;
@@ -332,15 +329,37 @@ export class DataManager {
             const json = JSON.parse(msg.data);
             if (json.alert !== undefined) Courier.alert(json.alert);
             if (json.token !== undefined) localStorage.token = json.token;
-        } else if (this.hasReceivedDocument) {
+        } else if (this.hasRemoteDocument) {
             for (const ch of deserializeChanges(new Uint8Array(msg.data))) {
                 this.perform(ch);
             }
         } else {
             // TODO kinda bad
             new Stamp.Stamp(deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
-            this.hasReceivedDocument = true;
+            this.wscb(true);
+            this.wscb = ()=>{};
+            this.hasRemoteDocument = true;
         }
+    }
+
+    public openLocal(localName: string, cb: (_: boolean) => void) {
+        // TODO check db existence
+        this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(localName).onsuccess = (ev: Event) => {
+            const res = (ev.target as IDBRequest).result;
+            if (res !== undefined) {
+                // TODO kinda bad
+                new Stamp.Stamp(deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+                cb(true);
+            } else cb(false);
+            this.hasLocalDocument = true;
+            this.localName = localName;
+        };
+    }
+
+    public openRemote(remoteName: string, cb: (_: boolean) => void) {
+        // TODO check ws existence
+        this.wscb = cb;
+        this.ws?.send(JSON.stringify({ m: 'open', name: remoteName }));
     }
 
     public add(change: Change) {
@@ -359,18 +378,16 @@ export class DataManager {
             const change = this.history[isUndo ? --this.histpos : this.histpos++];
             const real = isUndo ? change.rev() : change;
             this.perform(real);
-            if (this.hasReceivedDocument) {
-                if (this.ws !== undefined) {
-                    this.ws.send(serializeChanges([real]));
-                } else if (this.db !== undefined) {
-                    console.log('hi');
-                    if (this.dbto === undefined) this.dbto = setTimeout(() => {
-                        const tr = this.db!.transaction(['docs'], 'readwrite');
-                        tr.oncomplete = () => { this.dbto = undefined; };
-                        const os = tr.objectStore('docs');
-                        os.put(serializeStamp(this.listcells()), this.dburl);
-                    }, 3000);
-                }
+            if (this.hasRemoteDocument) {
+                this.ws?.send(serializeChanges([real]));
+            }
+            if (this.hasLocalDocument) {
+                if (this.dbto === undefined) this.dbto = setTimeout(() => {
+                    const tr = this.db!.transaction(['docs'], 'readwrite');
+                    tr.oncomplete = () => { this.dbto = undefined; };
+                    const os = tr.objectStore('docs');
+                    os.put(serializeStamp(this.listcells()), this.localName);
+                }, 1000);
             }
         } while (this.history[this.histpos-1]?.linked);
     }

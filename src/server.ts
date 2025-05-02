@@ -15,14 +15,25 @@ export function serve() {
     db.exec(`
         CREATE TABLE IF NOT EXISTS accounts (
             uid INTEGER PRIMARY KEY,
-            username TEXT UNIQUE,
-            password TEXT,
-            salt BLOB
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            salt BLOB NOT NULL
         );
         CREATE TABLE IF NOT EXISTS tokens (
-            token TEXT,
-            uid INTEGER,
-            date TEXT
+            token TEXT UNIQUE NOT NULL,
+            uid INTEGER NOT NULL,
+            date TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS documents (
+            did INTEGER PRIMARY KEY,
+            creator INTEGER NOT NULL,
+            name TEXT UNIQUE NOT NULL,
+            date TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS access (
+            uid INTEGER NOT NULL,
+            did INTEGER NOT NULL,
+            access INTEGER NOT NULL
         );
     `);
 
@@ -84,11 +95,11 @@ export function serve() {
                     } else {
                         ws.send(JSON.stringify({ alert: 'logged in!' })); // TODO update date?
                     }
+                } else if (json.m === 'open') {
+                    ws.send(Data.serializeStamp(data.listcells()));
                 }
             }
         });
-
-        ws.send(Data.serializeStamp(data.listcells()));
     });
 
 }

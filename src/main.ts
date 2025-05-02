@@ -5,6 +5,7 @@ import * as Data from './data.js';
 import * as Draw from './draw.js';
 import MenuManager from './menu.js';
 import ViewManager from './view.js';
+import FileManager from './file.js';
 import Toolbox from './toolbox.js';
 import Image from './image.js';
 import Gratility from './gratility.js';
@@ -21,23 +22,16 @@ const view = new ViewManager(image);
 const gratility = new Gratility(image, data, stamp, view);
 
 const toolbox = new Toolbox(document.getElementById('toolbox')!);
+const file = new FileManager(document.getElementById('file')!, gratility);
 const menu = new MenuManager(
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
     gratility,
-    toolbox
+    toolbox,
+    file
 );
 
-Event.initialize(gratility, svg, document.body, toolbox, menu, view);
-
-// TODO blegh
-if (localStorage.token) {
-    data.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
-        m: 'token', token: localStorage.token
-    });
-} else if (localStorage.docdata) {
-    data.connectDB('untitled');
-}
+Event.initialize(gratility, svg, document.body, toolbox, menu);
 
 // TODO better
 image.grid(-500, 500, -500, 500);
