@@ -155,6 +155,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'paste': resolve(new Tools.PasteTool()); break;
     case 'undo': resolve(new Tools.UndoTool(true)); break;
     case 'redo': resolve(new Tools.UndoTool(false)); break;
+    case 'transform': resolve(new Tools.TransformTool(parseInt(args[0], 10))); break;
     default: Courier.alert('unknown tool??'); return;
     }
 

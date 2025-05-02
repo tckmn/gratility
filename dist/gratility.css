@@ -172,6 +172,10 @@ div#actions div.settool {
     border: 1px dotted #666;
 }
 
+div#actions div.settool.natwidth {
+    width: auto;
+}
+
 div#actions div.settool.full {
     display: flex;
     flex-wrap: wrap;

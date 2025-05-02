@@ -30,6 +30,36 @@ export class Stamp {
         }
     }
 
+    public reflect(isHorizontal: boolean): Stamp {
+        return new Stamp(this.cells.map(cell => {
+            const [x, y] = Data.decode(cell.n);
+            const newn = Data.encode(
+                isHorizontal ? 2*this.xoff - x : x,
+                isHorizontal ? y : 2*this.yoff - y);
+            return new Data.Item(newn, cell.layer, cell.elt);
+        }), this.xoff, this.yoff,
+            isHorizontal ? 2*this.xoff - this.xmin : this.xmin,
+            isHorizontal ? 2*this.xoff - this.xmax : this.xmax,
+            isHorizontal ? this.ymin : 2*this.yoff - this.ymin,
+            isHorizontal ? this.ymax : 2*this.yoff - this.ymax);
+    }
+
+    public rotate(isLeft: boolean): Stamp {
+        const xmult = isLeft ? 1 : -1, ymult = isLeft ? -1 : 1;
+        return new Stamp(this.cells.map(cell => {
+            const [x, y] = Data.decode(cell.n);
+            const newn = Data.encode(
+                this.xoff + xmult*(y - this.yoff),
+                this.yoff + ymult*(x - this.xoff));
+            return new Data.Item(newn, cell.layer, cell.elt);
+        }), this.xoff, this.yoff,
+            isLeft ? this.xoff + xmult*(this.ymin - this.yoff) : this.xoff + xmult*(this.ymax - this.yoff),
+            isLeft ? this.xoff + xmult*(this.ymax - this.yoff) : this.xoff + xmult*(this.ymin - this.yoff),
+            isLeft ? this.yoff + ymult*(this.xmax - this.xoff) : this.yoff + ymult*(this.xmin - this.xoff),
+            isLeft ? this.yoff + ymult*(this.xmin - this.xoff) : this.yoff + ymult*(this.xmax - this.xoff));
+        // TODO ^ these might be wrong
+    }
+
     public toSVG(svg: SVGElement, bgcolor: string | undefined = '#fff', imgpad: number = 1, gridpad: number = 0) {
         const image = new Image(svg);
         const data = new Data.DataManager(image);
@@ -89,12 +119,24 @@ export class StampManager {
 
     public add(cells: Array<Data.Item>) {
         if (cells.length === 0) return;
-
         const stamp = render(cells);
         this.stamps.push(stamp);
         this.stamppos = this.stamps.length-1;
+        this.redraw();
+    }
 
-        this.image.stamps.replaceChildren(...cells.map(cell => {
+    public transform(fn: (s: Stamp) => Stamp) {
+        const stamp = this.stamps.pop();
+        if (stamp !== undefined) {
+            this.stamps.push(fn(stamp));
+            this.stamppos = this.stamps.length-1;
+            this.redraw();
+        }
+    }
+
+    private redraw() {
+        const stamp = this.stamps[this.stamppos];
+        this.image.stamps.replaceChildren(...stamp.cells.map(cell => {
             const [x, y] = Data.decode(cell.n);
             return Draw.objdraw(cell.elt, x - stamp.xoff, y - stamp.yoff);
         }));

@@ -13,3 +13,14 @@ to run server:
   mkdir serverdata
   echo 1234 > serverdata/port
   ./gratility serve
+
+
+==
+
+
+steps to add a new tool:
+- implement it in src/tools/*.ts
+- add it to src/tools/alltools.ts
+- make a gui for it in addtool in dist/gratility.html
+- process it in addtool-go in src/menu.ts
+- optional: add a default bind in src/toolbox.ts
