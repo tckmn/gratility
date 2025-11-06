@@ -280,6 +280,7 @@ export class DataManager {
     private db: IDBDatabase | undefined = undefined;
     private dbto: ReturnType<typeof setTimeout> | undefined = undefined;
 
+    private frozen = false;
     private hasLocalDocument = false;
     private hasRemoteDocument = false;
     private localName: string | undefined = undefined;
@@ -334,6 +335,7 @@ export class DataManager {
                 this.perform(ch);
             }
         } else {
+            this.frozen = false;
             // TODO kinda bad
             new Stamp.Stamp(deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
             this.wscb(true);
@@ -343,36 +345,43 @@ export class DataManager {
     }
 
     public openLocal(localName: string, cb: (_: boolean) => void) {
+        this.frozen = true;
         // TODO check db existence
         this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(localName).onsuccess = (ev: Event) => {
             const res = (ev.target as IDBRequest).result;
+            this.frozen = false;
             if (res !== undefined) {
                 // TODO kinda bad
+                console.log(res);
                 new Stamp.Stamp(deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+                this.hasLocalDocument = true;
+                this.localName = localName;
                 cb(true);
             } else cb(false);
-            this.hasLocalDocument = true;
-            this.localName = localName;
         };
     }
 
     public openRemote(remoteName: string, cb: (_: boolean) => void) {
+        this.frozen = true;
         // TODO check ws existence
         this.wscb = cb;
         this.ws?.send(JSON.stringify({ m: 'open', name: remoteName }));
     }
 
     public add(change: Change) {
+        if (this.frozen) return;
         if (this.histpos < this.history.length) this.history.splice(this.histpos, this.history.length);
         this.history.push(change);
         this.undo(false);
     }
 
     public breakLink() {
+        if (this.frozen) return;
         this.history[this.histpos-1].linked = false;
     }
 
     public undo(isUndo: boolean) {
+        if (this.frozen) return;
         do {
             if (isUndo ? (this.histpos <= 0) : (this.histpos >= this.history.length)) return;
             const change = this.history[isUndo ? --this.histpos : this.histpos++];
@@ -393,6 +402,7 @@ export class DataManager {
     }
 
     public perform(change: Change) {
+        if (this.frozen) return;
         if (change.pre !== undefined) {
 
             // TODO undefined cases here should never happen

@@ -28,11 +28,26 @@ export default class FileManager {
         return r;
     }
 
+    private filename(s: string): string {
+        return s.split(':')[1];
+    }
+
     public open(s: string) {
-        const schema = this.schema(s);
+        const schema = this.schema(s), filename = this.filename(s);
         if (this.available[schema]) {
-            if (schema === 'LOCAL') this.g.data.openLocal(s.split(':')[1], ()=>{});
-            else this.g.data.openRemote(s.split(':')[1], ()=>{});
+            if (schema === 'LOCAL') {
+                const docname = '🏠 ' + filename;
+                this.container.innerText = `opening ${docname}...`;
+                this.g.data.openLocal(filename, success => {
+                    this.container.innerText = success ? docname : `failed to open ${docname}`;
+                });
+            } else {
+                const docname = '🌐 ' + filename;
+                this.container.innerText = `opening ${docname}...`;
+                this.g.data.openRemote(filename, success => {
+                    this.container.innerText = success ? docname : `failed to open ${docname}`;
+                });
+            }
         } else {
             this.pending = s;
         }
