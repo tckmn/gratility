@@ -241,7 +241,7 @@ menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('file-newlocal', (manager: MenuManager, menu: Menu) => {
-    manager.file.openNew(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value));
+    manager.file.open(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value), true);
     manager.close();
 });
 

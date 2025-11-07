@@ -8,7 +8,7 @@ import * as Stamp from './stamp.js';
 export enum Schema { LOCAL, SERVER }
 
 export class File {
-    public constructor(public readonly schema: Schema, public readonly filename: string, public readonly title: string) {}
+    public constructor(public schema: Schema, public filename: string, public title: string) {}
     public stringify(): string { return JSON.stringify({ s: this.schema, f: this.filename, t: this.title }); }
     static destringify(s: string) { const o = JSON.parse(s); return new File(o.s, o.f, o.t); }
 }
@@ -17,7 +17,7 @@ export class FileManager {
 
     private readonly available: { [key in Schema]: boolean } = { [Schema.LOCAL]: false, [Schema.SERVER]: false };
     private readonly emoji: { [key in Schema]: string } = { [Schema.LOCAL]: '🏠', [Schema.SERVER]: '🌐' };
-    private pending: [boolean, File] | undefined = undefined;
+    private pending: [File, boolean] | undefined = undefined;
 
     private ws: WebSocket | undefined = undefined;
     private wscb: (_: boolean) => void = _=>{};
@@ -104,10 +104,10 @@ export class FileManager {
 
     // TODO all of the below should make sure current doc is saved first
 
-    private openLocal(localName: string, cb: (_: boolean) => void) {
+    private openLocal(f: File, cb: (_: boolean) => void) {
         this.g.data.frozen = true;
         // TODO check db existence
-        this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(localName).onsuccess = (ev: Event) => {
+        this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(f.filename).onsuccess = (ev: Event) => {
             const res = (ev.target as IDBRequest).result;
             this.g.data.clear();
             this.g.data.frozen = false;
@@ -115,67 +115,54 @@ export class FileManager {
                 // TODO kinda bad
                 new Stamp.Stamp(Data.deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this.g.data, 0, 0, true);
                 this.currentDocument = Schema.LOCAL;
-                this.localName = localName;
+                this.localName = f.filename;
                 cb(true);
             } else cb(false);
         };
     }
 
-    private newLocal(localName: string, localTitle: string, cb: (_: boolean) => void) {
+    private newLocal(f: File, cb: (_: boolean) => void) {
         // TODO handle error on tr, don't clear immediately + freeze
         this.g.data.clear();
         this.currentDocument = Schema.LOCAL;
-        this.localName = localName;
-        this.localFiles.push([localName, localTitle]);
+        this.localName = f.filename;
+        this.localFiles.push([f.filename, f.title]);
         const tr = this.db!.transaction(['docs'], 'readwrite');
         tr.oncomplete = () => { cb(true); };
         tr.objectStore('docs').put(this.localFiles, 'files');
     }
 
-    private openRemote(remoteName: string, cb: (_: boolean) => void) {
+    private openRemote(f: File, cb: (_: boolean) => void) {
         this.g.data.frozen = true;
         // TODO check ws existence
         this.wscb = cb;
-        this.ws?.send(JSON.stringify({ m: 'open', name: remoteName }));
+        this.ws?.send(JSON.stringify({ m: 'open', name: f.filename }));
     }
 
-    private newRemote(remoteName: string, remoteTitle: string, cb: (_: boolean) => void) {
+    private newRemote(f: File, cb: (_: boolean) => void) {
         // TODO
     }
 
-    public open(f: File) {
+    public open(f: File, createNew: boolean = false) {
         const docname = this.emoji[f.schema] + ' ' + f.title;
         if (this.available[f.schema]) {
-            this.container.innerText = `opening ${docname}...`;
-            (f.schema === Schema.LOCAL ? this.openLocal : this.openRemote).bind(this)(f.filename, success => {
-                this.container.innerText = success ? docname : `failed to open ${docname}`;
+            if (createNew) f.filename = crypto.randomUUID();
+            this.container.innerText = `${createNew ? 'creating' : 'opening'} ${docname}...`;
+            (createNew
+                ? f.schema === Schema.LOCAL ? this.newLocal : this.newRemote
+                : f.schema === Schema.LOCAL ? this.openLocal : this.openRemote).bind(this)(f, success => {
+                this.container.innerText = success ? docname : `failed to ${createNew ? 'create' : 'open'} ${docname}`;
                 if (success) localStorage.lastfile = f.stringify();
             });
         } else {
-            this.pending = [false, f];
-        }
-    }
-
-    public openNew(f: File) {
-        const docname = this.emoji[f.schema] + ' ' + f.title;
-        if (this.available[f.schema]) {
-            const filename = crypto.randomUUID();
-            this.container.innerText = `creating ${docname}...`;
-            (f.schema === Schema.LOCAL ? this.newLocal : this.newRemote).bind(this)(filename, f.title, success => {
-                this.container.innerText = success ? docname : `failed to create ${docname}`;
-                if (success) localStorage.lastfile = f.stringify();
-            });
-        } else {
-            this.pending = [true, f];
+            this.pending = [f, createNew];
         }
     }
 
     public onopen(t: Schema) {
         this.available[t] = true;
-        if (this.pending !== undefined && this.available[this.pending[1].schema]) {
-            // TODO so hacky lol
-            if (this.pending[0]) this.openNew(this.pending[1]);
-            else this.open(this.pending[1]);
+        if (this.pending !== undefined && this.available[this.pending[0].schema]) {
+            this.open(this.pending[0], this.pending[1]);
         }
     }
 
