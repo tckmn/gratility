@@ -2,8 +2,8 @@ import * as Measure from './measure.js';
 import * as Courier from './courier.js';
 import BitStream from './bitstream.js';
 import Image from './image.js';
+import FileManager from './file.js';
 import * as Draw from './draw.js';
-import * as Stamp from './stamp.js';
 
 export function encode(x: number, y: number): number {
     return (x << 16) | (y & 0xffff);
@@ -275,119 +275,11 @@ export class DataManager {
     private readonly history = new Array<Change>();
     private histpos = 0;
 
-    private ws: WebSocket | undefined = undefined;
-    private wscb: (_: boolean) => void = _=>{};
-    private db: IDBDatabase | undefined = undefined;
-    private dbto: ReturnType<typeof setTimeout> | undefined = undefined;
+    public frozen = false;
 
-    private frozen = false;
-    private hasLocalDocument = false;
-    private hasRemoteDocument = false;
-    private localName: string | undefined = undefined;
-    public localFiles: Array<[string, string]> = [];    // TODO really does not belong here but this is the class with indexeddb access
-
+    private file: FileManager | undefined = undefined;
     public constructor(private image: Image | undefined = undefined) {}
-
-    public connectWS(url: string, initmsg: any, onopen: (() => void), onclose: (() => void)) {
-        this.ws = new WebSocket(url);
-        this.ws.binaryType = 'arraybuffer';
-        this.ws.addEventListener('open', () => {
-            Courier.alert('connected to server');
-            this.ws?.send(JSON.stringify(initmsg));
-            onopen();
-        });
-        this.ws.addEventListener('error', () => {
-            Courier.alert('server connection failed');
-            this.ws = undefined;
-            onclose();
-        });
-        this.ws.addEventListener('close', () => {
-            Courier.alert('server connection lost');
-            this.ws = undefined;
-            onclose();
-        });
-        this.ws.addEventListener('message', this.message.bind(this));
-    }
-
-    public connectDB(onopen: (() => void), onclose: (() => void)) {
-        const req = window.indexedDB.open('gratility', 1);
-        req.onsuccess = (ev) => {
-            this.db = (ev.target as IDBRequest).result;
-            this.db!.transaction(['docs'], 'readonly').objectStore('docs').get('files').onsuccess = (ev: Event) => {
-                const res = (ev.target as IDBRequest).result;
-                if (res) this.localFiles = res;
-            };
-            onopen();
-        };
-        req.onerror = () => {
-            Courier.alert('local database connection failed');
-            this.db = undefined;
-            onclose();
-        };
-        req.onupgradeneeded = (ev: IDBVersionChangeEvent) => {
-            this.db = (ev.target as IDBRequest).result;
-            this.db!.createObjectStore('docs');
-        };
-    }
-
-    private message(msg: MessageEvent<any>) {
-        if (!(msg.data instanceof ArrayBuffer)) {
-            const json = JSON.parse(msg.data);
-            if (json.alert !== undefined) Courier.alert(json.alert);
-            if (json.token !== undefined) localStorage.token = json.token;
-        } else if (this.hasRemoteDocument) {
-            for (const ch of deserializeChanges(new Uint8Array(msg.data))) {
-                this.perform(ch);
-            }
-        } else {
-            this.frozen = false;
-            // TODO kinda bad
-            new Stamp.Stamp(deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0, true);
-            this.wscb(true);
-            this.wscb = ()=>{};
-            this.hasRemoteDocument = true;
-        }
-    }
-
-    // TODO all of the below should make sure current doc is saved first
-
-    public openLocal(localName: string, cb: (_: boolean) => void) {
-        this.frozen = true;
-        // TODO check db existence
-        this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(localName).onsuccess = (ev: Event) => {
-            const res = (ev.target as IDBRequest).result;
-            this.clear();
-            this.frozen = false;
-            if (res !== undefined) {
-                // TODO kinda bad
-                new Stamp.Stamp(deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this, 0, 0, true);
-                this.hasLocalDocument = true;
-                this.localName = localName;
-                cb(true);
-            } else cb(false);
-        };
-    }
-
-    public newLocal(localName: string, localTitle: string, cb: (_: boolean) => void) {
-        this.clear();
-        this.hasLocalDocument = true;
-        this.localName = localName;
-        this.localFiles.push([localName, localTitle]);
-        const tr = this.db!.transaction(['docs'], 'readwrite');
-        tr.oncomplete = () => { cb(true); };
-        tr.objectStore('docs').put(this.localFiles, 'files');
-    }
-
-    public openRemote(remoteName: string, cb: (_: boolean) => void) {
-        this.frozen = true;
-        // TODO check ws existence
-        this.wscb = cb;
-        this.ws?.send(JSON.stringify({ m: 'open', name: remoteName }));
-    }
-
-    public newRemote(remoteName: string, remoteTitle: string, cb: (_: boolean) => void) {
-        // TODO
-    }
+    public connect(file: FileManager) { this.file = file; }
 
     public add(change: Change) {
         if (this.frozen) return;
@@ -408,16 +300,7 @@ export class DataManager {
             const change = this.history[isUndo ? --this.histpos : this.histpos++];
             const real = isUndo ? change.rev() : change;
             this.perform(real);
-            if (this.hasRemoteDocument) {
-                this.ws?.send(serializeChanges([real]));
-            }
-            if (this.hasLocalDocument) {
-                if (this.dbto === undefined) this.dbto = setTimeout(() => {
-                    const tr = this.db!.transaction(['docs'], 'readwrite');
-                    tr.oncomplete = () => { this.dbto = undefined; };
-                    tr.objectStore('docs').put(serializeStamp(this.listcells()), this.localName);
-                }, 1000);
-            }
+            this.file?.recv(real);
         } while (this.history[this.histpos-1]?.linked);
     }
 
@@ -469,11 +352,7 @@ export class DataManager {
         return cells;
     }
 
-    public pending(): boolean {
-        return this.ws === undefined && this.dbto !== undefined;
-    }
-
-    private clear() {
+    public clear() {
         this.halfcells.clear();
         for (const [_, layers] of this.drawn) {
             for (const [_, elt] of layers) {

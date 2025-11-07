@@ -94,7 +94,7 @@ for (const colorpicker of Array.from(document.getElementsByClassName('colorpicke
 }
 
 window.addEventListener('beforeunload', e => {
-    if (data.pending()) {
+    if (file.unsavedChanges()) {
         e.preventDefault();
         e.returnValue = true;
     }

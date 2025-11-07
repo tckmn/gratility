@@ -207,7 +207,7 @@ menuevents.set('toolbox-key', (manager: MenuManager, menu: Menu, e: KeyboardEven
 // ###### SERVER MENU ###### //
 
 menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.file.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'login',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -216,7 +216,7 @@ menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.file.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'register',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -229,7 +229,7 @@ menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
 menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
     const localList: HTMLDivElement = menu.popup.querySelector('#localfilelist')!;
     while (localList.firstChild) localList.removeChild(localList.firstChild);
-    for (const [s, t] of manager.g.data.localFiles) {
+    for (const [s, t] of manager.file.localFiles) {
         const e = document.createElement('div');
         e.innerText = t;
         e.addEventListener('click', () => {
