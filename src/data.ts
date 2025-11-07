@@ -342,7 +342,7 @@ export class DataManager {
         } else {
             this.frozen = false;
             // TODO kinda bad
-            new Stamp.Stamp(deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+            new Stamp.Stamp(deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this, 0, 0, true);
             this.wscb(true);
             this.wscb = ()=>{};
             this.hasRemoteDocument = true;
@@ -360,7 +360,7 @@ export class DataManager {
             this.frozen = false;
             if (res !== undefined) {
                 // TODO kinda bad
-                new Stamp.Stamp(deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
+                new Stamp.Stamp(deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this, 0, 0, true);
                 this.hasLocalDocument = true;
                 this.localName = localName;
                 cb(true);
