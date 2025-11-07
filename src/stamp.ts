@@ -107,8 +107,7 @@ export function render(cells: Array<Data.Item>): Stamp {
     const xoff = Measure.round((xmin + xmax) / 2, 2);
     const yoff = Measure.round((ymin + ymax) / 2, 2);
 
-    const stamp = new Stamp(cells, xoff, yoff, xmin-xoff, xmax-xoff, ymin-yoff, ymax-yoff);
-    return stamp;
+    return new Stamp(cells, xoff, yoff, xmin-xoff, xmax-xoff, ymin-yoff, ymax-yoff);
 }
 
 export class StampManager {
