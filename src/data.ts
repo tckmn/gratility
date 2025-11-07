@@ -2,7 +2,7 @@ import * as Measure from './measure.js';
 import * as Courier from './courier.js';
 import BitStream from './bitstream.js';
 import Image from './image.js';
-import FileManager from './file.js';
+import * as File from './file.js';
 import * as Draw from './draw.js';
 
 export function encode(x: number, y: number): number {
@@ -277,9 +277,9 @@ export class DataManager {
 
     public frozen = false;
 
-    private file: FileManager | undefined = undefined;
+    private file: File.FileManager | undefined = undefined;
     public constructor(private image: Image | undefined = undefined) {}
-    public connect(file: FileManager) { this.file = file; }
+    public connect(file: File.FileManager) { this.file = file; }
 
     public add(change: Change) {
         if (this.frozen) return;

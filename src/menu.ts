@@ -4,7 +4,7 @@ import * as Data from './data.js';
 import * as Draw from './draw.js';
 import Tool from './tools/tool.js';
 import Toolbox from './toolbox.js';
-import FileManager from './file.js';
+import * as File from './file.js';
 import * as Tools from './tools/alltools.js';
 import * as Courier from './courier.js';
 
@@ -211,7 +211,7 @@ menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
         m: 'login',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
-    }, manager.file.onopen('SERVER'), manager.file.onclose('SERVER'));
+    });
     manager.close();
 });
 
@@ -220,7 +220,7 @@ menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
         m: 'register',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
-    }, manager.file.onopen('SERVER'), manager.file.onclose('SERVER'));
+    });
     manager.close();
 });
 
@@ -233,7 +233,7 @@ menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
         const e = document.createElement('div');
         e.innerText = t;
         e.addEventListener('click', () => {
-            manager.file.open('LOCAL:'+s, t);
+            manager.file.open(new File.File(File.Schema.LOCAL, s, t));
             manager.close();
         });
         localList.appendChild(e);
@@ -241,7 +241,7 @@ menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('file-newlocal', (manager: MenuManager, menu: Menu) => {
-    manager.file.openNew('LOCAL', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value);
+    manager.file.openNew(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value));
     manager.close();
 });
 
@@ -279,7 +279,7 @@ export default class MenuManager {
 
     private readonly menus: Map<string, Menu> = new Map();
 
-    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox, public file: FileManager) {
+    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox, public file: File.FileManager) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
                 const menu = this.menus.get(btn.dataset.menu as string);

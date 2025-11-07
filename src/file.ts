@@ -5,56 +5,64 @@ import * as Stamp from './stamp.js';
 
 // TODO: replace all instances of LOCAL and SERVER with enums
 
-export default class FileManager {
+export enum Schema { LOCAL, SERVER }
 
-    private readonly available = { LOCAL: false, SERVER: false };
-    private readonly emoji = { LOCAL: '🏠', SERVER: '🌐' };
-    private pending: [boolean, string, string] | undefined = undefined;
+export class File {
+    public constructor(public readonly schema: Schema, public readonly filename: string, public readonly title: string) {}
+    public stringify(): string { return JSON.stringify({ s: this.schema, f: this.filename, t: this.title }); }
+    static destringify(s: string) { const o = JSON.parse(s); return new File(o.s, o.f, o.t); }
+}
+
+export class FileManager {
+
+    private readonly available: { [key in Schema]: boolean } = { [Schema.LOCAL]: false, [Schema.SERVER]: false };
+    private readonly emoji: { [key in Schema]: string } = { [Schema.LOCAL]: '🏠', [Schema.SERVER]: '🌐' };
+    private pending: [boolean, File] | undefined = undefined;
 
     private ws: WebSocket | undefined = undefined;
     private wscb: (_: boolean) => void = _=>{};
     private db: IDBDatabase | undefined = undefined;
     private dbto: ReturnType<typeof setTimeout> | undefined = undefined;
 
-    private currentDocument: 'LOCAL' | 'SERVER' | undefined = undefined;
+    private currentDocument: Schema | undefined = undefined;
     private localName: string | undefined = undefined;  // TODO some type theoretic thing about how this is string exactly when currentDocument is LOCAL
     public localFiles: Array<[string, string]> = [];
 
     public constructor(private readonly container: HTMLElement, private readonly g: Gratility) {
         g.data.connect(this);
-        this.connectDB(this.onopen('LOCAL'), this.onclose('LOCAL'));
+        this.connectDB();
         if (localStorage.token) {
             this.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
                 m: 'token', token: localStorage.token
-            }, this.onopen('SERVER'), this.onclose('SERVER'));
+            });
         }
         if (localStorage.lastfile) {
-            this.open(localStorage.lastfile, localStorage.lasttitle);
+            this.open(File.destringify(localStorage.lastfile));
         }
     }
 
-    public connectWS(url: string, initmsg: any, onopen: (() => void), onclose: (() => void)) {
+    public connectWS(url: string, initmsg: any) {
         this.ws = new WebSocket(url);
         this.ws.binaryType = 'arraybuffer';
         this.ws.addEventListener('open', () => {
             Courier.alert('connected to server');
             this.ws?.send(JSON.stringify(initmsg));
-            onopen();
+            this.onopen(Schema.SERVER);
         });
         this.ws.addEventListener('error', () => {
             Courier.alert('server connection failed');
             this.ws = undefined;
-            onclose();
+            this.onclose(Schema.SERVER);
         });
         this.ws.addEventListener('close', () => {
             Courier.alert('server connection lost');
             this.ws = undefined;
-            onclose();
+            this.onclose(Schema.SERVER);
         });
         this.ws.addEventListener('message', this.message.bind(this));
     }
 
-    private connectDB(onopen: (() => void), onclose: (() => void)) {
+    private connectDB() {
         const req = window.indexedDB.open('gratility', 1);
         req.onsuccess = (ev) => {
             this.db = (ev.target as IDBRequest).result;
@@ -62,12 +70,12 @@ export default class FileManager {
                 const res = (ev.target as IDBRequest).result;
                 if (res) this.localFiles = res;
             };
-            onopen();
+            this.onopen(Schema.LOCAL);
         };
         req.onerror = () => {
             Courier.alert('local database connection failed');
             this.db = undefined;
-            onclose();
+            this.onclose(Schema.LOCAL);
         };
         req.onupgradeneeded = (ev: IDBVersionChangeEvent) => {
             this.db = (ev.target as IDBRequest).result;
@@ -80,7 +88,7 @@ export default class FileManager {
             const json = JSON.parse(msg.data);
             if (json.alert !== undefined) Courier.alert(json.alert);
             if (json.token !== undefined) localStorage.token = json.token;
-        } else if (this.currentDocument === 'SERVER') {
+        } else if (this.currentDocument === Schema.SERVER) {
             for (const ch of Data.deserializeChanges(new Uint8Array(msg.data))) {
                 this.g.data.perform(ch);
             }
@@ -90,7 +98,7 @@ export default class FileManager {
             new Stamp.Stamp(Data.deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this.g.data, 0, 0, true);
             this.wscb(true);
             this.wscb = ()=>{};
-            this.currentDocument = 'SERVER';
+            this.currentDocument = Schema.SERVER;
         }
     }
 
@@ -106,7 +114,7 @@ export default class FileManager {
             if (res !== undefined) {
                 // TODO kinda bad
                 new Stamp.Stamp(Data.deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this.g.data, 0, 0, true);
-                this.currentDocument = 'LOCAL';
+                this.currentDocument = Schema.LOCAL;
                 this.localName = localName;
                 cb(true);
             } else cb(false);
@@ -116,7 +124,7 @@ export default class FileManager {
     private newLocal(localName: string, localTitle: string, cb: (_: boolean) => void) {
         // TODO handle error on tr, don't clear immediately + freeze
         this.g.data.clear();
-        this.currentDocument = 'LOCAL';
+        this.currentDocument = Schema.LOCAL;
         this.localName = localName;
         this.localFiles.push([localName, localTitle]);
         const tr = this.db!.transaction(['docs'], 'readwrite');
@@ -135,38 +143,50 @@ export default class FileManager {
         // TODO
     }
 
-    private schema(s: string): 'LOCAL' | 'SERVER' {
-        const r = s.split(':')[0];
-        if (r !== 'LOCAL' && r !== 'SERVER') {
-            throw Error('??'); // TODO
-        }
-        return r;
-    }
-
-    private filename(s: string): string {
-        return s.split(':')[1];
-    }
-
-    public open(s: string, title: string) {
-        const schema = this.schema(s), filename = this.filename(s), docname = this.emoji[schema] + ' ' + title;
-        if (this.available[schema]) {
+    public open(f: File) {
+        const docname = this.emoji[f.schema] + ' ' + f.title;
+        if (this.available[f.schema]) {
             this.container.innerText = `opening ${docname}...`;
-            (schema === 'LOCAL' ? this.openLocal : this.openRemote).bind(this)(filename, success => {
+            (f.schema === Schema.LOCAL ? this.openLocal : this.openRemote).bind(this)(f.filename, success => {
                 this.container.innerText = success ? docname : `failed to open ${docname}`;
-                if (success) {
-                    localStorage.lastfile = s;
-                    localStorage.lasttitle = title;
-                }
+                if (success) localStorage.lastfile = f.stringify();
             });
         } else {
-            this.pending = [false, s, title];
+            this.pending = [false, f];
         }
+    }
+
+    public openNew(f: File) {
+        const docname = this.emoji[f.schema] + ' ' + f.title;
+        if (this.available[f.schema]) {
+            const filename = crypto.randomUUID();
+            this.container.innerText = `creating ${docname}...`;
+            (f.schema === Schema.LOCAL ? this.newLocal : this.newRemote).bind(this)(filename, f.title, success => {
+                this.container.innerText = success ? docname : `failed to create ${docname}`;
+                if (success) localStorage.lastfile = f.stringify();
+            });
+        } else {
+            this.pending = [true, f];
+        }
+    }
+
+    public onopen(t: Schema) {
+        this.available[t] = true;
+        if (this.pending !== undefined && this.available[this.pending[1].schema]) {
+            // TODO so hacky lol
+            if (this.pending[0]) this.openNew(this.pending[1]);
+            else this.open(this.pending[1]);
+        }
+    }
+
+    public onclose(t: Schema) {
+        this.available[t] = false;
     }
 
     public recv(change: Data.Change) {
-        if (this.currentDocument === 'SERVER') {
+        if (this.currentDocument === Schema.SERVER) {
             this.ws?.send(Data.serializeChanges([change]));
-        } else if (this.currentDocument === 'LOCAL') {
+        } else if (this.currentDocument === Schema.LOCAL) {
             if (this.dbto === undefined) this.dbto = setTimeout(() => {
                 // TODO what happens if a change occurs during the transaction
                 const tr = this.db!.transaction(['docs'], 'readwrite');
@@ -176,40 +196,8 @@ export default class FileManager {
         }
     }
 
-    public openNew(schema: 'LOCAL' | 'SERVER', title: string) {
-        const filename = crypto.randomUUID(), s = schema + ':' + filename, docname = this.emoji[schema] + ' ' + title;
-        if (this.available[schema]) {
-            this.container.innerText = `creating ${docname}...`;
-            (schema === 'LOCAL' ? this.newLocal : this.newRemote).bind(this)(filename, title, success => {
-                this.container.innerText = success ? docname : `failed to create ${docname}`;
-                if (success) {
-                    localStorage.lastfile = s;
-                    localStorage.lasttitle = title;
-                }
-            });
-        } else {
-            this.pending = [true, s, title];
-        }
-    }
-
-    public onopen(t: 'LOCAL' | 'SERVER'): () => void {
-        return () => {
-            this.available[t] = true;
-            if (this.pending !== undefined && this.available[this.schema(this.pending[1])]) {
-                // TODO so hacky lol
-                (this.pending[0] ? this.openNew : this.open).bind(this)(this.pending[1] as any, this.pending[2]);
-            }
-        };
-    }
-
-    public onclose(t: 'LOCAL' | 'SERVER'): () => void {
-        return () => {
-            this.available[t] = false;
-        };
-    }
-
     public unsavedChanges(): boolean {
-        return this.currentDocument === 'LOCAL' && this.dbto !== undefined;
+        return this.currentDocument === Schema.LOCAL && this.dbto !== undefined;
     }
 
 }
