@@ -94,8 +94,7 @@ export class FileManager {
             }
         } else {
             this.g.data.frozen = false;
-            // TODO kinda bad
-            new Stamp.Stamp(Data.deserializeStamp(new Uint8Array(msg.data)), 0, 0, 0, 0, 0, 0).apply(this.g.data, 0, 0, true);
+            Stamp.unsafeWrap(Data.deserializeStamp(new Uint8Array(msg.data))).apply(this.g.data, 0, 0, true);
             this.wscb(true);
             this.wscb = ()=>{};
             this.currentDocument = Schema.SERVER;
@@ -112,8 +111,7 @@ export class FileManager {
             this.g.data.clear();
             this.g.data.frozen = false;
             if (res !== undefined) {
-                // TODO kinda bad
-                new Stamp.Stamp(Data.deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this.g.data, 0, 0, true);
+                Stamp.unsafeWrap(Data.deserializeStamp(res)).apply(this.g.data, 0, 0, true);
                 this.currentDocument = Schema.LOCAL;
                 this.localName = f.filename;
                 cb(true);

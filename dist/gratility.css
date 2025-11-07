@@ -16,7 +16,12 @@ section#toolbar {
     width: 200px;
 }
 
-section#toolbar > button { width: 100%; }
+section#toolbar > button { width: 100%; font-size: 10pt; }
+
+section#toolbar > div#importexport {
+    padding: 1rem 0.2rem 0;
+    font-size: 10pt;
+}
 
 section#toolbar > div#toolbox {
     overflow-y: scroll;

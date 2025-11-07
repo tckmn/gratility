@@ -22,20 +22,49 @@ function download(fname: string, data: Uint8Array | string, contenttype: string)
     setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+// TODO bad
+function isFullPage(): boolean { return document.getElementById('iesel')!.dataset.value === 'full'; }
+
+// TODO full page import
+// TODO refactor some of this
+// TODO give feedback when no stamp
+
 const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
 
     ['dark', () => {
         document.body.classList.toggle('dark');
     }],
 
+    ['ultxt', (manager: MenuManager) => {
+        navigator.clipboard.readText().then(s => {
+            manager.g.stamp.add(Data.deserializeStamp(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
+        }, e => {
+            Courier.alert(`failed to read from clipboard: ${e}`);
+        });
+    }],
+
+    ['ulstamp', (manager: MenuManager) => {
+        // TODO
+    }],
+
+    ['dltxt', (manager: MenuManager) => {
+        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.g.data.listcells()) : manager.g.stamp.current();
+        if (stamp === undefined) return;
+        navigator.clipboard.writeText(btoa(String.fromCharCode.apply(null, Data.serializeStamp(stamp.cells) as unknown as number[]))).then(() => {
+            Courier.alert('copied to clipboard!');
+        }, e => {
+            Courier.alert(`failed to copy to clipboard: ${e}`);
+        });
+    }],
+
     ['dlstamp', (manager: MenuManager) => {
-        const stamp = manager.g.stamp.current();
+        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.g.data.listcells()) : manager.g.stamp.current();
         if (stamp === undefined) return;
         download('gratility.stamp', Data.serializeStamp(stamp.cells), 'application/octet-stream');
     }],
 
     ['dlsvg', (manager: MenuManager) => {
-        const stamp = manager.g.stamp.current();
+        const stamp = isFullPage() ? Stamp.render(manager.g.data.listcells()) : manager.g.stamp.current();
         if (stamp === undefined) return;
         const svg = Draw.draw(undefined, 'svg');
         stamp.toSVG(svg);
@@ -160,28 +189,6 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     }
 
     manager.close();
-});
-
-// ###### STAMP MENU ###### //
-
-menuevents.set('stamp-open', (manager: MenuManager, menu: Menu) => {
-    // TODO this whole function is awful
-    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    const stamp = manager.g.stamp.current();
-    elt.value = stamp === undefined ? '' :
-        btoa(String.fromCharCode.apply(null, Data.serializeStamp(stamp.cells) as unknown as number[]));
-    elt.focus();
-    elt.select();
-});
-
-menuevents.set('stamp-go', (manager: MenuManager, menu: Menu) => {
-    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    manager.g.stamp.add(Data.deserializeStamp(new Uint8Array(atob(elt.value).split('').map(c => c.charCodeAt(0)))));
-    manager.close();
-});
-
-menuevents.set('stamp-key', (manager: MenuManager, menu: Menu, e: KeyboardEvent) => {
-    if (e.key === 'Enter') manager.menuevent(menu, 'go');
 });
 
 // ###### TOOLBOX MENU ###### //

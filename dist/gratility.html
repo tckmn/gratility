@@ -18,12 +18,24 @@
                 <div style='flex:1'></div>
                 <button class='menuaction' data-menu='addtool'>+ add tool...</button>
                 <button class='menuaction' data-menu='toolbox'>save/load toolbox</button>
-                <button class='menuaction' data-menu='stamp'>save/load stamp</button>
                 <button class='menuaction' data-menu='colors'>save/load colors</button>
                 <button class='menuaction' data-menu='dark'>toggle dark mode</button>
-                <button class='menuaction' data-menu='dlstamp'>download stamp</button>
-                <button class='menuaction' data-menu='dlsvg'>download svg</button>
                 <button class='menuaction' data-menu='server'>connect to server</button>
+                <div id='importexport'>
+                    <span class='menuinput multisel' id='iesel'><!--
+                        --><button class='left' data-multisel='full'>full page</button><!--
+                        --><button class='right' data-multisel='stamp'>current stamp</button><!--
+                    --></span>
+                    <br>
+                    import:
+                    <button class='menuaction' data-menu='ultxt'>text</button>
+                    <button class='menuaction' data-menu='ulstamp'>file</button>
+                    <br>
+                    export:
+                    <button class='menuaction' data-menu='dltxt'>text</button>
+                    <button class='menuaction' data-menu='dlstamp'>file</button>
+                    <button class='menuaction' data-menu='dlsvg'>.svg</button>
+                </div>
                 <div class='menuaction' data-menu='file' id='file'>❗ not saving changes</div>
             </section>
             <svg id='grid'>
@@ -139,11 +151,6 @@
             </div>
 
             <div data-menu='toolbox'>
-                <textarea class='menuinput big' data-menu='value' data-event='keypress=key'></textarea>
-                <button class='menuinput' data-menu='go' data-event='click=go'>load</button>
-            </div>
-
-            <div data-menu='stamp'>
                 <textarea class='menuinput big' data-menu='value' data-event='keypress=key'></textarea>
                 <button class='menuinput' data-menu='go' data-event='click=go'>load</button>
             </div>

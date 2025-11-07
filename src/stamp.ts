@@ -5,6 +5,7 @@ import * as Measure from './measure.js';
 import Image from './image.js';
 
 export class Stamp {
+    // ideally this shouldn't be outside world exposed
     public constructor(
         public cells: Array<Data.Item>,
         public xoff: number,
@@ -84,6 +85,12 @@ export class Stamp {
             image.root.prepend(Draw.draw(undefined, 'rect', { fill: bgcolor, x: vx, y: vy, w: vw, h: vh }));
         }
     }
+}
+
+// WARNING: this does not compute any of the numeric metadata
+// only use when the stamp is just a wrapper for cell list
+export function unsafeWrap(cells: Array<Data.Item>): Stamp {
+    return new Stamp(cells, 0, 0, 0, 0, 0, 0);
 }
 
 export function render(cells: Array<Data.Item>): Stamp {
