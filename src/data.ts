@@ -284,6 +284,7 @@ export class DataManager {
     private hasLocalDocument = false;
     private hasRemoteDocument = false;
     private localName: string | undefined = undefined;
+    public localFiles: Array<[string, string]> = [];    // TODO really does not belong here but this is the class with indexeddb access
 
     public constructor(private image: Image | undefined = undefined) {}
 
@@ -312,6 +313,10 @@ export class DataManager {
         const req = window.indexedDB.open('gratility', 1);
         req.onsuccess = (ev) => {
             this.db = (ev.target as IDBRequest).result;
+            this.db!.transaction(['docs'], 'readonly').objectStore('docs').get('files').onsuccess = (ev: Event) => {
+                const res = (ev.target as IDBRequest).result;
+                if (res) this.localFiles = res;
+            };
             onopen();
         };
         req.onerror = () => {
@@ -344,15 +349,17 @@ export class DataManager {
         }
     }
 
+    // TODO all of the below should make sure current doc is saved first
+
     public openLocal(localName: string, cb: (_: boolean) => void) {
         this.frozen = true;
         // TODO check db existence
         this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(localName).onsuccess = (ev: Event) => {
             const res = (ev.target as IDBRequest).result;
+            this.clear();
             this.frozen = false;
             if (res !== undefined) {
                 // TODO kinda bad
-                console.log(res);
                 new Stamp.Stamp(deserializeStamp(res), 0, 0, 0, 0, 0, 0).apply(this, 0, 0);
                 this.hasLocalDocument = true;
                 this.localName = localName;
@@ -361,11 +368,25 @@ export class DataManager {
         };
     }
 
+    public newLocal(localName: string, localTitle: string, cb: (_: boolean) => void) {
+        this.clear();
+        this.hasLocalDocument = true;
+        this.localName = localName;
+        this.localFiles.push([localName, localTitle]);
+        const tr = this.db!.transaction(['docs'], 'readwrite');
+        tr.oncomplete = () => { cb(true); };
+        tr.objectStore('docs').put(this.localFiles, 'files');
+    }
+
     public openRemote(remoteName: string, cb: (_: boolean) => void) {
         this.frozen = true;
         // TODO check ws existence
         this.wscb = cb;
         this.ws?.send(JSON.stringify({ m: 'open', name: remoteName }));
+    }
+
+    public newRemote(remoteName: string, remoteTitle: string, cb: (_: boolean) => void) {
+        // TODO
     }
 
     public add(change: Change) {
@@ -394,8 +415,7 @@ export class DataManager {
                 if (this.dbto === undefined) this.dbto = setTimeout(() => {
                     const tr = this.db!.transaction(['docs'], 'readwrite');
                     tr.oncomplete = () => { this.dbto = undefined; };
-                    const os = tr.objectStore('docs');
-                    os.put(serializeStamp(this.listcells()), this.localName);
+                    tr.objectStore('docs').put(serializeStamp(this.listcells()), this.localName);
                 }, 1000);
             }
         } while (this.history[this.histpos-1]?.linked);
@@ -451,6 +471,18 @@ export class DataManager {
 
     public pending(): boolean {
         return this.ws === undefined && this.dbto !== undefined;
+    }
+
+    private clear() {
+        this.halfcells.clear();
+        for (const [_, layers] of this.drawn) {
+            for (const [_, elt] of layers) {
+                elt.remove();
+            }
+        }
+        this.drawn.clear();
+        this.history.length = 0;
+        this.histpos = 0;
     }
 
 }

@@ -5,7 +5,8 @@ import Gratility from './gratility.js';
 export default class FileManager {
 
     private readonly available = { LOCAL: false, SERVER: false };
-    private pending: string | undefined = undefined;
+    private readonly emoji = { LOCAL: '🏠', SERVER: '🌐' };
+    private pending: [boolean, string, string] | undefined = undefined;
 
     public constructor(private readonly container: HTMLElement, private readonly g: Gratility) {
         // does this belong here? idk
@@ -16,7 +17,7 @@ export default class FileManager {
             }, this.onopen('SERVER'), this.onclose('SERVER'));
         }
         if (localStorage.lastfile) {
-            this.open(localStorage.lastfile);
+            this.open(localStorage.lastfile, localStorage.lasttitle);
         }
     }
 
@@ -32,32 +33,43 @@ export default class FileManager {
         return s.split(':')[1];
     }
 
-    public open(s: string) {
-        const schema = this.schema(s), filename = this.filename(s);
+    public open(s: string, title: string) {
+        const schema = this.schema(s), filename = this.filename(s), docname = this.emoji[schema] + ' ' + title;
         if (this.available[schema]) {
-            if (schema === 'LOCAL') {
-                const docname = '🏠 ' + filename;
-                this.container.innerText = `opening ${docname}...`;
-                this.g.data.openLocal(filename, success => {
-                    this.container.innerText = success ? docname : `failed to open ${docname}`;
-                });
-            } else {
-                const docname = '🌐 ' + filename;
-                this.container.innerText = `opening ${docname}...`;
-                this.g.data.openRemote(filename, success => {
-                    this.container.innerText = success ? docname : `failed to open ${docname}`;
-                });
-            }
+            this.container.innerText = `opening ${docname}...`;
+            (schema === 'LOCAL' ? this.g.data.openLocal : this.g.data.openRemote).bind(this.g.data)(filename, success => {
+                this.container.innerText = success ? docname : `failed to open ${docname}`;
+                if (success) {
+                    localStorage.lastfile = s;
+                    localStorage.lasttitle = title;
+                }
+            });
         } else {
-            this.pending = s;
+            this.pending = [false, s, title];
+        }
+    }
+
+    public openNew(schema: 'LOCAL' | 'SERVER', title: string) {
+        const filename = crypto.randomUUID(), s = schema + ':' + filename, docname = this.emoji[schema] + ' ' + title;
+        if (this.available[schema]) {
+            this.container.innerText = `creating ${docname}...`;
+            (schema === 'LOCAL' ? this.g.data.newLocal : this.g.data.newRemote).bind(this.g.data)(filename, title, success => {
+                this.container.innerText = success ? docname : `failed to create ${docname}`;
+                if (success) {
+                    localStorage.lastfile = s;
+                    localStorage.lasttitle = title;
+                }
+            });
+        } else {
+            this.pending = [true, s, title];
         }
     }
 
     public onopen(t: 'LOCAL' | 'SERVER'): () => void {
         return () => {
             this.available[t] = true;
-            if (this.pending !== undefined && this.available[this.schema(this.pending)]) {
-                this.open(this.pending);
+            if (this.pending !== undefined && this.available[this.schema(this.pending[1])]) {
+                (this.pending[0] ? this.openNew : this.open).bind(this)(this.pending[1], this.pending[2]);
             }
         };
     }

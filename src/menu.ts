@@ -224,6 +224,26 @@ menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
     manager.close();
 });
 
+// ###### FILE MENU ###### //
+
+menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
+    const localList: HTMLDivElement = menu.popup.querySelector('#localfilelist')!;
+    while (localList.firstChild) localList.removeChild(localList.firstChild);
+    for (const [s, t] of manager.g.data.localFiles) {
+        const e = document.createElement('div');
+        e.innerText = t;
+        e.addEventListener('click', () => {
+            manager.file.open('LOCAL:'+s, t);
+            manager.close();
+        });
+        localList.appendChild(e);
+    }
+});
+
+menuevents.set('file-newlocal', (manager: MenuManager, menu: Menu) => {
+    manager.file.openNew('LOCAL', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value);
+    manager.close();
+});
 
 
 class Menu {

@@ -158,7 +158,12 @@
             </div>
 
             <div data-menu='file' class='small'>
-                todo file menu
+                <p>local files:</p>
+                <div id='localfilelist' class='filelist'></div>
+                <label><input class='menuinput' data-menu='newlocaltitle' placeholder='enter title...'> <button class='menuinput' data-menu='newlocal' data-event='click=newlocal'>new local file</button></label>
+                <p>your server files:</p>
+                <div id='serverfilelist' class='filelist'></div>
+                <label><input class='menuinput' data-menu='newservertitle' placeholder='enter title...'> <button class='menuinput' data-menu='newserver' data-event='click=newserver'>new server file</button></label>
             </div>
 
         </div>
