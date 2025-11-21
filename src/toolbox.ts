@@ -102,7 +102,7 @@ class ToolboxEntry {
 
 export class Toolbox {
 
-    constructor(public readonly name: string, public readonly tools: Array<ToolboxEntry> = []) {}
+    constructor(private readonly gf: Gratility.Frontend, public readonly name: string, public readonly tools: Array<ToolboxEntry> = []) {}
 
     public addBind(tbind: number | string | boolean, tool: Tool): boolean {
         if (this.tools.some(e => e.tbind === tbind)) return false;
@@ -111,7 +111,7 @@ export class Toolbox {
     }
 
     public save(): string { return this.name + '\n' + this.tools.map(t => t.save()).join('\n'); }
-    static load(s: string) { return new Toolbox(s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
+    static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
 
     public display(container: HTMLElement, editMode: boolean) {
         const title = document.createElement('div');
@@ -124,7 +124,7 @@ export class Toolbox {
         if (editMode) {
             const addbtn = document.createElement('button');
             addbtn.textContent = '+ add tool...';
-            // addbtn.addEventListener('click', () => );
+            addbtn.addEventListener('click', () => this.gf.menu.open('addtool'));
             container.appendChild(addbtn);
         }
     }
@@ -149,12 +149,12 @@ export class Toolboxbox {
     public readonly keyTools = new Map<string, Tool>();
     public readonly wheelTools = new Map<boolean, Tool>();
 
-    constructor(private frontend: Gratility.Frontend, private container: HTMLElement) {
+    constructor(private gf: Gratility.Frontend, private container: HTMLElement) {
         this.load(localStorage.toolbox ?? DEFAULT_TOOLS);
     }
 
     private save(): string { return this.toolboxes.map(b => b.save()).join('\n:\n'); }
-    private load(s: string) { this.toolboxes = s.split('\n:\n').map(Toolbox.load); this.recompute(); this.rerender(); }
+    private load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.recompute(); this.rerender(); }
 
     private recompute() {
         for (const toolbox of this.toolboxes) {
