@@ -1,9 +1,6 @@
-import Gratility from './gratility.js';
 import * as Data from './data.js';
 import * as Courier from './courier.js';
 import * as Stamp from './stamp.js';
-
-// TODO: replace all instances of LOCAL and SERVER with enums
 
 export enum Schema { LOCAL, SERVER }
 
@@ -28,8 +25,7 @@ export class FileManager {
     private localName: string | undefined = undefined;  // TODO some type theoretic thing about how this is string exactly when currentDocument is LOCAL
     public localFiles: Array<[string, string]> = [];
 
-    public constructor(private readonly container: HTMLElement, private readonly g: Gratility) {
-        g.data.connect(this);
+    public constructor(private readonly container: HTMLElement, private readonly data: Data.DataManager) {
         this.connectDB();
         if (localStorage.token) {
             this.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
@@ -90,11 +86,11 @@ export class FileManager {
             if (json.token !== undefined) localStorage.token = json.token;
         } else if (this.currentDocument === Schema.SERVER) {
             for (const ch of Data.deserializeChanges(new Uint8Array(msg.data))) {
-                this.g.data.perform(ch);
+                this.data.perform(ch);
             }
         } else {
-            this.g.data.frozen = false;
-            Stamp.unsafeWrap(Data.deserializeStamp(new Uint8Array(msg.data))).apply(this.g.data, 0, 0, true);
+            this.data.frozen = false;
+            Stamp.unsafeWrap(Data.deserializeStamp(new Uint8Array(msg.data))).apply(this.data, 0, 0, true);
             this.wscb(true);
             this.wscb = ()=>{};
             this.currentDocument = Schema.SERVER;
@@ -104,14 +100,14 @@ export class FileManager {
     // TODO all of the below should make sure current doc is saved first
 
     private openLocal(f: File, cb: (_: boolean) => void) {
-        this.g.data.frozen = true;
+        this.data.frozen = true;
         // TODO check db existence
         this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(f.filename).onsuccess = (ev: Event) => {
             const res = (ev.target as IDBRequest).result;
-            this.g.data.clear();
-            this.g.data.frozen = false;
+            this.data.clear();
+            this.data.frozen = false;
             if (res !== undefined) {
-                Stamp.unsafeWrap(Data.deserializeStamp(res)).apply(this.g.data, 0, 0, true);
+                Stamp.unsafeWrap(Data.deserializeStamp(res)).apply(this.data, 0, 0, true);
                 this.currentDocument = Schema.LOCAL;
                 this.localName = f.filename;
                 cb(true);
@@ -121,7 +117,7 @@ export class FileManager {
 
     private newLocal(f: File, cb: (_: boolean) => void) {
         // TODO handle error on tr, don't clear immediately + freeze
-        this.g.data.clear();
+        this.data.clear();
         this.currentDocument = Schema.LOCAL;
         this.localName = f.filename;
         this.localFiles.push([f.filename, f.title]);
@@ -131,7 +127,7 @@ export class FileManager {
     }
 
     private openRemote(f: File, cb: (_: boolean) => void) {
-        this.g.data.frozen = true;
+        this.data.frozen = true;
         // TODO check ws existence
         this.wscb = cb;
         this.ws?.send(JSON.stringify({ m: 'open', name: f.filename }));
@@ -176,7 +172,7 @@ export class FileManager {
                 // TODO what happens if a change occurs during the transaction
                 const tr = this.db!.transaction(['docs'], 'readwrite');
                 tr.oncomplete = () => { this.dbto = undefined; };
-                tr.objectStore('docs').put(Data.serializeStamp(this.g.data.listcells()), this.localName);
+                tr.objectStore('docs').put(Data.serializeStamp(this.data.listcells()), this.localName);
             }, 1000);
         }
     }

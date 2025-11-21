@@ -277,9 +277,9 @@ export class DataManager {
 
     public frozen = false;
 
-    private file: File.FileManager | undefined = undefined;
+    public file: File.FileManager | undefined = undefined;
     public constructor(private image: Image | undefined = undefined) {}
-    public connect(file: File.FileManager) { this.file = file; }
+    public connect(fileCont: HTMLElement) { this.file = new File.FileManager(fileCont, this); }
 
     public add(change: Change) {
         if (this.frozen) return;

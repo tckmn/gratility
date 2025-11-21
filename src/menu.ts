@@ -195,10 +195,12 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     manager.close();
 });
 
+// TODO: something if file does not exist below? it should never not exist
+
 // ###### SERVER MENU ###### //
 
 menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
-    manager.file.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.g.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'login',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -207,7 +209,7 @@ menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
-    manager.file.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.g.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'register',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -218,13 +220,15 @@ menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
 // ###### FILE MENU ###### //
 
 menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
+    const file = manager.g.data.file;
+    if (file === undefined) return;
     const localList: HTMLDivElement = menu.popup.querySelector('#localfilelist')!;
     while (localList.firstChild) localList.removeChild(localList.firstChild);
-    for (const [s, t] of manager.file.localFiles) {
+    for (const [s, t] of file.localFiles) {
         const e = document.createElement('div');
         e.innerText = t;
         e.addEventListener('click', () => {
-            manager.file.open(new File.File(File.Schema.LOCAL, s, t));
+            file.open(new File.File(File.Schema.LOCAL, s, t));
             manager.close();
         });
         localList.appendChild(e);
@@ -232,7 +236,7 @@ menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('file-newlocal', (manager: MenuManager, menu: Menu) => {
-    manager.file.open(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value), true);
+    manager.g.data.file?.open(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value), true);
     manager.close();
 });
 
@@ -274,7 +278,7 @@ export default class MenuManager {
 
     private readonly menus: Map<string, Menu> = new Map();
 
-    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox.Toolboxbox, public file: File.FileManager) {
+    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox.Toolboxbox) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
                 if (this.open(btn.dataset.menu as string)) return;

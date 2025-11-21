@@ -21,14 +21,14 @@ const stamp = new Stamp.StampManager(image);
 const view = new ViewManager(image);
 const gratility = new Gratility(image, data, stamp, view);
 
+data.connect(document.getElementById('file')!);
+
 const toolbox = new Toolbox.Toolboxbox(document.getElementById('toolbox')!);
-const file = new File.FileManager(document.getElementById('file')!, gratility);
 const menu = new MenuManager(
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
     gratility,
-    toolbox,
-    file
+    toolbox
 );
 
 Event.initialize(gratility, svg, document.body, toolbox, menu);
@@ -94,7 +94,7 @@ for (const colorpicker of Array.from(document.getElementsByClassName('colorpicke
 }
 
 window.addEventListener('beforeunload', e => {
-    if (file.unsavedChanges()) {
+    if (data.file?.unsavedChanges()) {
         e.preventDefault();
         e.returnValue = true;
     }
