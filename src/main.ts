@@ -4,9 +4,9 @@ import * as Color from './color.js';
 import * as Data from './data.js';
 import * as Draw from './draw.js';
 import * as File from './file.js';
+import * as Toolbox from './toolbox.js';
 import MenuManager from './menu.js';
 import ViewManager from './view.js';
-import Toolbox from './toolbox.js';
 import Image from './image.js';
 import Gratility from './gratility.js';
 
@@ -21,7 +21,7 @@ const stamp = new Stamp.StampManager(image);
 const view = new ViewManager(image);
 const gratility = new Gratility(image, data, stamp, view);
 
-const toolbox = new Toolbox(document.getElementById('toolbox')!);
+const toolbox = new Toolbox.Toolboxbox(document.getElementById('toolbox')!);
 const file = new File.FileManager(document.getElementById('file')!, gratility);
 const menu = new MenuManager(
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,

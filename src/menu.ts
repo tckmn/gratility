@@ -3,7 +3,7 @@ import * as Stamp from './stamp.js';
 import * as Data from './data.js';
 import * as Draw from './draw.js';
 import Tool from './tools/tool.js';
-import Toolbox from './toolbox.js';
+import * as Toolbox from './toolbox.js';
 import * as File from './file.js';
 import * as Tools from './tools/alltools.js';
 import * as Courier from './courier.js';
@@ -33,6 +33,10 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
 
     ['dark', () => {
         document.body.classList.toggle('dark');
+    }],
+
+    ['tedit', (manager: MenuManager) => {
+        manager.toolbox.toggleEdit();
     }],
 
     ['ultxt', (manager: MenuManager) => {
@@ -92,24 +96,24 @@ menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
 menuevents.set('addtool-bindmouse', (manager: MenuManager, menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
     if (e.button !== 0) e.preventDefault();
     target.value = 'click ' + e.button;
-    const conflict = manager.toolbox.mouseTools.has(e.button);
-    target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : tool => manager.toolbox.bindMouse(e.button, tool);
+    // const conflict = manager.toolbox.mouseTools.has(e.button);
+    // target.classList.toggle('conflict', conflict);
+    // resolve = conflict ? undefined : tool => manager.toolbox.bindMouse(e.button, tool);
 });
 
 menuevents.set('addtool-bindkey', (manager: MenuManager, menu: Menu, e: KeyboardEvent, target: HTMLInputElement) => {
     e.preventDefault();
     target.value = 'key [' + e.key + ']';
-    const conflict = manager.toolbox.keyTools.has(e.key);
-    target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : tool => manager.toolbox.bindKey(e.key, tool);
+    // const conflict = manager.toolbox.keyTools.has(e.key);
+    // target.classList.toggle('conflict', conflict);
+    // resolve = conflict ? undefined : tool => manager.toolbox.bindKey(e.key, tool);
 });
 
 menuevents.set('addtool-bindwheel', (manager: MenuManager, menu: Menu, e: WheelEvent, target: HTMLInputElement) => {
     target.value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
-    const conflict = manager.toolbox.wheelTools.has(e.deltaY < 0);
-    target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : tool => manager.toolbox.bindWheel(e.deltaY < 0, tool);
+    // const conflict = manager.toolbox.wheelTools.has(e.deltaY < 0);
+    // target.classList.toggle('conflict', conflict);
+    // resolve = conflict ? undefined : tool => manager.toolbox.bindWheel(e.deltaY < 0, tool);
 });
 
 menuevents.set('addtool-nop', (manager: MenuManager, menu: Menu, e: Event) => {
@@ -191,26 +195,6 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     manager.close();
 });
 
-// ###### TOOLBOX MENU ###### //
-
-menuevents.set('toolbox-open', (manager: MenuManager, menu: Menu) => {
-    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    elt.value = manager.toolbox.save();
-    elt.focus();
-    elt.select();
-});
-
-menuevents.set('toolbox-go', (manager: MenuManager, menu: Menu) => {
-    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    manager.toolbox.clear();
-    manager.toolbox.load(elt.value);
-    manager.close();
-});
-
-menuevents.set('toolbox-key', (manager: MenuManager, menu: Menu, e: KeyboardEvent) => {
-    if (e.key === 'Enter') manager.menuevent(menu, 'go');
-});
-
 // ###### SERVER MENU ###### //
 
 menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
@@ -269,10 +253,14 @@ export default class MenuManager {
     private activeMenu: Menu | undefined = undefined;
     public isOpen(): boolean { return this.activeMenu !== undefined; }
 
-    public open(menu: Menu) {
+    public open(mname: string): boolean {
+        if (this.activeMenu !== undefined) return false;
+        const menu = this.menus.get(mname);
+        if (menu === undefined) return false;
         menu.open();
         this.activeMenu = menu;
         this.menuevent(menu, 'open');
+        return true;
     }
 
     public close() {
@@ -286,16 +274,12 @@ export default class MenuManager {
 
     private readonly menus: Map<string, Menu> = new Map();
 
-    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox, public file: File.FileManager) {
+    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox.Toolboxbox, public file: File.FileManager) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
-                const menu = this.menus.get(btn.dataset.menu as string);
-                if (menu !== undefined && this.activeMenu === undefined) {
-                    this.open(menu);
-                } else {
-                    const fn = menuactions.get(btn.dataset.menu as string);
-                    if (fn !== undefined) fn(this);
-                }
+                if (this.open(btn.dataset.menu as string)) return;
+                const fn = menuactions.get(btn.dataset.menu as string);
+                if (fn !== undefined) fn(this);
             });
         }
 

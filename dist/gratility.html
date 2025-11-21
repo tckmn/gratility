@@ -16,9 +16,10 @@
                 <div id='toolbox'>
                 </div>
                 <div style='flex:1'></div>
-                <button class='menuaction' data-menu='addtool'>+ add tool...</button>
-                <button class='menuaction' data-menu='toolbox'>save/load toolbox</button>
+                <!-- <button class='menuaction' data-menu='addtool'>+ add tool...</button> -->
+                <!-- <button class='menuaction' data-menu='toolbox'>save/load toolbox</button> -->
                 <!-- <button class='menuaction' data-menu='colors'>save/load colors</button> -->
+                <button class='menuaction' data-menu='tedit'>toggle edit mode</button>
                 <button class='menuaction' data-menu='dark'>toggle dark mode</button>
                 <button class='menuaction' data-menu='server'>connect to server</button>
                 <div id='importexport'>
@@ -148,11 +149,6 @@
                     </section>
                 </div>
                 <button class='menuinput' data-menu='go' data-event='click=go'>add</button>
-            </div>
-
-            <div data-menu='toolbox'>
-                <textarea class='menuinput big' data-menu='value' data-event='keypress=key'></textarea>
-                <button class='menuinput' data-menu='go' data-event='click=go'>load</button>
             </div>
 
             <div data-menu='server' class='small'>

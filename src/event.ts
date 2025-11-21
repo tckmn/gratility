@@ -1,12 +1,12 @@
 import Tool from './tools/tool.js';
-import Toolbox from './toolbox.js';
+import * as Toolbox from './toolbox.js';
 import MenuManager from './menu.js';
 import Gratility from './gratility.js';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
 export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref: undefined };
 
-export function initialize(g: Gratility, svg: SVGElement, page: HTMLElement, toolbox: Toolbox, menu: MenuManager) {
+export function initialize(g: Gratility, svg: SVGElement, page: HTMLElement, toolbox: Toolbox.Toolboxbox, menu: MenuManager) {
 
     const activeTools = new Set<Tool>();
     const rect = svg.getBoundingClientRect();
