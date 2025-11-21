@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -27,7 +27,7 @@ export default class SurfaceTool implements Tool {
     private isDrawing = false;
     private element : Data.Element;
 
-    public ondown(x: number, y: number, g: Gratility) {
+    public ondown(x: number, y: number, g: Gratility.Backend) {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);
@@ -42,7 +42,7 @@ export default class SurfaceTool implements Tool {
         }
     }
 
-    public onmove(x: number, y: number, g: Gratility) {
+    public onmove(x: number, y: number, g: Gratility.Backend) {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);

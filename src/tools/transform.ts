@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 
 // TODO: some of them don't work yet
 
@@ -14,7 +14,7 @@ export default class TransformTool implements Tool {
 
     public constructor(private trnum: number) {}
 
-    public ondown(x: number, y: number, g: Gratility) {
+    public ondown(x: number, y: number, g: Gratility.Backend) {
         switch (this.trnum) {
         case 0: g.stamp.transform(s => s.reflect(true)); break;
         case 1: g.stamp.transform(s => s.reflect(false)); break;

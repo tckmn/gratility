@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -49,7 +49,7 @@ export default class LineTool implements Tool {
         this.y = Measure.hc(y, this.HC_WEIGHT);
     }
 
-    public onmove(x: number, y: number, g: Gratility) {
+    public onmove(x: number, y: number, g: Gratility.Backend) {
         x = Measure.hc(x, this.HC_WEIGHT);
         y = Measure.hc(y, this.HC_WEIGHT);
         if (x === this.x && y === this.y) return;

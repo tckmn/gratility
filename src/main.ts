@@ -8,7 +8,7 @@ import * as Toolbox from './toolbox.js';
 import MenuManager from './menu.js';
 import ViewManager from './view.js';
 import Image from './image.js';
-import Gratility from './gratility.js';
+import * as Gratility from './gratility.js';
 
 
 // TODO make this better i guess
@@ -19,19 +19,16 @@ const image = new Image(svg);
 const data = new Data.DataManager(image);
 const stamp = new Stamp.StampManager(image);
 const view = new ViewManager(image);
-const gratility = new Gratility(image, data, stamp, view);
+const backend = new Gratility.Backend(image, data, stamp, view);
 
 data.connect(document.getElementById('file')!);
 
-const toolbox = new Toolbox.Toolboxbox(document.getElementById('toolbox')!);
-const menu = new MenuManager(
+const frontend = new Gratility.Frontend(backend,
+    document.getElementById('toolbox')!,
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
-    Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
-    gratility,
-    toolbox
-);
+    Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>);
 
-Event.initialize(gratility, svg, document.body, toolbox, menu);
+Event.initialize(frontend, backend, svg, document.body);
 
 // TODO better
 image.grid(-500, 500, -500, 500);

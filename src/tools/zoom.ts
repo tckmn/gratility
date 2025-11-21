@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 
 export default class ZoomTool implements Tool {
 
@@ -12,7 +12,7 @@ export default class ZoomTool implements Tool {
 
     public constructor(private readonly amount: number) {}
 
-    public ondown(x: number, y: number, g: Gratility) {
+    public ondown(x: number, y: number, g: Gratility.Backend) {
         g.view.x = (x + g.view.x) * g.view.zoom(-this.amount) - x;
         g.view.y = (y + g.view.y) * g.view.zoom(-this.amount) - y;
         g.view.z += this.amount;

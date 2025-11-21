@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 
 export default class PanTool implements Tool {
 
@@ -18,7 +18,7 @@ export default class PanTool implements Tool {
         this.my = y;
     }
 
-    public onmove(x: number, y: number, g: Gratility) {
+    public onmove(x: number, y: number, g: Gratility.Backend) {
         g.view.x += x - this.mx;
         g.view.y += y - this.my;
         g.view.update();

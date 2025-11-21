@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -21,7 +21,7 @@ export default class CopyTool implements Tool {
 
     public constructor(private isCut: boolean) {}
 
-    public ondown(x: number, y: number, g: Gratility) {
+    public ondown(x: number, y: number, g: Gratility.Backend) {
         this.sx = x;
         this.sy = y;
         this.tx = x;
@@ -53,7 +53,7 @@ export default class CopyTool implements Tool {
         }
     }
 
-    public onup(g: Gratility) {
+    public onup(g: Gratility.Backend) {
         if (this.elt !== undefined) g.image.copypaste.removeChild(this.elt);
 
         const sx = Measure.hc(Math.min(this.sx, this.tx));

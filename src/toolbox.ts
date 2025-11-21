@@ -1,6 +1,7 @@
 import Tool from './tools/tool.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
+import * as Gratility from './gratility.js';
 
 const DEFAULT_TOOLS = `main
 m1::pan:
@@ -148,7 +149,7 @@ export class Toolboxbox {
     public readonly keyTools = new Map<string, Tool>();
     public readonly wheelTools = new Map<boolean, Tool>();
 
-    constructor(private container: HTMLElement) {
+    constructor(private frontend: Gratility.Frontend, private container: HTMLElement) {
         this.load(localStorage.toolbox ?? DEFAULT_TOOLS);
     }
 

@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -20,7 +20,7 @@ export default class TextTool implements Tool {
     private elt: SVGElement | undefined = undefined;
     private isDrawing: boolean = false;
 
-    public ondown(x: number, y: number, g: Gratility) {
+    public ondown(x: number, y: number, g: Gratility.Backend) {
         if (this.preset !== '') {
             const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
             const text = g.data.halfcells.get(n)?.get(Data.Layer.TEXT);
@@ -46,7 +46,7 @@ export default class TextTool implements Tool {
         }
     }
 
-    private onkey(g: Gratility) {
+    private onkey(g: Gratility.Backend) {
         return (e: KeyboardEvent) => {
             const text = g.data.halfcells.get(this.n)?.get(Data.Layer.TEXT);
             if (e.key === 'Enter' || e.key === 'Escape') {
@@ -66,7 +66,7 @@ export default class TextTool implements Tool {
         if (this.elt !== undefined) this.elt.parentNode!.removeChild(this.elt);
     }
 
-    public onmove(x: number, y: number, g: Gratility) {
+    public onmove(x: number, y: number, g: Gratility.Backend) {
         if (this.preset === '') return;
         const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
         const text = g.data.halfcells.get(n)?.get(Data.Layer.TEXT);

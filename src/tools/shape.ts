@@ -1,5 +1,5 @@
 import Tool from './tool.js';
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
@@ -63,7 +63,7 @@ export default class ShapeTool implements Tool {
 
     private isDrawing = false;
 
-    public ondown(x: number, y: number, g: Gratility) {
+    public ondown(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
         const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE);
@@ -84,7 +84,7 @@ export default class ShapeTool implements Tool {
         }
     }
 
-    public onmove(x: number, y: number, g: Gratility) {
+    public onmove(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
         const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE);

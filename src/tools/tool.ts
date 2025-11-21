@@ -1,4 +1,4 @@
-import Gratility from '../gratility.js';
+import * as Gratility from '../gratility.js';
 
 export default interface Tool {
     readonly repeat: boolean;
@@ -7,7 +7,7 @@ export default interface Tool {
     icon(): SVGElement | void;
     save(): string;
     // static load(s: string): Tool;
-    ondown(x: number, y: number, g: Gratility): void;
-    onmove(x: number, y: number, g: Gratility): void;
-    onup(g: Gratility): void;
+    ondown(x: number, y: number, g: Gratility.Backend): void;
+    onmove(x: number, y: number, g: Gratility.Backend): void;
+    onup(g: Gratility.Backend): void;
 }

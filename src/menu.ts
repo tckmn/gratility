@@ -1,4 +1,4 @@
-import Gratility from './gratility.js';
+import * as Gratility from './gratility.js';
 import * as Stamp from './stamp.js';
 import * as Data from './data.js';
 import * as Draw from './draw.js';
@@ -36,12 +36,12 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     }],
 
     ['tedit', (manager: MenuManager) => {
-        manager.toolbox.toggleEdit();
+        manager.gf.toolbox.toggleEdit();
     }],
 
     ['ultxt', (manager: MenuManager) => {
         navigator.clipboard.readText().then(s => {
-            manager.g.stamp.add(Data.deserializeStamp(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
+            manager.gb.stamp.add(Data.deserializeStamp(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
         }, e => {
             Courier.alert(`failed to read from clipboard: ${e}`);
         });
@@ -52,7 +52,7 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     }],
 
     ['dltxt', (manager: MenuManager) => {
-        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.g.data.listcells()) : manager.g.stamp.current();
+        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.gb.data.listcells()) : manager.gb.stamp.current();
         if (stamp === undefined) return;
         navigator.clipboard.writeText(btoa(String.fromCharCode.apply(null, Data.serializeStamp(stamp.cells) as unknown as number[]))).then(() => {
             Courier.alert('copied to clipboard!');
@@ -62,13 +62,13 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     }],
 
     ['dlstamp', (manager: MenuManager) => {
-        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.g.data.listcells()) : manager.g.stamp.current();
+        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.gb.data.listcells()) : manager.gb.stamp.current();
         if (stamp === undefined) return;
         download('gratility.stamp', Data.serializeStamp(stamp.cells), 'application/octet-stream');
     }],
 
     ['dlsvg', (manager: MenuManager) => {
-        const stamp = isFullPage() ? Stamp.render(manager.g.data.listcells()) : manager.g.stamp.current();
+        const stamp = isFullPage() ? Stamp.render(manager.gb.data.listcells()) : manager.gb.stamp.current();
         if (stamp === undefined) return;
         const svg = Draw.draw(undefined, 'svg');
         stamp.toSVG(svg);
@@ -200,7 +200,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
 // ###### SERVER MENU ###### //
 
 menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.gb.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'login',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -209,7 +209,7 @@ menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.gb.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
         m: 'register',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -220,7 +220,7 @@ menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
 // ###### FILE MENU ###### //
 
 menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
-    const file = manager.g.data.file;
+    const file = manager.gb.data.file;
     if (file === undefined) return;
     const localList: HTMLDivElement = menu.popup.querySelector('#localfilelist')!;
     while (localList.firstChild) localList.removeChild(localList.firstChild);
@@ -236,7 +236,7 @@ menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('file-newlocal', (manager: MenuManager, menu: Menu) => {
-    manager.g.data.file?.open(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value), true);
+    manager.gb.data.file?.open(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value), true);
     manager.close();
 });
 
@@ -278,7 +278,7 @@ export default class MenuManager {
 
     private readonly menus: Map<string, Menu> = new Map();
 
-    constructor(btns: Array<HTMLElement>, popups: Array<HTMLElement>, public g: Gratility, public toolbox: Toolbox.Toolboxbox) {
+    constructor(public gf: Gratility.Frontend, public gb: Gratility.Backend, btns: Array<HTMLElement>, popups: Array<HTMLElement>) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
                 if (this.open(btn.dataset.menu as string)) return;
