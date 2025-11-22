@@ -32,7 +32,9 @@ section#toolbar > div#toolbox > div.tbname {
     text-align: center;
     color: #555;
     background-color: #ddd;
+    margin-top: 1rem;
 }
+section#toolbar > div#toolbox > div.tbname:first-child { margin-top: 0; }
 
 section#toolbar > div#toolbox > div.tbtools {
     display: grid;
@@ -57,6 +59,9 @@ section#toolbar > div#toolbox div.delbtn {
     padding: 1px;
     margin: 1px;
 }
+
+section#toolbar > div#toolbox div.adddiv { display: flex; padding-top: 1rem; }
+section#toolbar > div#toolbox div.adddiv > input { width: 1px; flex: 1; }
 
 svg#grid {
     flex: 1;

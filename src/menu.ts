@@ -192,8 +192,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     default: Courier.alert('unknown tool??'); return;
     }
 
-    manager.gf.toolbox.refresh();
-    manager.gf.toolbox.save();
+    manager.gf.toolbox.saveRefresh();
     manager.close();
 });
 

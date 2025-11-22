@@ -2,6 +2,7 @@ import Tool from './tools/tool.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
 import * as Gratility from './gratility.js';
+import * as Courier from './courier.js';
 
 const DEFAULT_TOOLS = `main
 m1::pan:
@@ -122,7 +123,7 @@ export class Toolbox {
 
     // oops naming lol
     public save() { this.gf.toolbox.save(); }
-    public saveStr(): string { return this.name + '\n' + this.tools.map(t => t.save()).join('\n'); }
+    public saveStr(): string { return this.name + this.tools.map(t => '\n' + t.save()).join(); }
     static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
 
     public display(container: HTMLElement, editMode: boolean) {
@@ -158,6 +159,7 @@ export class Toolboxbox {
 
     public toolboxes: Array<Toolbox> = [];
     private editMode: boolean = false;
+    public isEdit() { return this.editMode; }
     public toggleEdit() { this.editMode = !this.editMode; this.rerender(); }
 
     public readonly mouseTools = new Map<number, Tool>();
@@ -169,10 +171,10 @@ export class Toolboxbox {
     }
 
     public save() { localStorage.toolbox = this.toolboxes.map(b => b.saveStr()).join('\n:\n'); }
-    private load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.refresh(); }
+    private load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.recompute(); this.rerender(); }
 
-    public refresh() {
-        this.recompute(); this.rerender();
+    public saveRefresh() {
+        this.recompute(); this.rerender(); this.save();
     }
 
     private recompute() {
@@ -195,9 +197,26 @@ export class Toolboxbox {
         for (const t of this.toolboxes) t.display(this.container, this.editMode);
 
         if (this.editMode) {
+            const adddiv = document.createElement('div');
+            adddiv.classList.add('adddiv');
+            const addtxt = document.createElement('input');
+            addtxt.setAttribute('placeholder', 'toolbox name...');
             const addbtn = document.createElement('button');
-            addbtn.textContent = '+ new toolbox';
-            this.container.appendChild(addbtn);
+            addbtn.textContent = '+ new';
+            adddiv.appendChild(addtxt);
+            adddiv.appendChild(addbtn);
+            this.container.appendChild(adddiv);
+
+            const addfn = () => {
+                if (addtxt.value.replace(/\s/g, '')) {
+                    this.toolboxes.push(new Toolbox(this.gf, addtxt.value));
+                    this.saveRefresh();
+                } else {
+                    Courier.alert('please provide a name for your new toolbox');
+                }
+            };
+            addtxt.addEventListener('keypress', e => { if (e.key === 'Enter') addfn(); });
+            addbtn.addEventListener('click', addfn);
         }
     }
 
