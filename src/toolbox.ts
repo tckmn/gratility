@@ -104,8 +104,12 @@ export class Toolbox {
 
     constructor(private readonly gf: Gratility.Frontend, public readonly name: string, public readonly tools: Array<ToolboxEntry> = []) {}
 
+    public hasBind(tbind: number | string | boolean): boolean {
+        return this.tools.some(e => e.tbind === tbind);
+    }
+
     public addBind(tbind: number | string | boolean, tool: Tool): boolean {
-        if (this.tools.some(e => e.tbind === tbind)) return false;
+        if (this.hasBind(tbind)) return false;
         this.tools.push(new ToolboxEntry(tbind, tool));
         return true;
     }
@@ -124,7 +128,10 @@ export class Toolbox {
         if (editMode) {
             const addbtn = document.createElement('button');
             addbtn.textContent = '+ add tool...';
-            addbtn.addEventListener('click', () => this.gf.menu.open('addtool'));
+            addbtn.addEventListener('click', () => {
+                this.gf.menu.addToolBox = this;
+                this.gf.menu.open('addtool');
+            });
             container.appendChild(addbtn);
         }
     }
@@ -154,9 +161,16 @@ export class Toolboxbox {
     }
 
     private save(): string { return this.toolboxes.map(b => b.save()).join('\n:\n'); }
-    private load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.recompute(); this.rerender(); }
+    private load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.refresh(); }
+
+    public refresh() {
+        this.recompute(); this.rerender();
+    }
 
     private recompute() {
+        this.mouseTools.clear();
+        this.keyTools.clear();
+        this.wheelTools.clear();
         for (const toolbox of this.toolboxes) {
             for (const entry of toolbox.tools) {
                 switch (typeof entry.tbind) {
