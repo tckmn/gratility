@@ -216,6 +216,8 @@ export class Toolboxbox {
                 }
             };
             addtxt.addEventListener('keypress', e => { if (e.key === 'Enter') addfn(); });
+            addtxt.addEventListener('keyup', e => e.stopPropagation());
+            addtxt.addEventListener('keydown', e => e.stopPropagation());
             addbtn.addEventListener('click', addfn);
         }
     }

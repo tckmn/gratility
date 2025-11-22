@@ -96,3 +96,6 @@ window.addEventListener('beforeunload', e => {
         e.returnValue = true;
     }
 });
+
+// TODO this should definitely definitely go somewhere else
+document.getElementById('toolbar')?.addEventListener('wheel', e => e.stopPropagation());

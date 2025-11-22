@@ -16,20 +16,17 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
         lastY = (e.clientY - rect.top) / gb.view.zoom() - gb.view.y;
     };
 
-    // TODO maybe edit mode shouldn't totally nuke everything
-    const noCapture = () => { return gf.menu.isOpen() || gf.toolbox.isEdit(); };
-
     svg.addEventListener('contextmenu', e => e.preventDefault());
 
     svg.addEventListener('pointermove', e => {
-        if (noCapture()) return;
+        if (gf.menu.isOpen()) return;
         upd(e);
         for (const t of activeTools) t.onmove(lastX, lastY, gb);
         for (const f of onmove) f(lastX, lastY);
     });
 
     svg.addEventListener('pointerdown', e => {
-        if (noCapture()) return;
+        if (gf.menu.isOpen()) return;
         upd(e);
         const t = gf.toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
@@ -38,7 +35,7 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
     });
 
     svg.addEventListener('pointerup', e => {
-        if (noCapture()) return;
+        if (gf.menu.isOpen()) return;
         const t = gf.toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
         t.onup(gb);
@@ -51,7 +48,7 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
     });
 
     page.addEventListener('keydown', e => {
-        if (noCapture()) {
+        if (gf.menu.isOpen()) {
             if (e.key === 'Escape') gf.menu.close();
             return;
         }
@@ -67,7 +64,7 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
     });
 
     page.addEventListener('keyup', e => {
-        if (noCapture()) return;
+        if (gf.menu.isOpen()) return;
         const t = gf.toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         t.onup(gb);
@@ -75,7 +72,7 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
     });
 
     page.addEventListener('wheel', e => {
-        if (noCapture()) return;
+        if (gf.menu.isOpen()) return;
         const t = gf.toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
         t.ondown(lastX, lastY, gb);
