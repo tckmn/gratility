@@ -69,7 +69,7 @@ class ToolboxEntry {
         }
     }
 
-    public display(container: HTMLElement, editMode: boolean, delcb: () => void) {
+    public display(toolbox: Toolbox, container: HTMLElement, editMode: boolean) {
         const bind = document.createElement('div');
         bind.textContent = this.describeBind();
         container.appendChild(bind);
@@ -88,7 +88,8 @@ class ToolboxEntry {
             delbtn.className = 'delbtn';
             delbtn.textContent = '×';
             delbtn.addEventListener('click', () => {
-                delcb();
+                toolbox.delBind(this);
+                toolbox.save();
                 container.removeChild(bind);
                 container.removeChild(name);
                 container.removeChild(icon);
@@ -114,7 +115,14 @@ export class Toolbox {
         return true;
     }
 
-    public save(): string { return this.name + '\n' + this.tools.map(t => t.save()).join('\n'); }
+    public delBind(e: ToolboxEntry) {
+        const idx = this.tools.indexOf(e);
+        if (idx !== -1) this.tools.splice(idx, 1);
+    }
+
+    // oops naming lol
+    public save() { this.gf.toolbox.save(); }
+    public saveStr(): string { return this.name + '\n' + this.tools.map(t => t.save()).join('\n'); }
     static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
 
     public display(container: HTMLElement, editMode: boolean) {
@@ -140,7 +148,7 @@ export class Toolbox {
         const container = document.createElement('div');
         container.classList.add('tbtools');
         if (editMode) container.classList.add('edit');
-        for (const t of this.tools) t.display(container, editMode, () => {});
+        for (const t of this.tools) t.display(this, container, editMode);
         return container;
     }
 
@@ -160,7 +168,7 @@ export class Toolboxbox {
         this.load(localStorage.toolbox ?? DEFAULT_TOOLS);
     }
 
-    private save(): string { return this.toolboxes.map(b => b.save()).join('\n:\n'); }
+    public save() { localStorage.toolbox = this.toolboxes.map(b => b.saveStr()).join('\n:\n'); }
     private load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.refresh(); }
 
     public refresh() {

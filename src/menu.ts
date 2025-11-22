@@ -193,6 +193,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     }
 
     manager.gf.toolbox.refresh();
+    manager.gf.toolbox.save();
     manager.close();
 });
 
