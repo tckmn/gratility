@@ -70,7 +70,9 @@ class ToolboxEntry {
         }
     }
 
-    public display(toolbox: Toolbox, container: HTMLElement, editMode: boolean) {
+    public display(toolbox: Toolbox): HTMLElement {
+        const container = document.createElement('div');
+
         const bind = document.createElement('div');
         bind.textContent = this.describeBind();
         container.appendChild(bind);
@@ -84,20 +86,12 @@ class ToolboxEntry {
         if (maybeIcon !== undefined) icon.appendChild(maybeIcon);
         container.appendChild(icon);
 
-        if (editMode) {
-            const delbtn = document.createElement('div');
-            delbtn.className = 'delbtn';
-            delbtn.textContent = '×';
-            delbtn.addEventListener('click', () => {
-                toolbox.delBind(this);
-                toolbox.save();
-                container.removeChild(bind);
-                container.removeChild(name);
-                container.removeChild(icon);
-                container.removeChild(delbtn);
-            });
-            container.appendChild(delbtn);
-        }
+        container.addEventListener('click', e => {
+            e.preventDefault();
+            toolbox.showMenu(e, this, container);
+        });
+
+        return container;
     }
 
 }
@@ -126,31 +120,78 @@ export class Toolbox {
     public saveStr(): string { return this.name + this.tools.map(t => '\n' + t.save()).join(); }
     static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
 
-    public display(container: HTMLElement, editMode: boolean) {
+    public display(container: HTMLElement) {
         const title = document.createElement('div');
         title.classList.add('tbname');
         title.textContent = this.name;
         container.appendChild(title);
 
-        container.appendChild(this.generateList(editMode));
+        title.addEventListener('click', e => {
+            e.preventDefault();
+            this.showMenu(e);
+        });
 
-        if (editMode) {
-            const addbtn = document.createElement('button');
-            addbtn.textContent = '+ add tool...';
-            addbtn.addEventListener('click', () => {
-                this.gf.menu.addToolBox = this;
-                this.gf.menu.open('addtool');
-            });
-            container.appendChild(addbtn);
-        }
+        container.appendChild(this.generateList());
     }
 
-    private generateList(editMode: boolean): HTMLElement {
+    private generateList(): HTMLElement {
         const container = document.createElement('div');
         container.classList.add('tbtools');
-        if (editMode) container.classList.add('edit');
-        for (const t of this.tools) t.display(this, container, editMode);
+        for (const t of this.tools) container.appendChild(t.display(this));
         return container;
+    }
+
+    public showMenu(e: MouseEvent, te: ToolboxEntry | undefined = undefined, row: HTMLElement | undefined = undefined) {
+        const c = this.gf.menu.newContextMenu(e, () => {
+            if (row !== undefined) row.classList.remove('activerow');
+        });
+        if (c === undefined) return;
+        if (row !== undefined) row.classList.add('activerow');
+
+        if (te !== undefined) {
+            c.btn('✎ edit tool', () => {
+                this.gf.toolbox.saveRefresh();
+                return true;
+            });
+
+            c.btn('× delete tool', () => {
+                this.delBind(te);
+                this.gf.toolbox.saveRefresh();
+                return true;
+            });
+
+            c.space();
+        }
+
+        c.btn('+ add new tool', () => {
+            this.gf.menu.addToolBox = this;
+            this.gf.menu.open('addtool');
+            return true;
+        });
+
+        c.space();
+
+        const addtxt = document.createElement('input');
+        addtxt.setAttribute('placeholder', 'toolbox name...');
+        c.menu.appendChild(addtxt);
+
+        const addfn = () => {
+            if (addtxt.value.replace(/\s/g, '')) {
+                this.gf.toolbox.toolboxes.push(new Toolbox(this.gf, addtxt.value));
+                this.gf.toolbox.saveRefresh();
+                return true;
+            } else {
+                Courier.alert('please provide a name for your new toolbox');
+            }
+        };
+
+        c.btn('+ add new toolbox', addfn);
+        addtxt.addEventListener('keyup', e => e.stopPropagation());
+        addtxt.addEventListener('keydown', e => {
+            e.stopPropagation();
+            if (e.key === 'Enter') addfn();
+            if (e.key === 'Escape') addtxt.blur();
+        });
     }
 
 }
@@ -158,9 +199,6 @@ export class Toolbox {
 export class Toolboxbox {
 
     public toolboxes: Array<Toolbox> = [];
-    private editMode: boolean = false;
-    public isEdit() { return this.editMode; }
-    public toggleEdit() { this.editMode = !this.editMode; this.rerender(); }
 
     public readonly mouseTools = new Map<number, Tool>();
     public readonly keyTools = new Map<string, Tool>();
@@ -194,32 +232,7 @@ export class Toolboxbox {
 
     private rerender() {
         while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
-        for (const t of this.toolboxes) t.display(this.container, this.editMode);
-
-        if (this.editMode) {
-            const adddiv = document.createElement('div');
-            adddiv.classList.add('adddiv');
-            const addtxt = document.createElement('input');
-            addtxt.setAttribute('placeholder', 'toolbox name...');
-            const addbtn = document.createElement('button');
-            addbtn.textContent = '+ new';
-            adddiv.appendChild(addtxt);
-            adddiv.appendChild(addbtn);
-            this.container.appendChild(adddiv);
-
-            const addfn = () => {
-                if (addtxt.value.replace(/\s/g, '')) {
-                    this.toolboxes.push(new Toolbox(this.gf, addtxt.value));
-                    this.saveRefresh();
-                } else {
-                    Courier.alert('please provide a name for your new toolbox');
-                }
-            };
-            addtxt.addEventListener('keypress', e => { if (e.key === 'Enter') addfn(); });
-            addtxt.addEventListener('keyup', e => e.stopPropagation());
-            addtxt.addEventListener('keydown', e => e.stopPropagation());
-            addbtn.addEventListener('click', addfn);
-        }
+        for (const t of this.toolboxes) t.display(this.container);
     }
 
 }

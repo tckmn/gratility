@@ -49,7 +49,7 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
 
     page.addEventListener('keydown', e => {
         if (gf.menu.isOpen()) {
-            if (e.key === 'Escape') gf.menu.close();
+            if (e.key === 'Escape') { gf.menu.close(); gf.menu.closeContextMenu(); }
             return;
         }
         if (keyeater.ref !== undefined) {

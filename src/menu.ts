@@ -35,10 +35,6 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
         document.body.classList.toggle('dark');
     }],
 
-    ['tedit', (manager: MenuManager) => {
-        manager.gf.toolbox.toggleEdit();
-    }],
-
     ['ultxt', (manager: MenuManager) => {
         navigator.clipboard.readText().then(s => {
             manager.gb.stamp.add(Data.deserializeStamp(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
@@ -253,11 +249,56 @@ class Menu {
     public close() { this.popup.style.display = 'none'; }
 }
 
+class ContextMenu {
+    public readonly menu: HTMLElement;
+    private readonly overlay: HTMLElement;
+
+    constructor(e: MouseEvent, private readonly onclose: () => void) {
+        this.menu = document.createElement('div');
+        this.menu.classList.add('contextmenu');
+        this.menu.style.left = e.pageX + 'px';
+        this.menu.style.top = e.pageY + 'px';
+        document.body.appendChild(this.menu);
+
+        this.overlay = document.createElement('div');
+        this.overlay.classList.add('overlay');
+        document.body.appendChild(this.overlay);
+
+        this.overlay.addEventListener('click', e => {
+            e.stopPropagation();
+            this.close();
+        });
+    }
+
+    public close() {
+        this.menu.remove();
+        this.overlay.remove();
+        this.onclose();
+    }
+
+    public btn(label: string, click: () => boolean | undefined) {
+        const btn = document.createElement('div');
+        btn.classList.add('menubtn');
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+            if (click()) this.close();
+        });
+        this.menu.appendChild(btn);
+    }
+
+    public space() {
+        const elt = document.createElement('div');
+        elt.classList.add('spacer');
+        this.menu.appendChild(elt);
+    }
+}
+
 export default class MenuManager {
 
     private activeMenu: Menu | undefined = undefined;
+    private contextMenu: ContextMenu | undefined = undefined;
     public addToolBox: Toolbox.Toolbox | undefined = undefined; // this is very hacky
-    public isOpen(): boolean { return this.activeMenu !== undefined; }
+    public isOpen(): boolean { return this.activeMenu !== undefined || this.contextMenu !== undefined; }
 
     public open(mname: string): boolean {
         if (this.activeMenu !== undefined) return false;
@@ -276,6 +317,19 @@ export default class MenuManager {
             this.activeMenu = undefined;
             this.menuevent(menu, 'close');
         }
+    }
+
+    public newContextMenu(e: MouseEvent, onclose: () => void): ContextMenu | undefined {
+        if (this.contextMenu !== undefined) return undefined;
+        this.contextMenu = new ContextMenu(e, () => {
+            this.contextMenu = undefined;
+            onclose();
+        });
+        return this.contextMenu;
+    }
+
+    public closeContextMenu() {
+        this.contextMenu?.close();
     }
 
     private readonly menus: Map<string, Menu> = new Map();

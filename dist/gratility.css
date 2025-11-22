@@ -33,7 +33,9 @@ section#toolbar > div#toolbox > div.tbname {
     color: #555;
     background-color: #ddd;
     margin-top: 1rem;
+    cursor: pointer;
 }
+section#toolbar > div#toolbox > div.tbname:hover { background-color: #ccc; }
 section#toolbar > div#toolbox > div.tbname:first-child { margin-top: 0; }
 
 section#toolbar > div#toolbox > div.tbtools {
@@ -42,26 +44,40 @@ section#toolbar > div#toolbox > div.tbtools {
     grid-column-gap: 0.5rem;
     font-size: 11pt;
 }
+section#toolbar > div#toolbox > div.tbtools > div {
+    display: grid;
+    grid-column: 1 / 4;
+    grid-template-columns: subgrid;
+    cursor: pointer;
+}
+section#toolbar > div#toolbox > div.tbtools > div:hover {
+    background-color: #eee;
+}
+section#toolbar > div#toolbox > div.tbtools > div.activerow {
+    background-color: #dfd;
+}
 
 section#toolbar > div#toolbox > div.edit {
     grid-template-columns: auto 1fr auto auto;
 }
 
 section#toolbar > div#toolbox svg { width: 1rem; height: 1rem; }
-section#toolbar > div#toolbox div.delbtn {
-    cursor: pointer;
-    width: calc(1em - 2px);
-    height: calc(1em - 2px);
-    background-color: #faa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1px;
-    margin: 1px;
+
+div.contextmenu {
+    position: absolute;
+    background-color: #eef;
+    border: 1px solid #dde;
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 99;
 }
 
-section#toolbar > div#toolbox div.adddiv { display: flex; padding-top: 1rem; }
-section#toolbar > div#toolbox div.adddiv > input { width: 1px; flex: 1; }
+div.contextmenu > div.menubtn {
+    cursor: pointer;
+    padding: 2px 3px;
+}
+div.contextmenu > div.menubtn:hover { background-color: #dde; }
+div.contextmenu > div.spacer { padding-top: 9px; }
 
 svg#grid {
     flex: 1;
@@ -119,6 +135,13 @@ div#alerts > div {
     border-radius: 5px;
     padding: 10px;
     cursor: pointer;
+}
+
+div.overlay {
+    position: fixed;
+    left: 0; right: 0; top: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.2);
+    z-index: 98;
 }
 
 .multisel button { border: 1px solid #444; border-radius: 5px; }
