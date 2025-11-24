@@ -117,7 +117,7 @@ export class Toolbox {
 
     // oops naming lol
     public save() { this.gf.toolbox.save(); }
-    public saveStr(): string { return this.name + this.tools.map(t => '\n' + t.save()).join(); }
+    public saveStr(): string { return this.name + this.tools.map(t => '\n' + t.save()).join(''); }
     static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
 
     public display(container: HTMLElement) {
