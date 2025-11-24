@@ -276,6 +276,13 @@ class ContextMenu {
         this.onclose();
     }
 
+    public lbl(label: string) {
+        const lbl = document.createElement('div');
+        lbl.classList.add('menulbl');
+        lbl.textContent = label;
+        this.menu.appendChild(lbl);
+    }
+
     public btn(label: string, click: () => boolean | undefined) {
         const btn = document.createElement('div');
         btn.classList.add('menubtn');

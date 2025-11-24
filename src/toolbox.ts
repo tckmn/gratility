@@ -149,6 +149,8 @@ export class Toolbox {
         if (row !== undefined) row.classList.add('activerow');
 
         if (te !== undefined) {
+            c.lbl(`tool ${te.tool.name()}`);
+
             c.btn('✎ edit tool', () => {
                 this.gf.toolbox.saveRefresh();
                 return true;
@@ -163,13 +165,23 @@ export class Toolbox {
             c.space();
         }
 
+        c.lbl(`toolbox ${this.name}`);
+
         c.btn('+ add new tool', () => {
             this.gf.menu.addToolBox = this;
             this.gf.menu.open('addtool');
             return true;
         });
 
+        c.btn('× delete toolbox', () => {
+            this.gf.toolbox.delToolbox(this);
+            this.gf.toolbox.saveRefresh();
+            return true;
+        });
+
         c.space();
+
+        c.lbl('all toolboxes');
 
         const addtxt = document.createElement('input');
         addtxt.setAttribute('placeholder', 'toolbox name...');
@@ -213,6 +225,11 @@ export class Toolboxbox {
 
     public saveRefresh() {
         this.recompute(); this.rerender(); this.save();
+    }
+
+    public delToolbox(t: Toolbox) {
+        const idx = this.toolboxes.indexOf(t);
+        if (idx !== -1) this.toolboxes.splice(idx, 1);
     }
 
     private recompute() {

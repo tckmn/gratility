@@ -72,12 +72,17 @@ div.contextmenu {
     z-index: 99;
 }
 
+div.contextmenu > div.menulbl {
+    font-size: 10pt;
+    color: #999;
+    text-align: center;
+}
 div.contextmenu > div.menubtn {
     cursor: pointer;
     padding: 2px 3px;
 }
 div.contextmenu > div.menubtn:hover { background-color: #dde; }
-div.contextmenu > div.spacer { padding-top: 9px; }
+div.contextmenu > div.spacer { padding-top: 11px; }
 
 svg#grid {
     flex: 1;
