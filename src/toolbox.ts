@@ -98,7 +98,7 @@ class ToolboxEntry {
 
 export class Toolbox {
 
-    constructor(private readonly gf: Gratility.Frontend, public readonly name: string, public readonly tools: Array<ToolboxEntry> = []) {}
+    constructor(private readonly gf: Gratility.Frontend, public name: string, public readonly tools: Array<ToolboxEntry> = []) {}
 
     public hasBind(tbind: number | string | boolean): boolean {
         return this.tools.some(e => e.tbind === tbind);
@@ -187,6 +187,31 @@ export class Toolbox {
                 ['never mind', () => {}]
             ]);
             return true;
+        });
+
+        c.space();
+
+        const renametxt = document.createElement('input');
+        renametxt.setAttribute('placeholder', 'toolbox name...');
+        renametxt.value = this.name;
+        c.menu.appendChild(renametxt);
+
+        const renamefn = () => {
+            if (renametxt.value.replace(/\s/g, '')) {
+                this.name = renametxt.value;
+                this.gf.toolbox.saveRefresh();
+                return true;
+            } else {
+                Courier.alert(`please provide a name to rename ${this.name} to`);
+            }
+        };
+
+        c.btn('✎ rename toolbox', renamefn);
+        renametxt.addEventListener('keyup', e => e.stopPropagation());
+        renametxt.addEventListener('keydown', e => {
+            e.stopPropagation();
+            if (e.key === 'Enter') if (renamefn()) c.close();
+            if (e.key === 'Escape') renametxt.blur();
         });
 
         c.space();
