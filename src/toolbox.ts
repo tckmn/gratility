@@ -211,7 +211,7 @@ export class Toolbox {
         addtxt.addEventListener('keyup', e => e.stopPropagation());
         addtxt.addEventListener('keydown', e => {
             e.stopPropagation();
-            if (e.key === 'Enter') addfn();
+            if (e.key === 'Enter') if (addfn()) c.close();
             if (e.key === 'Escape') addtxt.blur();
         });
     }
