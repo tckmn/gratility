@@ -307,14 +307,14 @@ export default class MenuManager {
     public addToolBox: Toolbox.Toolbox | undefined = undefined; // this is very hacky
     public isOpen(): boolean { return this.activeMenu !== undefined || this.contextMenu !== undefined; }
 
-    public open(mname: string): boolean {
-        if (this.activeMenu !== undefined) return false;
+    public open(mname: string): Menu | undefined {
+        if (this.activeMenu !== undefined) return;
         const menu = this.menus.get(mname);
-        if (menu === undefined) return false;
+        if (menu === undefined) return;
         menu.open();
         this.activeMenu = menu;
         this.menuevent(menu, 'open');
-        return true;
+        return menu;
     }
 
     public close() {
@@ -337,6 +337,22 @@ export default class MenuManager {
 
     public closeContextMenu() {
         this.contextMenu?.close();
+    }
+
+    public confirm(msg: string, btns: Array<[string, () => void]>) {
+        const menu = this.open('confirm');
+        if (menu === undefined) return;
+        menu.popup.querySelector('#confmsg')!.textContent = msg;
+        menu.popup.querySelector('#confbtn')!.textContent = '';
+        for (const [lbl, cb] of btns) {
+            const btn = document.createElement('button');
+            btn.textContent = lbl;
+            btn.addEventListener('click', () => {
+                this.close();
+                cb();
+            });
+            menu.popup.querySelector('#confbtn')!.appendChild(btn);
+        }
     }
 
     private readonly menus: Map<string, Menu> = new Map();

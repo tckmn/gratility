@@ -157,8 +157,13 @@ export class Toolbox {
             });
 
             c.btn('× delete tool', () => {
-                this.delBind(te);
-                this.gf.toolbox.saveRefresh();
+                this.gf.menu.confirm(`really delete tool ${te.tool.name()}?`, [
+                    ['delete it', () => {
+                        this.delBind(te);
+                        this.gf.toolbox.saveRefresh();
+                    }],
+                    ['never mind', () => {}]
+                ]);
                 return true;
             });
 
@@ -174,8 +179,13 @@ export class Toolbox {
         });
 
         c.btn('× delete toolbox', () => {
-            this.gf.toolbox.delToolbox(this);
-            this.gf.toolbox.saveRefresh();
+            this.gf.menu.confirm(`really delete toolbox ${this.name}?`, [
+                ['delete it', () => {
+                    this.gf.toolbox.delToolbox(this);
+                    this.gf.toolbox.saveRefresh();
+                }],
+                ['never mind', () => {}]
+            ]);
             return true;
         });
 
