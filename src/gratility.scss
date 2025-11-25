@@ -24,6 +24,7 @@ section#toolbar {
 
     > div#toolbox {
         overflow-y: scroll;
+        scrollbar-width: none;
 
         > div.tbname {
             font-size: 9pt;
