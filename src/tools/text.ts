@@ -5,16 +5,15 @@ import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 import * as Event from '../event.js';
 
-export default class TextTool implements Tool {
+export default class TextTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'text';
     public name(): string { return 'Text'; }
-    public icon() {}
     public save() { return this.preset; }
     public static load(s: string) { return new TextTool(s); }
 
-    constructor(private preset: string) {}
+    constructor(private preset: string) { super(); }
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;
@@ -81,7 +80,5 @@ export default class TextTool implements Tool {
             }
         }
     }
-
-    public onup() {}
 
 }

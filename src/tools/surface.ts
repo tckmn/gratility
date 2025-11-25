@@ -4,7 +4,7 @@ import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
-export default class SurfaceTool implements Tool {
+export default class SurfaceTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'surface';
@@ -21,6 +21,7 @@ export default class SurfaceTool implements Tool {
     public static load(s: string) { return new SurfaceTool(parseInt(s, 10)); }
 
     constructor(private color: number) {
+        super();
         this.element = new Data.Element(Data.Obj.SURFACE, this.color);
     }
 
@@ -57,7 +58,5 @@ export default class SurfaceTool implements Tool {
             }
         }
     }
-
-    public onup() {}
 
 }

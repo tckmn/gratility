@@ -82,9 +82,17 @@ let resolve: ((tool: Tool) => any) | undefined = undefined;
 
 menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
     const elt = menu.inputs.get('binding') as HTMLTextAreaElement;
-    elt.value = '';
+    elt.value = manager.addToolEntry === undefined ? '' : manager.addToolEntry.describeBind();
     for (const el of Array.from(document.getElementsByClassName('addtool-active'))) {
         el.classList.remove('addtool-active');
+    }
+    if (manager.addToolEntry !== undefined) {
+        const tool = manager.addToolEntry.tool;
+        const panel = menu.popup.querySelector(`[data-tool="${tool.panel()}"]`)!;
+        panel.classList.add('addtool-active');
+        panel.scrollIntoView();
+        const args = Array.from(panel.getElementsByClassName('arg')) as Array<HTMLElement>;
+        tool.setargs(args);
     }
     resolve = undefined;
 });
@@ -304,7 +312,11 @@ export default class MenuManager {
 
     private activeMenu: Menu | undefined = undefined;
     private contextMenu: ContextMenu | undefined = undefined;
-    public addToolBox: Toolbox.Toolbox | undefined = undefined; // this is very hacky
+
+    // these are very hacky
+    public addToolBox: Toolbox.Toolbox | undefined = undefined;
+    public addToolEntry: Toolbox.ToolboxEntry | undefined = undefined;
+
     public isOpen(): boolean { return this.activeMenu !== undefined || this.contextMenu !== undefined; }
 
     public open(mname: string): Menu | undefined {

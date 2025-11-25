@@ -2,12 +2,11 @@ import Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 import * as Measure from '../measure.js';
 
-export default class PasteTool implements Tool {
+export default class PasteTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'paste';
     public name(): string { return 'Paste'; }
-    public icon() {}
     public save() { return ''; }
     public static load() { return new PasteTool(); }
 
@@ -17,8 +16,5 @@ export default class PasteTool implements Tool {
 
         g.stamp.current()?.apply(g.data, xoff, yoff);
     }
-
-    public onmove(x: number, y: number) { }
-    public onup() { }
 
 }

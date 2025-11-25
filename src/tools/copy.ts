@@ -4,12 +4,12 @@ import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
-export default class CopyTool implements Tool {
+export default class CopyTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'copy';
     public name(): string { return this.isCut ? 'Cut' : 'Copy'; }
-    public icon() {}
+    public panel(): string { return this.isCut ? 'cut' : 'copy'; }
     public save() { return this.isCut ? 'x' : 'c'; }
     public static load(s: string) { return new CopyTool(s === 'x'); }
 
@@ -19,7 +19,7 @@ export default class CopyTool implements Tool {
     private ty = 0;
     private elt: SVGElement | undefined;
 
-    public constructor(private isCut: boolean) {}
+    public constructor(private isCut: boolean) { super(); }
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
         this.sx = x;

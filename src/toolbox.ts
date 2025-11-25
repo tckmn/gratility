@@ -25,7 +25,7 @@ function onesplit(s: string, delim: string): [string, string | undefined] {
     return parts.length === 1 ? [s, undefined] : [parts[0], parts.slice(1).join(delim)];
 }
 
-class ToolboxEntry {
+export class ToolboxEntry {
 
     constructor(public readonly tbind: number | string | boolean, public readonly tool: Tool) {}
 
@@ -152,7 +152,9 @@ export class Toolbox {
             c.lbl(`tool ${te.tool.name()}`);
 
             c.btn('✎ edit tool', () => {
-                this.gf.toolbox.saveRefresh();
+                this.gf.menu.addToolBox = this;
+                this.gf.menu.addToolEntry = te;
+                this.gf.menu.open('addtool');
                 return true;
             });
 

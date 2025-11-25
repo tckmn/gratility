@@ -1,12 +1,11 @@
 import Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 
-export default class PanTool implements Tool {
+export default class PanTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'pan';
     public name(): string { return 'Pan'; }
-    public icon() {}
     public save() { return ''; }
     public static load() { return new PanTool(); }
 
@@ -23,7 +22,5 @@ export default class PanTool implements Tool {
         g.view.y += y - this.my;
         g.view.update();
     }
-
-    public onup() {}
 
 }

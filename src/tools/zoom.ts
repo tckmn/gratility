@@ -1,16 +1,16 @@
 import Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 
-export default class ZoomTool implements Tool {
+export default class ZoomTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'zoom';
     public name(): string { return 'Zoom ' + (this.amount > 0 ? 'in' : 'out'); }
-    public icon() {}
+    public panel(): string { return this.amount > 0 ? 'zoomin' : 'zoomout'; }
     public save() { return this.amount.toString(); }
     public static load(s: string) { return new ZoomTool(parseInt(s, 10)); }
 
-    public constructor(private readonly amount: number) {}
+    public constructor(private readonly amount: number) { super(); }
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
         g.view.x = (x + g.view.x) * g.view.zoom(-this.amount) - x;

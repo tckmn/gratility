@@ -4,7 +4,7 @@ import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
-export default class LineTool implements Tool {
+export default class LineTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'line';
@@ -34,6 +34,7 @@ export default class LineTool implements Tool {
     }
 
     constructor(private spec: Data.LineSpec) {
+        super();
         this.HC_WEIGHT = spec.isEdge ? 0.35 : 0;
         this.LAYER = spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH;
     }

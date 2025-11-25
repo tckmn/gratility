@@ -26,7 +26,7 @@ function atlocs(x: number, y: number, locs: number): [number, number] {
     return [bx, by];
 }
 
-export default class ShapeTool implements Tool {
+export default class ShapeTool extends Tool {
 
     public readonly repeat = false;
     public readonly tid = 'shape';
@@ -59,7 +59,7 @@ export default class ShapeTool implements Tool {
     constructor(
         private spec: Data.ShapeSpec,
         private locs: number // bitmask: 0b center edge corner
-    ) {}
+    ) { super(); }
 
     private isDrawing = false;
 
@@ -107,7 +107,5 @@ export default class ShapeTool implements Tool {
             }
         }
     }
-
-    public onup() {}
 
 }
