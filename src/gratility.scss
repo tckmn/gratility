@@ -14,54 +14,46 @@ section#toolbar {
     display: flex;
     flex-direction: column;
     width: 200px;
-}
 
-section#toolbar > button { width: 100%; font-size: 10pt; }
+    > button { width: 100%; font-size: 10pt; }
 
-section#toolbar > div#importexport {
-    padding: 1rem 0.2rem 0;
-    font-size: 10pt;
-}
+    > div#importexport {
+        padding: 1rem 0.2rem 0;
+        font-size: 10pt;
+    }
 
-section#toolbar > div#toolbox {
-    overflow-y: scroll;
-}
+    > div#toolbox {
+        overflow-y: scroll;
 
-section#toolbar > div#toolbox > div.tbname {
-    font-size: 9pt;
-    text-align: center;
-    color: #555;
-    background-color: #ddd;
-    margin-top: 1rem;
-    cursor: pointer;
-}
-section#toolbar > div#toolbox > div.tbname:hover { background-color: #ccc; }
-section#toolbar > div#toolbox > div.tbname:first-child { margin-top: 0; }
+        > div.tbname {
+            font-size: 9pt;
+            text-align: center;
+            color: #555;
+            background-color: #ddd;
+            margin-top: 1rem;
+            cursor: pointer;
+            &:hover { background-color: #ccc; }
+            &:first-child { margin-top: 0; }
+        }
 
-section#toolbar > div#toolbox > div.tbtools {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-column-gap: 0.5rem;
-    font-size: 11pt;
-}
-section#toolbar > div#toolbox > div.tbtools > div {
-    display: grid;
-    grid-column: 1 / 4;
-    grid-template-columns: subgrid;
-    cursor: pointer;
-}
-section#toolbar > div#toolbox > div.tbtools > div:hover {
-    background-color: #eee;
-}
-section#toolbar > div#toolbox > div.tbtools > div.activerow {
-    background-color: #dfd;
-}
+        > div.tbtools {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            grid-column-gap: 0.5rem;
+            font-size: 11pt;
+            > div {
+                display: grid;
+                grid-column: 1 / 4;
+                grid-template-columns: subgrid;
+                cursor: pointer;
+                &:hover { background-color: #eee; }
+                &.activerow { background-color: #dfd; }
+            }
+        }
 
-section#toolbar > div#toolbox > div.edit {
-    grid-template-columns: auto 1fr auto auto;
+        svg { width: 1rem; height: 1rem; }
+    }
 }
-
-section#toolbar > div#toolbox svg { width: 1rem; height: 1rem; }
 
 div.contextmenu {
     position: absolute;
@@ -70,23 +62,21 @@ div.contextmenu {
     border-radius: 10px;
     padding: 10px;
     z-index: 99;
+
+    > div.menulbl {
+        font-size: 10pt;
+        color: #999;
+        text-align: center;
+    }
+    > div.menubtn {
+        cursor: pointer;
+        padding: 2px 3px;
+        &:hover { background-color: #dde; }
+    }
+    > div.spacer { padding-top: 11px; }
 }
 
-div.contextmenu > div.menulbl {
-    font-size: 10pt;
-    color: #999;
-    text-align: center;
-}
-div.contextmenu > div.menubtn {
-    cursor: pointer;
-    padding: 2px 3px;
-}
-div.contextmenu > div.menubtn:hover { background-color: #dde; }
-div.contextmenu > div.spacer { padding-top: 11px; }
-
-svg#grid {
-    flex: 1;
-}
+svg#grid { flex: 1; }
 
 div#menupopups > div {
     display: none;
@@ -100,17 +90,9 @@ div#menupopups > div {
     box-sizing: border-box;
     padding: 15px;
     flex-direction: column;
-}
 
-div#menupopups > div.small {
-    width: 40vw;
-    height: 40vh;
-    left: 30vw;
-    top: 30vh;
-}
-
-div#menupopups > div .big {
-    flex: 1;
+    &.small { width: 40vw; height: 40vh; left: 30vw; top: 30vh; }
+    .big { flex: 1; }
 }
 
 div.menuclose {
@@ -133,13 +115,12 @@ div#alerts {
     right: 10px;
     top: 10px;
     width: 30vw;
-}
-
-div#alerts > div {
-    background-color: rgba(200,200,255,0.8);
-    border-radius: 5px;
-    padding: 10px;
-    cursor: pointer;
+    > div {
+        background-color: rgba(200,200,255,0.8);
+        border-radius: 5px;
+        padding: 10px;
+        cursor: pointer;
+    }
 }
 
 div.overlay {
@@ -149,11 +130,14 @@ div.overlay {
     z-index: 98;
 }
 
-.multisel button { border: 1px solid #444; border-radius: 5px; }
-.multisel button.left, .multisel button.mid { border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.multisel button.right, .multisel button.mid { border-top-left-radius: 0; border-bottom-left-radius: 0; }
-.multisel button.active { background-color: #161; color: #eee; }
-.multisel button.active:hover { background-color: #040; }
+.multisel button {
+    border: 1px solid #444;
+    border-radius: 5px;
+    &.left, &.mid { border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    &.right, &.mid { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    &.active { background-color: #161; color: #eee; }
+    &.active:hover { background-color: #040; }
+}
 
 .colorpicker span {
     display: inline-block;
@@ -163,32 +147,28 @@ div.overlay {
     vertical-align: middle;
     margin: 0 2px;
     border: 1px solid black;
+    &.active { box-shadow: 0 0 2px 2px #f80; }
+    &.transparent {
+        position: relative;
+        background: linear-gradient(to bottom right,
+            transparent, transparent 46%,
+            #f00 46%, #f00 54%,
+            transparent 54%, transparent
+        );
+    }
+    &.transparent:after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom left,
+            transparent, transparent 46%,
+            #f00 46%, #f00 54%,
+            transparent 54%, transparent
+        );
+    }
 }
 
-.colorpicker span.active {
-    box-shadow: 0 0 2px 2px #f80;
-}
-
-.colorpicker span.transparent {
-    position: relative;
-    background: linear-gradient(to bottom right,
-        transparent, transparent 46%,
-        #f00 46%, #f00 54%,
-        transparent 54%, transparent
-    );
-}
-
-.colorpicker span.transparent:after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom left,
-        transparent, transparent 46%,
-        #f00 46%, #f00 54%,
-        transparent 54%, transparent
-    );
-}
 
 input.conflict { box-shadow: 0 0 5px 2px #f00; }
 
@@ -197,55 +177,43 @@ section.group {
     border: 1px dashed #666;
     border-radius: 10px;
     margin-top: 30px;
+    &.first { margin-top: 10px; }
     padding: 10px 10px;
+
+    > span:first-child {
+        position: absolute;
+        top: -10px;
+        left: 15px;
+        background-color: #f8f8f8;
+        font-size: 10pt;
+        color: #666;
+    }
 }
 
-section.group.first { margin-top: 10px; }
+div#actions {
+    overflow-y: scroll;
 
-section.group > span:first-child {
-    position: absolute;
-    top: -10px;
-    left: 15px;
-    background-color: #f8f8f8;
-    font-size: 10pt;
-    color: #666;
-}
+    div.settool {
+        cursor: pointer;
+        display: inline-flex;
+        width: 10em;
+        align-items: center;
+        padding: 5px 10px;
+        min-height: 30px;
+        margin: 10px 5px;
+        border: 1px dotted #666;
 
-div#actions { overflow-y: scroll; }
+        &.natwidth { width: auto; }
+        &.full { display: flex; flex-wrap: wrap; width: auto; }
+        &:hover { background-color: #eee; }
+        &.addtool-active { background-color: #9f9; }
 
-div#actions div.settool {
-    cursor: pointer;
-    display: inline-flex;
-    width: 10em;
-    align-items: center;
-    padding: 5px 10px;
-    min-height: 30px;
-    margin: 10px 5px;
-    border: 1px dotted #666;
-}
-
-div#actions div.settool.natwidth {
-    width: auto;
-}
-
-div#actions div.settool.full {
-    display: flex;
-    flex-wrap: wrap;
-    width: auto;
-}
-
-div#actions div.settool:hover {
-    background-color: #eee;
-}
-
-div#actions div.settool.addtool-active {
-    background-color: #9f9;
-}
-
-div#actions div.settool > label, div#actions div.settool > span {
-    background-color: #ddf;
-    padding: 5px 10px;
-    margin-left: 20px;
+        > label, > span {
+            background-color: #ddf;
+            padding: 5px 10px;
+            margin-left: 20px;
+        }
+    }
 }
 
 div#file {
