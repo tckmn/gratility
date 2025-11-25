@@ -1,4 +1,5 @@
 dist/gratility.js
+dist/gratility.css
 bin
 node_modules
 serverdata
