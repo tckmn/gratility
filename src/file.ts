@@ -25,7 +25,9 @@ export class FileManager {
     private localName: string | undefined = undefined;  // TODO some type theoretic thing about how this is string exactly when currentDocument is LOCAL
     public localFiles: Array<[string, string]> = [];
 
-    public constructor(private readonly container: HTMLElement, private readonly data: Data.DataManager) {
+    public constructor(private readonly fileCont: HTMLElement,
+                       private readonly serverCont: HTMLElement,
+                       private readonly data: Data.DataManager) {
         this.connectDB();
         if (localStorage.token) {
             this.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
@@ -41,16 +43,22 @@ export class FileManager {
         this.ws = new WebSocket(url);
         this.ws.binaryType = 'arraybuffer';
         this.ws.addEventListener('open', () => {
+            this.serverCont.classList.remove('nc', 'dc');
+            this.serverCont.classList.add('c');
             Courier.alert('connected to server');
             this.ws?.send(JSON.stringify(initmsg));
             this.onopen(Schema.SERVER);
         });
         this.ws.addEventListener('error', () => {
+            this.serverCont.classList.remove('nc', 'c');
+            this.serverCont.classList.add('dc');
             Courier.alert('server connection failed');
             this.ws = undefined;
             this.onclose(Schema.SERVER);
         });
         this.ws.addEventListener('close', () => {
+            this.serverCont.classList.remove('nc', 'c');
+            this.serverCont.classList.add('dc');
             Courier.alert('server connection lost');
             this.ws = undefined;
             this.onclose(Schema.SERVER);
@@ -141,11 +149,11 @@ export class FileManager {
         const docname = this.emoji[f.schema] + ' ' + f.title;
         if (this.available[f.schema]) {
             if (createNew) f.filename = crypto.randomUUID();
-            this.container.innerText = `${createNew ? 'creating' : 'opening'} ${docname}...`;
+            this.fileCont.innerText = `${createNew ? 'creating' : 'opening'} ${docname}...`;
             (createNew
                 ? f.schema === Schema.LOCAL ? this.newLocal : this.newRemote
                 : f.schema === Schema.LOCAL ? this.openLocal : this.openRemote).bind(this)(f, success => {
-                this.container.innerText = success ? docname : `failed to ${createNew ? 'create' : 'open'} ${docname}`;
+                this.fileCont.innerText = success ? docname : `failed to ${createNew ? 'create' : 'open'} ${docname}`;
                 if (success) localStorage.lastfile = f.stringify();
             });
         } else {

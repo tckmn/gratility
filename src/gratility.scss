@@ -53,6 +53,37 @@ section#toolbar {
 
         svg { width: 1rem; height: 1rem; }
     }
+
+    div#file {
+        text-wrap: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        font-family: monospace;
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+        cursor: pointer;
+        background-color: #eee;
+        &:hover { background-color: #ddd; }
+    }
+
+    div#server {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 10pt;
+        cursor: pointer;
+        padding: 0 0.5rem 0.1rem;
+        &:hover { background-color: #ddd; }
+        > span > span { display: none; }
+        > div {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        &.nc { > span > span.nc { display: inline; } > div { background-color: #888; } }
+        &.c  { > span > span.c  { display: inline; } > div { background-color: #8f8; } }
+        &.dc { > span > span.dc { display: inline; } > div { background-color: #f00; } }
+    }
 }
 
 div.contextmenu {
@@ -214,13 +245,4 @@ div#actions {
             margin-left: 20px;
         }
     }
-}
-
-div#file {
-    text-wrap: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    font-family: monospace;
-    padding: 0.5rem;
-    cursor: pointer;
 }

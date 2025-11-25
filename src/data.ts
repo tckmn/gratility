@@ -279,7 +279,9 @@ export class DataManager {
 
     public file: File.FileManager | undefined = undefined;
     public constructor(private image: Image | undefined = undefined) {}
-    public connect(fileCont: HTMLElement) { this.file = new File.FileManager(fileCont, this); }
+    public connect(fileCont: HTMLElement, serverCont: HTMLElement) {
+        this.file = new File.FileManager(fileCont, serverCont, this);
+    }
 
     public add(change: Change) {
         if (this.frozen) return;
