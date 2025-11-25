@@ -78,15 +78,25 @@ const menuevents: Map<string, (manager: MenuManager, menu: Menu, e: never, targe
 
 // ###### ADD TOOL MENU ###### //
 
-let resolve: ((tool: Tool) => any) | undefined = undefined;
+let resolve: number | string | boolean | undefined = undefined;
 
 menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
     const elt = menu.inputs.get('binding') as HTMLTextAreaElement;
-    elt.value = manager.addToolEntry === undefined ? '' : manager.addToolEntry.describeBind();
+    const btn = menu.inputs.get('go') as HTMLInputElement;
+    elt.classList.remove('conflict');
     for (const el of Array.from(document.getElementsByClassName('addtool-active'))) {
         el.classList.remove('addtool-active');
     }
-    if (manager.addToolEntry !== undefined) {
+
+    if (manager.addToolEntry === undefined) {
+        elt.value = '';
+        resolve = undefined;
+        btn.textContent = 'add';
+    } else {
+        elt.value = manager.addToolEntry.describeBind();
+        resolve = manager.addToolEntry.tbind;
+        btn.textContent = 'save edits';
+
         const tool = manager.addToolEntry.tool;
         const panel = menu.popup.querySelector(`[data-tool="${tool.panel()}"]`)!;
         panel.classList.add('addtool-active');
@@ -94,30 +104,29 @@ menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
         const args = Array.from(panel.getElementsByClassName('arg')) as Array<HTMLElement>;
         tool.setargs(args);
     }
-    resolve = undefined;
 });
 
 menuevents.set('addtool-bindmouse', (manager: MenuManager, menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
     if (e.button !== 0) e.preventDefault();
     target.value = 'click ' + e.button;
-    const conflict = manager.addToolBox!.hasBind(e.button);
+    const conflict = e.button != manager.addToolEntry?.tbind && manager.addToolBox!.hasBind(e.button);
     target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : tool => manager.addToolBox?.addBind(e.button, tool);
+    resolve = conflict ? undefined : e.button;
 });
 
 menuevents.set('addtool-bindkey', (manager: MenuManager, menu: Menu, e: KeyboardEvent, target: HTMLInputElement) => {
     e.preventDefault();
     target.value = 'key [' + e.key + ']';
-    const conflict = manager.addToolBox!.hasBind(e.key);
+    const conflict = e.key != manager.addToolEntry?.tbind && manager.addToolBox!.hasBind(e.key);
     target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : tool => manager.addToolBox?.addBind(e.key, tool);
+    resolve = conflict ? undefined : e.key;
 });
 
 menuevents.set('addtool-bindwheel', (manager: MenuManager, menu: Menu, e: WheelEvent, target: HTMLInputElement) => {
     target.value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
-    const conflict = manager.addToolBox!.hasBind(e.deltaY < 0);
+    const conflict = (e.deltaY < 0) != manager.addToolEntry?.tbind && manager.addToolBox!.hasBind(e.deltaY < 0);
     target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : tool => manager.addToolBox?.addBind(e.deltaY < 0, tool);
+    resolve = conflict ? undefined : e.deltaY < 0;
 });
 
 menuevents.set('addtool-nop', (manager: MenuManager, menu: Menu, e: Event) => {
@@ -153,15 +162,16 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
         }
     });
 
+    let tool;
     switch (el.dataset.tool) {
-    case 'surface': resolve(new Tools.SurfaceTool(parseInt(args[0], 10))); break;
+    case 'surface': tool = new Tools.SurfaceTool(parseInt(args[0], 10)); break;
     case 'line':
-        resolve(new Tools.LineTool({
+        tool = new Tools.LineTool({
             isEdge: parseInt(args[0]) === 1,
             color: parseInt(args[1]),
             thickness: parseInt(args[2]),
             head: parseInt(args[3]),
-        }));
+        });
         break;
     case 'shape':
         if (!(parseInt(args[1], 10) >= 1 && parseInt(args[1], 10) <= 5)) {
@@ -176,28 +186,40 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
             Courier.alert('shape should should have at least one of fill or outline');
             return;
         }
-        resolve(new Tools.ShapeTool({
+        tool = new Tools.ShapeTool({
             shape: parseInt(args[0], 10),
             size: parseInt(args[1], 10),
             fill: args[3] === '' ? undefined : parseInt(args[3], 10),
             outline: args[4] === '' ? undefined : parseInt(args[4], 10)
-        }, args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0)));
+        }, args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0));
         break;
-    case 'text': resolve(new Tools.TextTool(args[0])); break;
-    case 'pan': resolve(new Tools.PanTool()); break;
-    case 'zoomin': resolve(new Tools.ZoomTool(1)); break;
-    case 'zoomout': resolve(new Tools.ZoomTool(-1)); break;
-    case 'copy': resolve(new Tools.CopyTool(false)); break;
-    case 'cut': resolve(new Tools.CopyTool(true)); break;
-    case 'paste': resolve(new Tools.PasteTool()); break;
-    case 'undo': resolve(new Tools.UndoTool(true)); break;
-    case 'redo': resolve(new Tools.UndoTool(false)); break;
-    case 'transform': resolve(new Tools.TransformTool(parseInt(args[0], 10))); break;
+    case 'text': tool = new Tools.TextTool(args[0]); break;
+    case 'pan': tool = new Tools.PanTool(); break;
+    case 'zoomin': tool = new Tools.ZoomTool(1); break;
+    case 'zoomout': tool = new Tools.ZoomTool(-1); break;
+    case 'copy': tool = new Tools.CopyTool(false); break;
+    case 'cut': tool = new Tools.CopyTool(true); break;
+    case 'paste': tool = new Tools.PasteTool(); break;
+    case 'undo': tool = new Tools.UndoTool(true); break;
+    case 'redo': tool = new Tools.UndoTool(false); break;
+    case 'transform': tool = new Tools.TransformTool(parseInt(args[0], 10)); break;
     default: Courier.alert('unknown tool??'); return;
+    }
+
+    if (manager.addToolEntry === undefined) {
+        manager.addToolBox?.addBind(resolve, tool);
+    } else {
+        manager.addToolEntry.tbind = resolve;
+        manager.addToolEntry.tool = tool;
     }
 
     manager.gf.toolbox.saveRefresh();
     manager.close();
+});
+
+menuevents.set('addtool-close', (manager: MenuManager, menu: Menu) => {
+    manager.addToolBox = undefined;
+    manager.addToolEntry = undefined;
 });
 
 // TODO: something if file does not exist below? it should never not exist

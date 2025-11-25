@@ -27,7 +27,7 @@ function onesplit(s: string, delim: string): [string, string | undefined] {
 
 export class ToolboxEntry {
 
-    constructor(public readonly tbind: number | string | boolean, public readonly tool: Tool) {}
+    constructor(public tbind: number | string | boolean, public tool: Tool) {}
 
     public describeBind(): string {
         switch (typeof this.tbind) {
