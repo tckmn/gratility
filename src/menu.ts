@@ -9,7 +9,7 @@ import * as Tools from './tools/alltools.js';
 import * as Courier from './courier.js';
 
 
-function download(fname: string, data: Uint8Array | string, contenttype: string) {
+function download(fname: string, data: Uint8Array<ArrayBuffer> | string, contenttype: string) {
     const blob = new Blob([data], { type: contenttype });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

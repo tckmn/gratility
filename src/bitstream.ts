@@ -3,9 +3,9 @@ export default class BitStream {
     private bytepos: number = 0;
     private bitsleft: number = 8;
 
-    private constructor(private arr: Uint8Array) {}
+    private constructor(private arr: Uint8Array<ArrayBuffer>) {}
 
-    public static fromArr(arr: Uint8Array) { return new BitStream(arr); }
+    public static fromArr(arr: Uint8Array<ArrayBuffer>) { return new BitStream(arr); }
     public static fromLen(len: number) { return new BitStream(new Uint8Array(len)); }
     public static empty() { return new BitStream(new Uint8Array(1024)); }
 
@@ -97,7 +97,7 @@ export default class BitStream {
         this.bitsleft = bitsleft || 8;
     }
 
-    public cut(): Uint8Array {
+    public cut(): Uint8Array<ArrayBuffer> {
         return this.arr.subarray(0, this.bytepos+1);
     }
 

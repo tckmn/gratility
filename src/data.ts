@@ -184,7 +184,7 @@ const deserializefns = {
 
 };
 
-export function serializeStamp(stamp: Array<Item>): Uint8Array {
+export function serializeStamp(stamp: Array<Item>): Uint8Array<ArrayBuffer> {
     const bs = BitStream.empty();
     bs.write(1, 0);
 
@@ -198,7 +198,7 @@ export function serializeStamp(stamp: Array<Item>): Uint8Array {
     return bs.cut();
 }
 
-export function deserializeStamp(arr: Uint8Array): Array<Item> {
+export function deserializeStamp(arr: Uint8Array<ArrayBuffer>): Array<Item> {
     const stamp = new Array<Item>();
     const bs = BitStream.fromArr(arr);
 
@@ -219,7 +219,7 @@ export function deserializeStamp(arr: Uint8Array): Array<Item> {
     return stamp;
 }
 
-export function serializeChanges(changes: Array<Change>): Uint8Array {
+export function serializeChanges(changes: Array<Change>): Uint8Array<ArrayBuffer> {
     const bs = BitStream.empty();
     bs.write(1, 0);
 
@@ -243,7 +243,7 @@ export function serializeChanges(changes: Array<Change>): Uint8Array {
     return bs.cut();
 }
 
-export function deserializeChanges(arr: Uint8Array): Array<Change> {
+export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> {
     const changes = [];
     const bs = BitStream.fromArr(arr);
 
