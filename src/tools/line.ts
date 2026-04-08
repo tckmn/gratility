@@ -33,14 +33,12 @@ export default class LineTool extends Tool.Tool {
     constructor(private spec: Data.LineSpec) {
         super();
         this.HC_WEIGHT = spec.isEdge ? 0.35 : 0;
-        this.LAYER = spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH;
     }
 
     private isDrawing: boolean | undefined = undefined;
     private x = 0;
     private y = 0;
-    private HC_WEIGHT : number;
-    private LAYER : Data.Layer;
+    private HC_WEIGHT: number;
 
     public ondown(x: number, y: number) {
         this.x = Measure.hc(x, this.HC_WEIGHT);
@@ -86,7 +84,7 @@ export default class LineTool extends Tool.Tool {
 
         const n = Data.encode(cx, cy)
 
-        const oldline = g.data.halfcells.get(n)?.get(this.LAYER) as Data.LineTile | undefined; // TODO remove cast
+        const oldline = g.data.halfcells.get(n)?.[this.spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH];
         const newline = new Data.LineTile(this.spec, dir === -1);
 
         if (this.isDrawing === undefined) {
@@ -95,11 +93,11 @@ export default class LineTool extends Tool.Tool {
 
         if (this.isDrawing) {
             if (oldline === undefined || !oldline.eq(newline)) {
-                g.data.add(new Data.Change(n, this.LAYER, oldline, newline));
+                g.data.add(new Data.Change(n, this.spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH, oldline, newline));
             }
         } else {
             if (oldline !== undefined) {
-                g.data.add(new Data.Change(n, this.LAYER, oldline, undefined));
+                g.data.add(new Data.Change(n, this.spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH, oldline, undefined));
             }
         }
     }

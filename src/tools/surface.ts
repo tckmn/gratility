@@ -32,7 +32,7 @@ export default class SurfaceTool extends Tool.Tool {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);
-        const surface = g.data.halfcells.get(n)?.get(Data.Layer.SURFACE);
+        const surface = g.data.halfcells.get(n)?.[Data.Layer.SURFACE];
         if (surface === undefined) {
             g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.tile));
             this.isDrawing = true;
@@ -46,7 +46,7 @@ export default class SurfaceTool extends Tool.Tool {
         x = Measure.cell(x);
         y = Measure.cell(y);
         const n = Data.encode(x*2+1, y*2+1);
-        const surface = g.data.halfcells.get(n)?.get(Data.Layer.SURFACE);
+        const surface = g.data.halfcells.get(n)?.[Data.Layer.SURFACE];
         if (surface === undefined) {
             if (this.isDrawing) {
                 g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.tile));

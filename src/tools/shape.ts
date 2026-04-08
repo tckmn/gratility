@@ -66,7 +66,7 @@ export default class ShapeTool extends Tool.Tool {
     public ondown(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE) as Data.ShapeTile | undefined;
+        const shape = g.data.halfcells.get(n)?.[Data.Layer.SHAPE];
         const shapelst = shape?.shapes;
         if (shapelst === undefined) {
             g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
@@ -87,7 +87,7 @@ export default class ShapeTool extends Tool.Tool {
     public onmove(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE) as Data.ShapeTile | undefined;
+        const shape = g.data.halfcells.get(n)?.[Data.Layer.SHAPE];
         const shapelst = shape?.shapes;
         if (shapelst === undefined) {
             if (this.isDrawing) {

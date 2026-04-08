@@ -77,8 +77,7 @@ export default class CopyTool extends Tool.Tool {
                 const n = Data.encode(x, y);
                 const hc = g.data.halfcells.get(n);
                 if (hc !== undefined) {
-                    const arr = Array.from(hc.entries());
-                    stamp.push(...arr.map(([k,v], i) => {
+                    stamp.push(...hc.map((k,v) => {
                         if (this.isCut) {
                             shouldBreak = true;
                             g.data.add(new Data.Change(n, k, v, undefined, true));

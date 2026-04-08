@@ -4,7 +4,6 @@ import BitStream from './bitstream.js';
 import Image from './image.js';
 import * as File from './file.js';
 import * as Draw from './draw.js';
-
 import * as Color from './color.js';
 
 export function encode(x: number, y: number): number {
@@ -29,7 +28,6 @@ export const enum Layer {
     TEXT,
 }
 
-
 export const enum Shape {
     CIRCLE = 0,
     SQUARE,
@@ -41,14 +39,6 @@ export const enum Head {
     NONE = 0,
     ARROW
 }
-
-export function headsymmetric(h: Head) {
-    switch (h) {
-    case Head.NONE: return true;
-    case Head.ARROW: return false;
-    }
-}
-
 
 const N_BITS = 32;
 const OBJ_BITS = 6;
@@ -398,9 +388,40 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
     return changes;
 }
 
+
+// TODO a lot of this class is very hacky
+class Halfcell {
+    public [Layer.SURFACE]: SurfaceTile | undefined;
+    public [Layer.PATH]: LineTile | undefined;
+    public [Layer.EDGE]: LineTile | undefined;
+    public [Layer.SHAPE]: ShapeTile | undefined;
+    public [Layer.TEXT]: TextTile | undefined;
+
+    public empty(): boolean {
+        return this[Layer.SURFACE] === undefined &&
+            this[Layer.PATH] === undefined &&
+            this[Layer.EDGE] === undefined &&
+            this[Layer.SHAPE] === undefined &&
+            this[Layer.TEXT] === undefined;
+    }
+
+    public delete(l: Layer) { this[l] = undefined; }
+    public set(l: Layer, t: Tile) { this[l] = t as any; }
+
+    public map<T>(f: (l: Layer, t :Tile) => T): T[] {
+        const arr = [];
+        if (this[Layer.SURFACE] !== undefined) arr.push(f(Layer.SURFACE, this[Layer.SURFACE]));
+        if (this[Layer.PATH] !== undefined) arr.push(f(Layer.PATH, this[Layer.PATH]));
+        if (this[Layer.EDGE] !== undefined) arr.push(f(Layer.EDGE, this[Layer.EDGE]));
+        if (this[Layer.SHAPE] !== undefined) arr.push(f(Layer.SHAPE, this[Layer.SHAPE]));
+        if (this[Layer.TEXT] !== undefined) arr.push(f(Layer.TEXT, this[Layer.TEXT]));
+        return arr;
+    }
+}
+
 export class DataManager {
 
-    public readonly halfcells = new Map<number, Map<Layer, Tile>>();
+    public readonly halfcells = new Map<number, Halfcell>();
     private readonly drawn = new Map<number, Map<Layer, SVGElement>>();
 
     private readonly history = new Array<Change>();
@@ -451,14 +472,14 @@ export class DataManager {
             // delete item
             const hc = this.halfcells.get(change.n);
             hc?.delete(change.layer);
-            if (hc?.size === 0) this.halfcells.delete(change.n);
+            if (hc?.empty()) this.halfcells.delete(change.n);
 
         }
 
         if (change.post !== undefined) {
 
             // create item
-            if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Map());
+            if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Halfcell());
             this.halfcells.get(change.n)!.set(change.layer, change.post);
 
             if (this.image !== undefined) {
@@ -478,7 +499,7 @@ export class DataManager {
     public listcells(): Array<Item> {
         const cells = new Array<Item>();
         for (const [n, hc] of this.halfcells) {
-            cells.push(...Array.from(hc.entries()).map(([k,v]) => {
+            cells.push(...hc.map((k,v) => {
                 return new Item(n, k, v);
             }));
         }

@@ -26,7 +26,7 @@ export default class TextTool extends Tool.Tool {
     public ondown(x: number, y: number, g: Gratility.Backend) {
         if (this.spec.val !== '') {
             const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-            const pre = g.data.halfcells.get(n)?.get(Data.Layer.TEXT) as Data.TextTile | undefined; // TODO find a way to avoid casting here
+            const pre = g.data.halfcells.get(n)?.[Data.Layer.TEXT];
             if (pre && pre.spec.val === this.spec.val) {
                 g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, undefined));
                 this.isDrawing = false;
@@ -50,7 +50,7 @@ export default class TextTool extends Tool.Tool {
 
     private onkey(g: Gratility.Backend) {
         return (e: KeyboardEvent) => {
-            const pre = g.data.halfcells.get(this.n)?.get(Data.Layer.TEXT) as Data.TextTile | undefined;
+            const pre = g.data.halfcells.get(this.n)?.[Data.Layer.TEXT];
             const color = pre === undefined ? this.spec.color : pre.spec.color;
             const text = pre === undefined ? '' : pre.spec.val;
             if (e.key === 'Enter' || e.key === 'Escape') {
@@ -74,7 +74,7 @@ export default class TextTool extends Tool.Tool {
     public onmove(x: number, y: number, g: Gratility.Backend) {
         if (this.spec.val === '') return;
         const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-        const pre = g.data.halfcells.get(n)?.get(Data.Layer.TEXT) as Data.TextTile | undefined;
+        const pre = g.data.halfcells.get(n)?.[Data.Layer.TEXT];
         if (pre && pre.spec.val === this.spec.val) {
             if (!this.isDrawing) {
                 g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, undefined));
