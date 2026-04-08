@@ -1,4 +1,4 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 
 import CopyTool      from './copy.js';
 import LineTool      from './line.js';
@@ -30,7 +30,7 @@ export { default as ZoomTool      } from './zoom.js';
  * you can't even put static constraints on an interface.
  * object-oriented programming is a blight upon this world :(
  */
-export const tidtotool = new Map<string, (s: string) => Tool>([
+export const tidtotool = new Map<string, (s: string) => Tool.Tool>([
     ['copy',      CopyTool.load],
     ['line',      LineTool.load],
     ['pan',       PanTool.load],

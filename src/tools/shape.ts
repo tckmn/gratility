@@ -1,4 +1,4 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
@@ -26,7 +26,7 @@ function atlocs(x: number, y: number, locs: number): [number, number] {
     return [bx, by];
 }
 
-export default class ShapeTool extends Tool {
+export default class ShapeTool extends Tool.Tool {
 
     public readonly repeat = false;
     public readonly tid = 'shape';

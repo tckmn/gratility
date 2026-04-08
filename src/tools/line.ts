@@ -1,10 +1,10 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
-export default class LineTool extends Tool {
+export default class LineTool extends Tool.Tool {
 
     public readonly repeat = false;
     public readonly tid = 'line';

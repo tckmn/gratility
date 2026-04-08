@@ -1,7 +1,7 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 
-export default class PanTool extends Tool {
+export default class PanTool extends Tool.Tool {
 
     public readonly repeat = false;
     public readonly tid = 'pan';

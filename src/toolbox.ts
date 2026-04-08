@@ -1,4 +1,4 @@
-import Tool from './tools/tool.js';
+import * as Tool from './tools/tool.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
 import * as Gratility from './gratility.js';
@@ -27,7 +27,7 @@ function onesplit(s: string, delim: string): [string, string | undefined] {
 
 export class ToolboxEntry {
 
-    constructor(public tbind: number | string | boolean, public tool: Tool) {}
+    constructor(public tbind: number | string | boolean, public tool: Tool.Tool) {}
 
     public describeBind(): string {
         switch (typeof this.tbind) {
@@ -104,7 +104,7 @@ export class Toolbox {
         return this.tools.some(e => e.tbind === tbind);
     }
 
-    public addBind(tbind: number | string | boolean, tool: Tool): boolean {
+    public addBind(tbind: number | string | boolean, tool: Tool.Tool): boolean {
         if (this.hasBind(tbind)) return false;
         this.tools.push(new ToolboxEntry(tbind, tool));
         return true;
@@ -249,9 +249,9 @@ export class Toolboxbox {
 
     public toolboxes: Array<Toolbox> = [];
 
-    public readonly mouseTools = new Map<number, Tool>();
-    public readonly keyTools = new Map<string, Tool>();
-    public readonly wheelTools = new Map<boolean, Tool>();
+    public readonly mouseTools = new Map<number, Tool.Tool>();
+    public readonly keyTools = new Map<string, Tool.Tool>();
+    public readonly wheelTools = new Map<boolean, Tool.Tool>();
 
     constructor(private gf: Gratility.Frontend, private container: HTMLElement) {
         this.load(localStorage.toolbox ?? DEFAULT_TOOLS);

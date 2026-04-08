@@ -1,9 +1,9 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 
 // TODO: some of them don't work yet
 
-export default class TransformTool extends Tool {
+export default class TransformTool extends Tool.Tool {
 
     public readonly repeat = false;
     public readonly tid = 'transform';

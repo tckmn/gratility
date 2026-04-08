@@ -2,7 +2,6 @@ import * as Gratility from './gratility.js';
 import * as Stamp from './stamp.js';
 import * as Data from './data.js';
 import * as Draw from './draw.js';
-import Tool from './tools/tool.js';
 import * as Toolbox from './toolbox.js';
 import * as File from './file.js';
 import * as Tools from './tools/alltools.js';
@@ -193,7 +192,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
             outline: args[4] === '' ? undefined : parseInt(args[4], 10)
         }, args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0));
         break;
-    case 'text': tool = new Tools.TextTool(args[0]); break;
+    case 'text': tool = new Tools.TextTool(parseInt(args[0], 10), args[1]); break;
     case 'pan': tool = new Tools.PanTool(); break;
     case 'zoomin': tool = new Tools.ZoomTool(1); break;
     case 'zoomout': tool = new Tools.ZoomTool(-1); break;

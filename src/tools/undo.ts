@@ -1,8 +1,8 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 import * as Data from '../data.js';
 
-export default class UndoTool extends Tool {
+export default class UndoTool extends Tool.Tool {
 
     public readonly repeat = true;
     public readonly tid = 'undo';

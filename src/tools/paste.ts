@@ -1,8 +1,8 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 import * as Measure from '../measure.js';
 
-export default class PasteTool extends Tool {
+export default class PasteTool extends Tool.Tool {
 
     public readonly repeat = false;
     public readonly tid = 'paste';

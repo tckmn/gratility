@@ -1,4 +1,4 @@
-import Tool from './tools/tool.js';
+import * as Tool from './tools/tool.js';
 import * as Gratility from './gratility.js';
 
 export const onmove: Array<(x: number, y: number) => void> = [];
@@ -6,7 +6,7 @@ export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref
 
 export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: SVGElement, page: HTMLElement) {
 
-    const activeTools = new Set<Tool>();
+    const activeTools = new Set<Tool.Tool>();
     const rect = svg.getBoundingClientRect();
 
     let lastX = 0;

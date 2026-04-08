@@ -1,19 +1,19 @@
-import Tool from './tool.js';
+import * as Tool from './tool.js';
 import * as Gratility from '../gratility.js';
 import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 import * as Event from '../event.js';
 
-export default class TextTool extends Tool {
+export default class TextTool extends Tool.DragTool {
 
     public readonly repeat = false;
     public readonly tid = 'text';
     public name(): string { return 'Text'; }
     public save() { return this.preset; }
-    public static load(s: string) { return new TextTool(s); }
+    public static load(s: string) { return new TextTool(0, s); } // TODO
 
-    constructor(private preset: string) { super(); }
+    constructor(private color: number, private preset: string) { super(); }
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;

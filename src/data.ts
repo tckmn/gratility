@@ -5,6 +5,8 @@ import Image from './image.js';
 import * as File from './file.js';
 import * as Draw from './draw.js';
 
+import * as Color from './color.js';
+
 export function encode(x: number, y: number): number {
     return (x << 16) | (y & 0xffff);
 }
@@ -48,63 +50,6 @@ export function headsymmetric(h: Head) {
 }
 
 
-export type ShapeSpec = {
-    shape: Shape,
-    fill: number | undefined,
-    outline: number | undefined,
-    size: number
-}
-
-export type LineSpec = {
-    isEdge: boolean,
-    color: number,
-    thickness: number,
-    head: Head
-}
-
-export function sheq(a: ShapeSpec, b: ShapeSpec) {
-    return a.shape === b.shape && a.size === b.size;
-}
-
-export function linedateq(a: LineSpec, b: LineSpec) {
-    return a.isEdge === b.isEdge && a.head === b.head
-        && a.color === b.color && a.thickness === b.thickness;
-}
-
-export function lineeq([spec1, dir1]: [LineSpec, boolean], [spec2, dir2]: [LineSpec, boolean]) {
-    if (!linedateq(spec1, spec2)) return false;
-    switch (spec1.head) {
-        case Head.NONE: return true;
-        case Head.ARROW: return dir1 === dir2;
-    }
-}
-
-export class Element {
-    public constructor(
-        public readonly obj: Obj,
-        public readonly data: any,
-    ) {}
-}
-
-export class Item {
-    public constructor(
-        public readonly n: number,
-        public readonly layer: Layer,
-        public readonly elt: Element
-    ) {}
-}
-
-export class Change {
-    public constructor(
-        public readonly n: number,
-        public readonly layer: Layer,
-        public readonly pre: Element | undefined,
-        public readonly post: Element | undefined,
-        public linked: boolean = false,
-    ) {}
-    public rev() { return new Change(this.n, this.layer, this.post, this.pre, this.linked); }
-}
-
 const N_BITS = 32;
 const OBJ_BITS = 6;
 const LAYER_BITS = 6;
@@ -115,24 +60,97 @@ const VLQ_CHUNK = 4;
 const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
 
-const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
 
-    [Obj.SURFACE]: (bs: BitStream, data: number) => {
-        bs.write(COLOR_BITS, data);
-    },
+export abstract class Tile {
+    abstract readonly obj: Obj;
+    abstract eq(other: Tile): boolean;
+    abstract serialize(bs: BitStream): void;
+    abstract draw(x: number, y: number): SVGElement;
+}
 
-    [Obj.LINE]: (bs: BitStream, [spec, dir]: [LineSpec, boolean]) => {
-            bs.write(1, spec.isEdge ? 1 : 0);
-            if (spec.color === undefined) bs.write(1, 0);
-            else { bs.write(1, 1); bs.write(COLOR_BITS, spec.color); }
-            bs.write(THICKNESS_BITS, spec.thickness);
-            bs.write(HEAD_BITS, spec.head);
-            bs.write(1, dir ? 1 : 0);
-    },
+export class SurfaceTile extends Tile {
+    public readonly obj = Obj.SURFACE;
+    constructor(
+        public color: number
+    ) { super(); }
+    public eq(other: SurfaceTile): boolean { return this.color === other.color; }
+    public serialize(bs: BitStream) {
+        bs.write(COLOR_BITS, this.color);
+    }
+    public draw(x: number, y: number): SVGElement {
+        return Draw.draw(undefined, 'rect', {
+            width: Measure.CELL,
+            height: Measure.CELL,
+            x: Measure.HALFCELL*(x-1),
+            y: Measure.HALFCELL*(y-1),
+            fill: Color.colors[this.color]
+        });
+    }
+}
 
-    [Obj.SHAPE]: (bs: BitStream, data: ShapeSpec[]) => {
-        bs.writeVLQ(VLQ_CHUNK, data.length);
-        for (const spec of data) {
+export class LineTile extends Tile {
+    public readonly obj = Obj.LINE;
+    constructor(
+        public isEdge: boolean,
+        public color: number,
+        public thickness: number,
+        public head: Head,
+        public dir: boolean
+    ) { super(); }
+    public eq(other: LineTile): boolean {
+        return this.isEdge === other.isEdge && this.head === other.head
+            && this.color === other.color && this.thickness === other.thickness
+            && (this.head === Head.NONE ? true : this.dir === other.dir);
+    }
+    public serialize(bs: BitStream) {
+        bs.write(1, this.isEdge ? 1 : 0);
+        bs.write(COLOR_BITS, this.color);
+        bs.write(THICKNESS_BITS, this.thickness);
+        bs.write(HEAD_BITS, this.head);
+        bs.write(1, this.dir ? 1 : 0);
+    }
+    public draw(x: number, y: number): SVGElement {
+        const g = Draw.draw(undefined, 'g', {
+            transform: `
+                rotate(${((y%2===0) == this.isEdge ? 0 : 90) + (this.dir ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
+                `
+        });
+        const stroke = Color.colors[this.color];
+        const strokeLinecap = 'round'
+        const strokeWidth = Measure.LINE * this.thickness;
+        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(this.thickness));
+        Draw.draw(g, 'line', {
+            x1: adjust(x+1,0),
+            x2: adjust(x-1,0),
+            y1: adjust(y,0),
+            y2: adjust(y,0),
+            stroke, strokeLinecap, strokeWidth
+        });
+        if (this.head === Head.ARROW) {
+            Draw.draw(g, 'path', {
+                d: `M ${adjust(x,3)} ${adjust(y,5)} L ${adjust(x,-2)} ${adjust(y,0)} L ${adjust(x,3)} ${adjust(y,-5)}`,
+                fill: 'none',
+                stroke, strokeLinecap, strokeWidth
+            });
+        }
+        return g;
+    }
+}
+
+export class ShapeTile extends Tile {
+    public readonly obj = Obj.SHAPE;
+    constructor(
+        public shapes: {
+            shape: Shape,
+            fill: number | undefined,
+            outline: number | undefined,
+            size: number
+        }[]
+    ) { super(); }
+    public eq(other: ShapeTile): boolean { return true; } // TODO return this.shape === other.shape && this.size === other.size; }
+    public serialize(bs: BitStream) {
+        bs.writeVLQ(VLQ_CHUNK, this.shapes.length);
+        for (const spec of this.shapes) {
             bs.write(SHAPE_BITS, spec.shape);
             if (spec.fill === undefined) bs.write(1, 0);
             else { bs.write(1, 1); bs.write(COLOR_BITS, spec.fill); }
@@ -140,30 +158,118 @@ const serializefns: { [obj in Obj]: (bs: BitStream, data: never) => void } = {
             else { bs.write(1, 1); bs.write(COLOR_BITS, spec.outline); }
             bs.write(SIZE_BITS, spec.size);
         }
-    },
+    }
+    public draw(x: number, y: number): SVGElement {
+        const g = Draw.draw(undefined, 'g', {
+            transform: `translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})`
+        });
 
-    [Obj.TEXT]: (bs: BitStream, data: string) => {
-        bs.writeString(data);
-    },
+        for (const spec of this.shapes) {
+            const r = Measure.HALFCELL * (spec.size/6);
+            const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(spec.size/12));
+            const fill = spec.fill === undefined ? 'none' : Color.colors[spec.fill];
+            const stroke = spec.outline === undefined ? 'none' : Color.colors[spec.outline];
 
-};
+            switch (spec.shape) {
+            case Shape.CIRCLE:
+                Draw.draw(g, 'circle', {
+                    cx: 0, cy: 0, r: r,
+                    strokeWidth, fill, stroke
+                });
+                break;
+            case Shape.SQUARE:
+                Draw.draw(g, 'rect', {
+                    width: r*2, height: r*2, x: -r, y: -r,
+                    strokeWidth, fill, stroke
+                });
+                break;
+            case Shape.FLAG:
+                Draw.draw(g, 'path', {
+                    d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
+                    transform: `scale(${r*0.9})`,
+                    strokeWidth: strokeWidth/(r*0.9), fill, stroke
+                });
+                break;
+            case Shape.STAR:
+                Draw.draw(g, 'path', {
+                    d: 'M' + [0,1,2,3,4,5,6,7,8,9].map(n => (
+                        r*(n%2===0?1:0.5)*Math.cos((n/5+0.5)*Math.PI) + ' ' +
+                            -r*(n%2===0?1:0.5)*Math.sin((n/5+0.5)*Math.PI)
+                    )).join('L') + 'Z',
+                    strokeWidth, fill, stroke
+                });
+                break;
+            }
+        }
+
+        return g;
+    }
+}
+
+export class TextTile extends Tile {
+    public readonly obj = Obj.TEXT;
+    constructor(
+        public color: number,
+        public val: string
+    ) { super(); }
+    public eq(other: TextTile): boolean { return this.val === other.val; }
+    public serialize(bs: BitStream) {
+        bs.write(COLOR_BITS, this.color);
+        bs.writeString(this.val);
+    }
+    public draw(x: number, y: number): SVGElement {
+        return Draw.draw(undefined, 'text', {
+            x: Measure.HALFCELL*x,
+            y: Measure.HALFCELL*y,
+            textAnchor: 'middle',
+            dominantBaseline: 'central',
+            fontSize: Measure.CELL*(
+                this.val.length === 1 ? 0.75 :
+                this.val.length === 2 ? 0.55 :
+                this.val.length === 3 ? 0.4 :
+                0.3
+            ),
+            textContent: this.val
+        });
+    }
+}
+
+
+export class Item {
+    public constructor(
+        public readonly n: number,
+        public readonly layer: Layer,
+        public readonly tile: Tile
+    ) {}
+}
+
+export class Change {
+    public constructor(
+        public readonly n: number,
+        public readonly layer: Layer,
+        public readonly pre: Tile | undefined,
+        public readonly post: Tile | undefined,
+        public linked: boolean = false,
+    ) {}
+    public rev() { return new Change(this.n, this.layer, this.post, this.pre, this.linked); }
+}
 
 const deserializefns = {
 
-    [Obj.SURFACE]: (bs: BitStream): any => {
-        return bs.read(COLOR_BITS);
+    [Obj.SURFACE]: (bs: BitStream): Tile => {
+        return new SurfaceTile(bs.read(COLOR_BITS));
     },
 
-    [Obj.LINE]: (bs: BitStream): any => {
+    [Obj.LINE]: (bs: BitStream): Tile => {
         const isEdge = bs.read(1) === 1;
-        const color = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+        const color = bs.read(COLOR_BITS);
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return [{isEdge, color, thickness, head}, dir];
+        return new LineTile(isEdge, color, thickness, head, dir);
     },
 
-    [Obj.SHAPE]: (bs: BitStream): any => {
+    [Obj.SHAPE]: (bs: BitStream): Tile => {
         // check to make sure this isn't unreasonably large
         // (maybe should do something if it is?)
         const len = Math.min(bs.readVLQ(VLQ_CHUNK), 16);
@@ -175,11 +281,11 @@ const deserializefns = {
             const size = bs.read(SIZE_BITS);
             arr.push({ shape, fill, outline, size });
         }
-        return arr;
+        return new ShapeTile(arr);
     },
 
-    [Obj.TEXT]: (bs: BitStream): any => {
-        return bs.readString();
+    [Obj.TEXT]: (bs: BitStream): Tile => {
+        return new TextTile(bs.read(COLOR_BITS), bs.readString());
     },
 
 };
@@ -190,9 +296,9 @@ export function serializeStamp(stamp: Array<Item>): Uint8Array<ArrayBuffer> {
 
     for (const item of stamp) {
         bs.write(N_BITS, item.n);
-        bs.write(OBJ_BITS, item.elt.obj);
+        bs.write(OBJ_BITS, item.tile.obj);
         bs.write(LAYER_BITS, item.layer);
-        serializefns[item.elt.obj](bs, item.elt.data as never);
+        item.tile.serialize(bs);
     }
 
     return bs.cut();
@@ -213,7 +319,7 @@ export function deserializeStamp(arr: Uint8Array<ArrayBuffer>): Array<Item> {
         if (!bs.inbounds()) break;
         const obj = bs.read(OBJ_BITS) as Obj;
         const layer = bs.read(LAYER_BITS) as Layer;
-        stamp.push(new Item(n, layer, new Element(obj, deserializefns[obj](bs))));
+        stamp.push(new Item(n, layer, deserializefns[obj](bs)));
     }
 
     return stamp;
@@ -230,13 +336,13 @@ export function serializeChanges(changes: Array<Change>): Uint8Array<ArrayBuffer
             bs.write(OBJ_BITS, (1<<OBJ_BITS)-1);
         } else {
             bs.write(OBJ_BITS, ch.pre.obj);
-            serializefns[ch.pre.obj](bs, ch.pre.data as never);
+            ch.pre.serialize(bs);
         }
         if (ch.post === undefined) {
             bs.write(OBJ_BITS, (1<<OBJ_BITS)-1);
         } else {
             bs.write(OBJ_BITS, ch.post.obj);
-            serializefns[ch.post.obj](bs, ch.post.data as never);
+            ch.post.serialize(bs);
         }
     }
 
@@ -258,9 +364,9 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
         if (!bs.inbounds()) break;
         const layer = bs.read(LAYER_BITS) as Layer;
         const preobj = bs.read(OBJ_BITS);
-        const pre = preobj === (1<<OBJ_BITS)-1 ? undefined : new Element(preobj, deserializefns[preobj as Obj](bs));
+        const pre = preobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[preobj as Obj](bs);
         const postobj = bs.read(OBJ_BITS);
-        const post = postobj === (1<<OBJ_BITS)-1 ? undefined : new Element(postobj, deserializefns[postobj as Obj](bs));
+        const post = postobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[postobj as Obj](bs);
         changes.push(new Change(n, layer, pre, post));
     }
 
@@ -269,7 +375,7 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
 
 export class DataManager {
 
-    public readonly halfcells = new Map<number, Map<Layer, Element>>();
+    public readonly halfcells = new Map<number, Map<Layer, Tile>>();
     private readonly drawn = new Map<number, Map<Layer, SVGElement>>();
 
     private readonly history = new Array<Change>();
@@ -333,7 +439,7 @@ export class DataManager {
             if (this.image !== undefined) {
                 // draw it
                 const [x, y] = decode(change.n);
-                const elt = Draw.objdraw(change.post, x, y);
+                const elt = change.post.draw(x, y);
                 this.image.obj(change.layer).appendChild(elt);
 
                 // save the element
