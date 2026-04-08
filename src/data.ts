@@ -40,6 +40,8 @@ export const enum Head {
     ARROW
 }
 
+const CURRENT_VERSION = 1;
+const VERSION_BITS = 7;
 const N_BITS = 32;
 const OBJ_BITS = 6;
 const LAYER_BITS = 6;
@@ -276,7 +278,30 @@ export class Change {
     public rev() { return new Change(this.n, this.layer, this.post, this.pre, this.linked); }
 }
 
-const deserializefns = {
+const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}} = ((x: {[key in number]: {[key in Obj]?: (bs: BitStream) => Tile}}) => {
+    for (let i = CURRENT_VERSION-1; i >= 0; --i) {
+        if (x[i][Obj.SURFACE] === undefined) x[i][Obj.SURFACE] = x[i+1][Obj.SURFACE];
+        if (x[i][Obj.LINE] === undefined) x[i][Obj.LINE] = x[i+1][Obj.LINE];
+        if (x[i][Obj.SHAPE] === undefined) x[i][Obj.SHAPE] = x[i+1][Obj.SHAPE];
+        if (x[i][Obj.TEXT] === undefined) x[i][Obj.TEXT] = x[i+1][Obj.TEXT];
+    }
+    return x as never;
+})({ 0: {
+
+    [Obj.LINE]: (bs: BitStream): Tile => {
+        const isEdge = bs.read(1) === 1;
+        const color = bs.read(1) === 0 ? 0 : bs.read(COLOR_BITS);
+        const thickness = bs.read(THICKNESS_BITS);
+        const head = bs.read(HEAD_BITS);
+        const dir = bs.read(1) === 1;
+        return new LineTile(new LineSpec(isEdge, color, thickness, head), dir);
+    },
+
+    [Obj.TEXT]: (bs: BitStream): Tile => {
+        return new TextTile(new TextSpec(0, bs.readString()));
+    }
+
+}, 1: {
 
     [Obj.SURFACE]: (bs: BitStream): Tile => {
         return new SurfaceTile(new SurfaceSpec(bs.read(COLOR_BITS)));
@@ -308,13 +333,29 @@ const deserializefns = {
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
         return new TextTile(new TextSpec(bs.read(COLOR_BITS), bs.readString()));
-    },
+    }
 
-};
+}});
+
+function readVersion(bs: BitStream): number | undefined {
+    let ret;
+    const bit = bs.read(1);
+    if (bit === 0) ret = 0;
+    else ret = bs.read(VERSION_BITS);
+    if (ret > CURRENT_VERSION) {
+        Courier.alert(`deserialize: invalid version number ${ret}`);
+        return undefined;
+    }
+    if (ret !== CURRENT_VERSION) {
+        Courier.alert(`deserialize: old version number ${ret}; converting automatically`);
+    }
+    return ret;
+}
 
 export function serializeStamp(stamp: Array<Item>): Uint8Array<ArrayBuffer> {
     const bs = BitStream.empty();
-    bs.write(1, 0);
+    bs.write(1, 1);
+    bs.write(VERSION_BITS, CURRENT_VERSION);
 
     for (const item of stamp) {
         bs.write(N_BITS, item.n);
@@ -330,18 +371,15 @@ export function deserializeStamp(arr: Uint8Array<ArrayBuffer>): Array<Item> {
     const stamp = new Array<Item>();
     const bs = BitStream.fromArr(arr);
 
-    const version = bs.read(1);
-    if (version !== 0) {
-        Courier.alert('deserialize: invalid version number');
-        return [];
-    }
+    const version = readVersion(bs);
+    if (version === undefined) return [];
 
     while (1) {
         const n = bs.read(N_BITS);
         if (!bs.inbounds()) break;
         const obj = bs.read(OBJ_BITS) as Obj;
         const layer = bs.read(LAYER_BITS) as Layer;
-        stamp.push(new Item(n, layer, deserializefns[obj](bs)));
+        stamp.push(new Item(n, layer, deserializefns[version][obj](bs)));
     }
 
     return stamp;
@@ -349,7 +387,8 @@ export function deserializeStamp(arr: Uint8Array<ArrayBuffer>): Array<Item> {
 
 export function serializeChanges(changes: Array<Change>): Uint8Array<ArrayBuffer> {
     const bs = BitStream.empty();
-    bs.write(1, 0);
+    bs.write(1, 1);
+    bs.write(VERSION_BITS, CURRENT_VERSION);
 
     for (const ch of changes) {
         bs.write(N_BITS, ch.n);
@@ -375,20 +414,17 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
     const changes = [];
     const bs = BitStream.fromArr(arr);
 
-    const version = bs.read(1);
-    if (version !== 0) {
-        Courier.alert('deserialize: invalid version number');
-        return [];
-    }
+    const version = readVersion(bs);
+    if (version === undefined) return [];
 
     while (1) {
         const n = bs.read(N_BITS);
         if (!bs.inbounds()) break;
         const layer = bs.read(LAYER_BITS) as Layer;
         const preobj = bs.read(OBJ_BITS);
-        const pre = preobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[preobj as Obj](bs);
+        const pre = preobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[version][preobj as Obj](bs);
         const postobj = bs.read(OBJ_BITS);
-        const post = postobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[postobj as Obj](bs);
+        const post = postobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[version][postobj as Obj](bs);
         changes.push(new Change(n, layer, pre, post));
     }
 

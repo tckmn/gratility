@@ -38,7 +38,7 @@ function interpret(s: string) {
     try {
         return Stamp.render(Data.deserializeStamp(new Uint8Array(atob(s).split('').map(c => c.charCodeAt(0)))));
     } catch (e) {
-        return Stamp.render(Data.deserializeStamp(fs.readFileSync(s)));
+        return Stamp.render(Data.deserializeStamp(new Uint8Array(fs.readFileSync(s))));
     }
 }
 

@@ -49,7 +49,7 @@ export function serve() {
 
         ws.on('message', function message(msg, isBinary) {
             if (isBinary) {
-                for (const ch of Data.deserializeChanges(msg as Buffer)) {
+                for (const ch of Data.deserializeChanges(msg as Buffer<ArrayBuffer>)) {
                     data.add(ch);
                 }
                 wss.clients.forEach(client => {

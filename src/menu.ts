@@ -43,7 +43,13 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     }],
 
     ['ulstamp', (manager: MenuManager) => {
-        // TODO
+        const fileinput = document.getElementById('fileinput') as HTMLInputElement;
+        const cb = () => {
+            fileinput.removeEventListener('change', cb);
+            fileinput.files![0].bytes().then(x => manager.gb.stamp.add(Data.deserializeStamp(x)));
+        };
+        fileinput.addEventListener('change', cb);
+        fileinput.click();
     }],
 
     ['dltxt', (manager: MenuManager) => {
