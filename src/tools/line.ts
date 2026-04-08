@@ -13,7 +13,7 @@ export default class LineTool extends Tool.Tool {
         return Draw.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                Draw.objdraw(new Data.Element(Data.Obj.LINE, [this.spec, false]), 0, 1)
+                new Data.LineTile(this.spec, false).draw(0, 1)
             ]
         });
     }
@@ -25,12 +25,9 @@ export default class LineTool extends Tool.Tool {
     ].join(' '); }
     public static load(s: string) {
         const ss = s.split(' '), ns = ss.map(x => parseInt(x, 10));
-        return new LineTool({
-            isEdge: ss[0] === 'E',
-            color: ns[1],
-            thickness: ns[2],
-            head: ns[3]
-        });
+        return new LineTool(new Data.LineSpec(
+            ss[0] === 'E', ns[1], ns[2], ns[3]
+        ));
     }
 
     constructor(private spec: Data.LineSpec) {
@@ -89,16 +86,15 @@ export default class LineTool extends Tool.Tool {
 
         const n = Data.encode(cx, cy)
 
-        const oldline = g.data.halfcells.get(n)?.get(this.LAYER);
-        const newline = new Data.Element(Data.Obj.LINE,
-                                         [this.spec, dir === -1] as [Data.LineSpec, boolean])
+        const oldline = g.data.halfcells.get(n)?.get(this.LAYER) as Data.LineTile | undefined; // TODO remove cast
+        const newline = new Data.LineTile(this.spec, dir === -1);
 
         if (this.isDrawing === undefined) {
-            this.isDrawing = oldline === undefined || !Data.lineeq(oldline.data, newline.data);
+            this.isDrawing = oldline === undefined || !oldline.eq(newline);
         }
 
         if (this.isDrawing) {
-            if (oldline === undefined || !Data.lineeq(oldline.data, newline.data)) {
+            if (oldline === undefined || !oldline.eq(newline)) {
                 g.data.add(new Data.Change(n, this.LAYER, oldline, newline));
             }
         } else {

@@ -61,21 +61,30 @@ const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
 
 
+export abstract class Spec {
+    abstract eq(other: Spec): boolean;
+}
+
 export abstract class Tile {
     abstract readonly obj: Obj;
-    abstract eq(other: Tile): boolean;
+    // abstract eq(other: Tile): boolean;
     abstract serialize(bs: BitStream): void;
     abstract draw(x: number, y: number): SVGElement;
 }
 
-export class SurfaceTile extends Tile {
-    public readonly obj = Obj.SURFACE;
+export class SurfaceSpec extends Spec {
     constructor(
         public color: number
     ) { super(); }
-    public eq(other: SurfaceTile): boolean { return this.color === other.color; }
+    public eq(other: SurfaceSpec): boolean { return this.color === other.color; }
+}
+export class SurfaceTile extends Tile {
+    public readonly obj = Obj.SURFACE;
+    constructor(
+        public spec: SurfaceSpec
+    ) { super(); }
     public serialize(bs: BitStream) {
-        bs.write(COLOR_BITS, this.color);
+        bs.write(COLOR_BITS, this.spec.color);
     }
     public draw(x: number, y: number): SVGElement {
         return Draw.draw(undefined, 'rect', {
@@ -83,42 +92,50 @@ export class SurfaceTile extends Tile {
             height: Measure.CELL,
             x: Measure.HALFCELL*(x-1),
             y: Measure.HALFCELL*(y-1),
-            fill: Color.colors[this.color]
+            fill: Color.colors[this.spec.color]
         });
     }
 }
 
-export class LineTile extends Tile {
-    public readonly obj = Obj.LINE;
+export class LineSpec extends Spec {
     constructor(
         public isEdge: boolean,
         public color: number,
         public thickness: number,
-        public head: Head,
+        public head: Head
+    ) { super(); }
+    public eq(other: LineSpec): boolean {
+        return this.isEdge === other.isEdge && this.head === other.head
+            && this.color === other.color && this.thickness === other.thickness;
+    }
+}
+export class LineTile extends Tile {
+    public readonly obj = Obj.LINE;
+    constructor(
+        public spec: LineSpec,
         public dir: boolean
     ) { super(); }
     public eq(other: LineTile): boolean {
-        return this.isEdge === other.isEdge && this.head === other.head
-            && this.color === other.color && this.thickness === other.thickness
-            && (this.head === Head.NONE ? true : this.dir === other.dir);
+        return this.spec.eq(other.spec) &&
+            (this.spec.head === Head.NONE ? true : this.dir === other.dir);
     }
     public serialize(bs: BitStream) {
-        bs.write(1, this.isEdge ? 1 : 0);
-        bs.write(COLOR_BITS, this.color);
-        bs.write(THICKNESS_BITS, this.thickness);
-        bs.write(HEAD_BITS, this.head);
+        bs.write(1, this.spec.isEdge ? 1 : 0);
+        bs.write(COLOR_BITS, this.spec.color);
+        bs.write(THICKNESS_BITS, this.spec.thickness);
+        bs.write(HEAD_BITS, this.spec.head);
         bs.write(1, this.dir ? 1 : 0);
     }
     public draw(x: number, y: number): SVGElement {
         const g = Draw.draw(undefined, 'g', {
             transform: `
-                rotate(${((y%2===0) == this.isEdge ? 0 : 90) + (this.dir ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
+                rotate(${((y%2===0) == this.spec.isEdge ? 0 : 90) + (this.dir ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
                 `
         });
-        const stroke = Color.colors[this.color];
+        const stroke = Color.colors[this.spec.color];
         const strokeLinecap = 'round'
-        const strokeWidth = Measure.LINE * this.thickness;
-        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(this.thickness));
+        const strokeWidth = Measure.LINE * this.spec.thickness;
+        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(this.spec.thickness));
         Draw.draw(g, 'line', {
             x1: adjust(x+1,0),
             x2: adjust(x-1,0),
@@ -126,7 +143,7 @@ export class LineTile extends Tile {
             y2: adjust(y,0),
             stroke, strokeLinecap, strokeWidth
         });
-        if (this.head === Head.ARROW) {
+        if (this.spec.head === Head.ARROW) {
             Draw.draw(g, 'path', {
                 d: `M ${adjust(x,3)} ${adjust(y,5)} L ${adjust(x,-2)} ${adjust(y,0)} L ${adjust(x,3)} ${adjust(y,-5)}`,
                 fill: 'none',
@@ -137,17 +154,20 @@ export class LineTile extends Tile {
     }
 }
 
+export class ShapeSpec extends Spec {
+    constructor(
+        public shape: Shape,
+        public fill: number | undefined,
+        public outline: number | undefined,
+        public size: number
+    ) { super(); }
+    public eq(other: ShapeSpec): boolean { return this.shape === other.shape && this.size === other.size; }
+}
 export class ShapeTile extends Tile {
     public readonly obj = Obj.SHAPE;
     constructor(
-        public shapes: {
-            shape: Shape,
-            fill: number | undefined,
-            outline: number | undefined,
-            size: number
-        }[]
+        public shapes: ShapeSpec[]
     ) { super(); }
-    public eq(other: ShapeTile): boolean { return true; } // TODO return this.shape === other.shape && this.size === other.size; }
     public serialize(bs: BitStream) {
         bs.writeVLQ(VLQ_CHUNK, this.shapes.length);
         for (const spec of this.shapes) {
@@ -206,16 +226,21 @@ export class ShapeTile extends Tile {
     }
 }
 
-export class TextTile extends Tile {
-    public readonly obj = Obj.TEXT;
+export class TextSpec extends Spec {
     constructor(
         public color: number,
         public val: string
     ) { super(); }
-    public eq(other: TextTile): boolean { return this.val === other.val; }
+    public eq(other: TextSpec): boolean { return this.val === other.val; }
+}
+export class TextTile extends Tile {
+    public readonly obj = Obj.TEXT;
+    constructor(
+        public spec: TextSpec
+    ) { super(); }
     public serialize(bs: BitStream) {
-        bs.write(COLOR_BITS, this.color);
-        bs.writeString(this.val);
+        bs.write(COLOR_BITS, this.spec.color);
+        bs.writeString(this.spec.val);
     }
     public draw(x: number, y: number): SVGElement {
         return Draw.draw(undefined, 'text', {
@@ -224,12 +249,12 @@ export class TextTile extends Tile {
             textAnchor: 'middle',
             dominantBaseline: 'central',
             fontSize: Measure.CELL*(
-                this.val.length === 1 ? 0.75 :
-                this.val.length === 2 ? 0.55 :
-                this.val.length === 3 ? 0.4 :
+                this.spec.val.length === 1 ? 0.75 :
+                this.spec.val.length === 2 ? 0.55 :
+                this.spec.val.length === 3 ? 0.4 :
                 0.3
             ),
-            textContent: this.val
+            textContent: this.spec.val
         });
     }
 }
@@ -257,7 +282,7 @@ export class Change {
 const deserializefns = {
 
     [Obj.SURFACE]: (bs: BitStream): Tile => {
-        return new SurfaceTile(bs.read(COLOR_BITS));
+        return new SurfaceTile(new SurfaceSpec(bs.read(COLOR_BITS)));
     },
 
     [Obj.LINE]: (bs: BitStream): Tile => {
@@ -266,7 +291,7 @@ const deserializefns = {
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return new LineTile(isEdge, color, thickness, head, dir);
+        return new LineTile(new LineSpec(isEdge, color, thickness, head), dir);
     },
 
     [Obj.SHAPE]: (bs: BitStream): Tile => {
@@ -279,13 +304,13 @@ const deserializefns = {
             const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const size = bs.read(SIZE_BITS);
-            arr.push({ shape, fill, outline, size });
+            arr.push(new ShapeSpec(shape, fill, outline, size));
         }
         return new ShapeTile(arr);
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
-        return new TextTile(bs.read(COLOR_BITS), bs.readString());
+        return new TextTile(new TextSpec(bs.read(COLOR_BITS), bs.readString()));
     },
 
 };

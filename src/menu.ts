@@ -163,14 +163,14 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
 
     let tool;
     switch (el.dataset.tool) {
-    case 'surface': tool = new Tools.SurfaceTool(parseInt(args[0], 10)); break;
+    case 'surface': tool = new Tools.SurfaceTool(new Data.SurfaceSpec(parseInt(args[0], 10))); break;
     case 'line':
-        tool = new Tools.LineTool({
-            isEdge: parseInt(args[0]) === 1,
-            color: parseInt(args[1]),
-            thickness: parseInt(args[2]),
-            head: parseInt(args[3]),
-        });
+        tool = new Tools.LineTool(new Data.LineSpec(
+            parseInt(args[0]) === 1,
+            parseInt(args[1]),
+            parseInt(args[2]),
+            parseInt(args[3])
+        ));
         break;
     case 'shape':
         if (!(parseInt(args[1], 10) >= 1 && parseInt(args[1], 10) <= 5)) {
@@ -185,14 +185,14 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
             Courier.alert('shape should should have at least one of fill or outline');
             return;
         }
-        tool = new Tools.ShapeTool({
-            shape: parseInt(args[0], 10),
-            size: parseInt(args[1], 10),
-            fill: args[3] === '' ? undefined : parseInt(args[3], 10),
-            outline: args[4] === '' ? undefined : parseInt(args[4], 10)
-        }, args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0));
+        tool = new Tools.ShapeTool(new Data.ShapeSpec(
+            parseInt(args[0], 10),
+            args[3] === '' ? undefined : parseInt(args[3], 10),
+            args[4] === '' ? undefined : parseInt(args[4], 10),
+            parseInt(args[1], 10)
+        ), args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0));
         break;
-    case 'text': tool = new Tools.TextTool(parseInt(args[0], 10), args[1]); break;
+    case 'text': tool = new Tools.TextTool(new Data.TextSpec(parseInt(args[0], 10), args[1])); break;
     case 'pan': tool = new Tools.PanTool(); break;
     case 'zoomin': tool = new Tools.ZoomTool(1); break;
     case 'zoomout': tool = new Tools.ZoomTool(-1); break;

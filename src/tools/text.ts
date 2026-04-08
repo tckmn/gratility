@@ -5,30 +5,33 @@ import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 import * as Event from '../event.js';
 
-export default class TextTool extends Tool.DragTool {
+export default class TextTool extends Tool.Tool {
 
     public readonly repeat = false;
     public readonly tid = 'text';
     public name(): string { return 'Text'; }
-    public save() { return this.preset; }
-    public static load(s: string) { return new TextTool(0, s); } // TODO
+    public save() { return this.spec.val; }
+    public static load(s: string) { return new TextTool(new Data.TextSpec(0, s)); } // TODO
 
-    constructor(private color: number, private preset: string) { super(); }
+    constructor(private spec: Data.TextSpec) {
+        super();
+        this.tile = new Data.TextTile(this.spec);
+    }
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;
     private isDrawing: boolean = false;
+    private tile : Data.TextTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
-        if (this.preset !== '') {
+        if (this.spec.val !== '') {
             const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-            const text = g.data.halfcells.get(n)?.get(Data.Layer.TEXT);
-            if (text && text.data === this.preset) {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
+            const pre = g.data.halfcells.get(n)?.get(Data.Layer.TEXT) as Data.TextTile | undefined; // TODO find a way to avoid casting here
+            if (pre && pre.spec.val === this.spec.val) {
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, undefined));
                 this.isDrawing = false;
             } else {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, text,
-                                           new Data.Element(Data.Obj.TEXT, this.preset)));
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, this.tile));
                 this.isDrawing = true;
             }
         } else if (Event.keyeater.ref === undefined) {
@@ -47,15 +50,18 @@ export default class TextTool extends Tool.DragTool {
 
     private onkey(g: Gratility.Backend) {
         return (e: KeyboardEvent) => {
-            const text = g.data.halfcells.get(this.n)?.get(Data.Layer.TEXT);
+            const pre = g.data.halfcells.get(this.n)?.get(Data.Layer.TEXT) as Data.TextTile | undefined;
+            const color = pre === undefined ? this.spec.color : pre.spec.color;
+            const text = pre === undefined ? '' : pre.spec.val;
             if (e.key === 'Enter' || e.key === 'Escape') {
                 this.deselect();
             } else if (e.key === 'Backspace') {
-                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
-                                           new Data.Element(Data.Obj.TEXT, (text?.data ?? '').slice(0, (text?.data ?? '').length-1))));
+                // TODO delete if no more text
+                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, pre,
+                                           new Data.TextTile(new Data.TextSpec(color, text.slice(0, text.length-1)))));
             } else if (e.key.length === 1) {
-                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, text,
-                                           new Data.Element(Data.Obj.TEXT, (text?.data ?? '') + e.key)));
+                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, pre,
+                                           new Data.TextTile(new Data.TextSpec(color, text + e.key))));
             }
         };
     }
@@ -66,17 +72,16 @@ export default class TextTool extends Tool.DragTool {
     }
 
     public onmove(x: number, y: number, g: Gratility.Backend) {
-        if (this.preset === '') return;
+        if (this.spec.val === '') return;
         const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-        const text = g.data.halfcells.get(n)?.get(Data.Layer.TEXT);
-        if (text && text.data === this.preset) {
+        const pre = g.data.halfcells.get(n)?.get(Data.Layer.TEXT) as Data.TextTile | undefined;
+        if (pre && pre.spec.val === this.spec.val) {
             if (!this.isDrawing) {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, text, undefined));
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, undefined));
             }
         } else {
             if (this.isDrawing) {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, text,
-                                           new Data.Element(Data.Obj.TEXT, this.preset)));
+                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, this.tile));
             }
         }
     }

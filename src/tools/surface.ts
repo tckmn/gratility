@@ -13,20 +13,20 @@ export default class SurfaceTool extends Tool.Tool {
         return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                Draw.objdraw(this.element, 1, 1)
+                this.tile.draw(1, 1)
             ]
         });
     }
-    public save() { return this.color.toString(); }
-    public static load(s: string) { return new SurfaceTool(parseInt(s, 10)); }
+    public save() { return this.spec.color.toString(); }
+    public static load(s: string) { return new SurfaceTool(new Data.SurfaceSpec(parseInt(s, 10))); }
 
-    constructor(private color: number) {
+    constructor(private spec: Data.SurfaceSpec) {
         super();
-        this.element = new Data.Element(Data.Obj.SURFACE, this.color);
+        this.tile = new Data.SurfaceTile(this.spec);
     }
 
     private isDrawing = false;
-    private element : Data.Element;
+    private tile : Data.SurfaceTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
         x = Measure.cell(x);
@@ -34,8 +34,7 @@ export default class SurfaceTool extends Tool.Tool {
         const n = Data.encode(x*2+1, y*2+1);
         const surface = g.data.halfcells.get(n)?.get(Data.Layer.SURFACE);
         if (surface === undefined) {
-            g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface,
-                                     new Data.Element(Data.Obj.SURFACE, this.color)));
+            g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.tile));
             this.isDrawing = true;
         } else {
             g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, undefined));
@@ -50,7 +49,7 @@ export default class SurfaceTool extends Tool.Tool {
         const surface = g.data.halfcells.get(n)?.get(Data.Layer.SURFACE);
         if (surface === undefined) {
             if (this.isDrawing) {
-                g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.element));
+                g.data.add(new Data.Change(n, Data.Layer.SURFACE, surface, this.tile));
             }
         } else {
             if (!this.isDrawing) {

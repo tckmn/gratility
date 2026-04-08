@@ -35,7 +35,7 @@ export default class ShapeTool extends Tool.Tool {
         return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                Draw.objdraw(new Data.Element(Data.Obj.SHAPE, [this.spec]), 1, 1)
+                new Data.ShapeTile([this.spec]).draw(1, 1)
             ]
         });
     }
@@ -48,12 +48,12 @@ export default class ShapeTool extends Tool.Tool {
     ].join(' '); }
     public static load(s: string) {
         const ss = s.split(' '), ns = ss.map(x => parseInt(x, 10));
-        return new ShapeTool({
-            shape: ns[0],
-            fill: ss[1] === '-' ? undefined : ns[1],
-            outline: ss[2] === '-' ? undefined : ns[2],
-            size: ns[3]
-        }, ns[4]);
+        return new ShapeTool(new Data.ShapeSpec(
+            ns[0],
+            ss[1] === '-' ? undefined : ns[1],
+            ss[2] === '-' ? undefined : ns[2],
+            ns[3]
+        ), ns[4]);
     }
 
     constructor(
@@ -66,20 +66,20 @@ export default class ShapeTool extends Tool.Tool {
     public ondown(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE);
-        const shapelst = shape?.data as Data.ShapeSpec[] | undefined;
+        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE) as Data.ShapeTile | undefined;
+        const shapelst = shape?.shapes;
         if (shapelst === undefined) {
             g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                       new Data.Element(Data.Obj.SHAPE, [this.spec])));
+                                       new Data.ShapeTile([this.spec])));
             this.isDrawing = true;
-        } else if (!shapelst.some(sh => Data.sheq(sh, this.spec))) {
+        } else if (!shapelst.some(sh => sh.eq(this.spec))) {
             g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                       new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
+                                       new Data.ShapeTile(shapelst.concat(this.spec))));
             this.isDrawing = true;
         } else {
-            const remaining = shapelst.filter(sh => !Data.sheq(sh, this.spec));
+            const remaining = shapelst.filter(sh => !sh.eq(this.spec));
             g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined
-                                       : new Data.Element(Data.Obj.SHAPE, remaining)));
+                                       : new Data.ShapeTile(remaining)));
             this.isDrawing = false;
         }
     }
@@ -87,23 +87,23 @@ export default class ShapeTool extends Tool.Tool {
     public onmove(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
         const n = Data.encode(x, y);
-        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE);
-        const shapelst = shape?.data as Data.ShapeSpec[] | undefined;
+        const shape = g.data.halfcells.get(n)?.get(Data.Layer.SHAPE) as Data.ShapeTile | undefined;
+        const shapelst = shape?.shapes;
         if (shapelst === undefined) {
             if (this.isDrawing) {
                 g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                           new Data.Element(Data.Obj.SHAPE, [this.spec])));
+                                           new Data.ShapeTile([this.spec])));
             }
-        } else if (!shapelst.some(sh => Data.sheq(sh, this.spec))) {
+        } else if (!shapelst.some(sh => sh.eq(this.spec))) {
             if (this.isDrawing) {
                 g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                           new Data.Element(Data.Obj.SHAPE, shapelst.concat(this.spec))));
+                                           new Data.ShapeTile(shapelst.concat(this.spec))));
             }
         } else {
             if (!this.isDrawing) {
-                const remaining = shapelst.filter(sh => !Data.sheq(sh, this.spec));
+                const remaining = shapelst.filter(sh => !sh.eq(this.spec));
                 g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined :
-                                           new Data.Element(Data.Obj.SHAPE, remaining)));
+                                           new Data.ShapeTile(remaining)));
             }
         }
     }
