@@ -26,7 +26,7 @@ function atlocs(x: number, y: number, locs: number): [number, number] {
     return [bx, by];
 }
 
-export default class ShapeTool extends Tool.Tool {
+export default class ShapeTool extends Tool.DragTool {
 
     public readonly repeat = false;
     public readonly tid = 'shape';
@@ -59,53 +59,28 @@ export default class ShapeTool extends Tool.Tool {
     constructor(
         private spec: Data.ShapeSpec,
         private locs: number // bitmask: 0b center edge corner
-    ) { super(); }
+    ) { super(); this.tile = new Data.ShapeTile([this.spec]); }
 
-    private isDrawing = false;
+    protected readonly layer: Data.Layer = Data.Layer.SHAPE;
+    protected readonly tile: Data.ShapeTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
-        const n = Data.encode(x, y);
-        const shape = g.data.halfcells.get(n)?.[Data.Layer.SHAPE];
-        const shapelst = shape?.shapes;
-        if (shapelst === undefined) {
-            g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                       new Data.ShapeTile([this.spec])));
-            this.isDrawing = true;
-        } else if (!shapelst.some(sh => sh.eq(this.spec))) {
-            g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                       new Data.ShapeTile(shapelst.concat(this.spec))));
-            this.isDrawing = true;
-        } else {
-            const remaining = shapelst.filter(sh => !sh.eq(this.spec));
-            g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined
-                                       : new Data.ShapeTile(remaining)));
-            this.isDrawing = false;
-        }
+        this.drag(true, Data.encode(x, y), g);
     }
 
     public onmove(x: number, y: number, g: Gratility.Backend) {
         [x, y] = atlocs(x, y, this.locs);
-        const n = Data.encode(x, y);
-        const shape = g.data.halfcells.get(n)?.[Data.Layer.SHAPE];
-        const shapelst = shape?.shapes;
-        if (shapelst === undefined) {
-            if (this.isDrawing) {
-                g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                           new Data.ShapeTile([this.spec])));
-            }
-        } else if (!shapelst.some(sh => sh.eq(this.spec))) {
-            if (this.isDrawing) {
-                g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape,
-                                           new Data.ShapeTile(shapelst.concat(this.spec))));
-            }
-        } else {
-            if (!this.isDrawing) {
-                const remaining = shapelst.filter(sh => !sh.eq(this.spec));
-                g.data.add(new Data.Change(n, Data.Layer.SHAPE, shape, remaining.length === 0 ? undefined :
-                                           new Data.ShapeTile(remaining)));
-            }
-        }
+        this.drag(false, Data.encode(x, y), g);
+    }
+
+    protected draw(cell: Data.ShapeTile | undefined): Data.ShapeTile {
+        return cell === undefined ? this.tile : new Data.ShapeTile(cell.shapes.concat(this.spec));
+    }
+
+    protected erase(cell: Data.ShapeTile): Data.ShapeTile | undefined {
+        const remaining = cell.shapes.filter(sh => !sh.eq(this.spec));
+        return remaining.length === 0 ? undefined : new Data.ShapeTile(remaining);
     }
 
 }

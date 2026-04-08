@@ -52,12 +52,16 @@ const THICKNESS_BITS = 3;
 
 
 export abstract class Spec {
-    abstract eq(other: Spec): boolean;
+    // this isn't currently used anywhere but i guess i have implementations
+    // for all instances
+    // abstract eq(other: Spec): boolean;
 }
 
 export abstract class Tile {
     abstract readonly obj: Obj;
-    // abstract eq(other: Tile): boolean;
+    // this is only ever used in DragTool to determine whether to draw or erase
+    // (instance versions may be used ad hoc)
+    abstract eq(other: Tile): boolean;
     abstract serialize(bs: BitStream): void;
     abstract draw(x: number, y: number): SVGElement;
 }
@@ -73,6 +77,7 @@ export class SurfaceTile extends Tile {
     constructor(
         public spec: SurfaceSpec
     ) { super(); }
+    public eq(other: SurfaceTile) { return this.spec.eq(other.spec); }
     public serialize(bs: BitStream) {
         bs.write(COLOR_BITS, this.spec.color);
     }
@@ -158,6 +163,7 @@ export class ShapeTile extends Tile {
     constructor(
         public shapes: ShapeSpec[]
     ) { super(); }
+    public eq(other: ShapeTile) { return other.shapes.some(sh => sh.eq(this.shapes[0])); }
     public serialize(bs: BitStream) {
         bs.writeVLQ(VLQ_CHUNK, this.shapes.length);
         for (const spec of this.shapes) {
@@ -221,13 +227,14 @@ export class TextSpec extends Spec {
         public color: number,
         public val: string
     ) { super(); }
-    public eq(other: TextSpec): boolean { return this.val === other.val; }
+    public eq(other: TextSpec): boolean { return this.color === other.color && this.val === other.val; }
 }
 export class TextTile extends Tile {
     public readonly obj = Obj.TEXT;
     constructor(
         public spec: TextSpec
     ) { super(); }
+    public eq(other: TextTile): boolean { return this.spec === other.spec; }
     public serialize(bs: BitStream) {
         bs.write(COLOR_BITS, this.spec.color);
         bs.writeString(this.spec.val);

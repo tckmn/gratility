@@ -5,7 +5,7 @@ import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 import * as Event from '../event.js';
 
-export default class TextTool extends Tool.Tool {
+export default class TextTool extends Tool.DragTool {
 
     public readonly repeat = false;
     public readonly tid = 'text';
@@ -20,20 +20,12 @@ export default class TextTool extends Tool.Tool {
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;
-    private isDrawing: boolean = false;
-    private tile : Data.TextTile;
+    protected readonly layer: Data.Layer = Data.Layer.TEXT;
+    protected readonly tile: Data.TextTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
         if (this.spec.val !== '') {
-            const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-            const pre = g.data.halfcells.get(n)?.[Data.Layer.TEXT];
-            if (pre && pre.spec.val === this.spec.val) {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, undefined));
-                this.isDrawing = false;
-            } else {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, this.tile));
-                this.isDrawing = true;
-            }
+            this.drag(true, Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1), g);
         } else if (Event.keyeater.ref === undefined) {
             const cx = Measure.cell(x)*2, cy = Measure.cell(y)*2;
             this.n = Data.encode(cx+1, cy+1);
@@ -73,17 +65,7 @@ export default class TextTool extends Tool.Tool {
 
     public onmove(x: number, y: number, g: Gratility.Backend) {
         if (this.spec.val === '') return;
-        const n = Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1);
-        const pre = g.data.halfcells.get(n)?.[Data.Layer.TEXT];
-        if (pre && pre.spec.val === this.spec.val) {
-            if (!this.isDrawing) {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, undefined));
-            }
-        } else {
-            if (this.isDrawing) {
-                g.data.add(new Data.Change(n, Data.Layer.TEXT, pre, this.tile));
-            }
-        }
+        this.drag(false, Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1), g);
     }
 
 }
