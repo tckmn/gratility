@@ -24,6 +24,7 @@ const backend = new Gratility.Backend(image, data, stamp, view);
 data.connect(document.getElementById('file')!, document.getElementById('server')!);
 
 const frontend = new Gratility.Frontend(backend,
+    document.getElementById('actions')!,
     document.getElementById('toolbox')!,
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>);
@@ -54,40 +55,6 @@ for (const multisel of Array.from(document.getElementsByClassName('multisel')) a
         children[0].classList.add('active');
         multisel.dataset.value = children[0].dataset.multisel;
     }
-}
-
-for (const colorpicker of Array.from(document.getElementsByClassName('colorpicker')) as Array<HTMLElement>) {
-    const children: Array<HTMLSpanElement> = [];
-
-    // TODO less repetition
-    if (colorpicker.classList.contains('optional')) {
-        const el = document.createElement('span');
-        el.classList.add('transparent');
-        el.addEventListener('click', () => {
-            for (const ch of children) ch.classList.remove('active');
-            el.classList.add('active');
-            colorpicker.dataset.value = '';
-        });
-
-        colorpicker.appendChild(el);
-        children.push(el);
-    }
-
-    Color.colors.forEach((color, i) => {
-        const el = document.createElement('span');
-        el.style.backgroundColor = color;
-        el.addEventListener('click', () => {
-            for (const ch of children) ch.classList.remove('active');
-            el.classList.add('active');
-            colorpicker.dataset.value = i.toString();
-        });
-
-        colorpicker.appendChild(el);
-        children.push(el);
-    });
-
-    children[0].classList.add('active');
-    colorpicker.dataset.value = colorpicker.classList.contains('optional') ? '' : '0';
 }
 
 window.addEventListener('beforeunload', e => {

@@ -15,8 +15,8 @@ export class Backend {
 export class Frontend {
     public readonly toolbox: Toolbox.Toolboxbox;
     public readonly menu: MenuManager;
-    public constructor(backend: Backend, toolcont: HTMLElement, btns: Array<HTMLElement>, popups: Array<HTMLElement>) {
-        this.toolbox = new Toolbox.Toolboxbox(this, toolcont);
+    public constructor(backend: Backend, toolmenu: HTMLElement, toolcont: HTMLElement, btns: Array<HTMLElement>, popups: Array<HTMLElement>) {
+        this.toolbox = new Toolbox.Toolboxbox(this, toolmenu, toolcont);
         this.menu = new MenuManager(this, backend, btns, popups);
     }
 }

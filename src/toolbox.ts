@@ -1,6 +1,7 @@
 import * as Tool from './tools/tool.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
+import * as Color from './color.js';
 import * as Gratility from './gratility.js';
 import * as Courier from './courier.js';
 
@@ -253,7 +254,8 @@ export class Toolboxbox {
     public readonly keyTools = new Map<string, Tool.Tool>();
     public readonly wheelTools = new Map<boolean, Tool.Tool>();
 
-    constructor(private gf: Gratility.Frontend, private container: HTMLElement) {
+    constructor(private gf: Gratility.Frontend, menuCont: HTMLElement, private container: HTMLElement) {
+        this.generateMenu(menuCont);
         this.load(localStorage.toolbox ?? DEFAULT_TOOLS);
     }
 
@@ -289,4 +291,113 @@ export class Toolboxbox {
         for (const t of this.toolboxes) t.display(this.container);
     }
 
+    private generateMenu(menuCont: HTMLElement) {
+        const group = makeGroup(menuCont, 'drawing');
+
+        group.append(new MenuItem('surface', 'Surface', (param) => {
+            const color = param.color('color');
+            return () => new Tools.SurfaceTool(new Data.SurfaceSpec(color.get()));
+        }, 'full').element);
+    }
+
+}
+
+class Param<T> {
+    private val: T | undefined;
+    constructor(private source: ParamSource, private consumeFunc: (s: string) => [T, string], private readFunc: () => T) {}
+    public get(): T {
+        if (this.val !== undefined) return this.val;
+        return this.readFunc();
+    }
+    public consume(s: string): string { const ret = this.consumeFunc(s); this.val = ret[0]; return ret[1]; }
+    public clean() { this.val = undefined; }
+}
+
+function consumeNum(s: string): [number, string] { const idx = s.indexOf(':'); return [parseInt(s.slice(0, idx), 10), s.slice(idx+1)]; }
+
+function makeGroup(cont: HTMLElement, name: string) {
+    const group = document.createElement('section');
+    group.classList.add('group');
+    const lbl = document.createElement('span');
+    lbl.textContent = name;
+    group.append(lbl);
+    cont.append(group);
+    return group;
+}
+function makeArg(name: string, el: HTMLElement) {
+    const arg = document.createElement('label');
+    arg.append(document.createTextNode(`${name}: `));
+    arg.append(el);
+    return arg;
+}
+
+class ParamSource {
+    // lol no existential types in typescript
+    private params: Array<Param<number> | Param<string>> = [];
+    constructor(private element: HTMLElement) {}
+
+    public color(name: string, optional: boolean = false): Param<number> {
+        const colorpicker = document.createElement('span');
+        colorpicker.classList.add('colorpicker');
+        const children: Array<HTMLSpanElement> = [];
+        let val = optional ? -1 : 0;
+
+        // TODO less repetition
+        if (optional) {
+            const el = document.createElement('span');
+            el.classList.add('transparent');
+            el.addEventListener('click', () => {
+                for (const ch of children) ch.classList.remove('active');
+                el.classList.add('active');
+                val = -1;
+            });
+
+            colorpicker.appendChild(el);
+            children.push(el);
+        }
+
+        Color.colors.forEach((color, i) => {
+            const el = document.createElement('span');
+            el.style.backgroundColor = color;
+            el.addEventListener('click', () => {
+                for (const ch of children) ch.classList.remove('active');
+                el.classList.add('active');
+                val = i;
+            });
+
+            colorpicker.appendChild(el);
+            children.push(el);
+        });
+
+        children[0].classList.add('active');
+        this.element.append(makeArg(name, colorpicker));
+
+        const param = new Param<number>(this, consumeNum, () => val);
+        this.params.push(param);
+        return param;
+    }
+
+    public inject(s: string) { for (const p of this.params) s = p.consume(s); }
+    public reject() { for (const p of this.params) p.clean(); }
+}
+
+class MenuItem {
+    public static lookup: Map<string, MenuItem> = new Map();
+
+    private readonly psource: ParamSource;
+    public readonly element: HTMLElement;
+    private readonly generate: () => Tool.Tool;
+
+    constructor(private mid: string, private name: string, f: (p: ParamSource) => (() => Tool.Tool), extraClass: string | undefined = undefined) {
+        MenuItem.lookup.set(mid, this);
+        this.element = document.createElement('div');
+        this.element.classList.add('settool');
+        if (extraClass !== undefined) this.element.classList.add(extraClass);
+        this.element.append(document.createTextNode(name));
+        this.psource = new ParamSource(this.element);
+        this.generate = f(this.psource);
+    }
+
+    public fromHTML(): Tool.Tool { return this.generate(); }
+    public fromStr(s: string): Tool.Tool { this.psource.inject(s); return this.generate(); }
 }
