@@ -4,7 +4,7 @@ import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
-export default class CopyTool extends Tool.Tool {
+export default class CopyTool extends Tool.SelectTool {
 
     public readonly repeat = false;
     public readonly tid = 'copy';
@@ -13,54 +13,9 @@ export default class CopyTool extends Tool.Tool {
     public save() { return this.isCut ? 'x' : 'c'; }
     public static load(s: string) { return new CopyTool(s === 'x'); }
 
-    private sx = 0;
-    private sy = 0;
-    private tx = 0;
-    private ty = 0;
-    private elt: SVGElement | undefined;
-
     public constructor(private isCut: boolean) { super(); }
 
-    public ondown(x: number, y: number, g: Gratility.Backend) {
-        this.sx = x;
-        this.sy = y;
-        this.tx = x;
-        this.ty = y;
-        this.elt = Draw.draw(g.image.copypaste, 'rect', {
-            x: x,
-            y: y,
-            width: 0,
-            height: 0,
-            fill: 'rgba(0,0,0,0.25)',
-            stroke: '#000'
-        });
-    }
-
-    public onmove(x: number, y: number) {
-        this.tx = x;
-        this.ty = y;
-
-        const sx = Measure.physhc(Math.min(this.sx, this.tx));
-        const sy = Measure.physhc(Math.min(this.sy, this.ty));
-        const tx = Measure.physhc(Math.max(this.sx, this.tx));
-        const ty = Measure.physhc(Math.max(this.sy, this.ty));
-
-        if (this.elt !== undefined) {
-            this.elt.setAttribute('x', sx.toString());
-            this.elt.setAttribute('y', sy.toString());
-            this.elt.setAttribute('width', (tx-sx).toString());
-            this.elt.setAttribute('height', (ty-sy).toString());
-        }
-    }
-
-    public onup(g: Gratility.Backend) {
-        if (this.elt !== undefined) g.image.copypaste.removeChild(this.elt);
-
-        const sx = Measure.hc(Math.min(this.sx, this.tx));
-        const sy = Measure.hc(Math.min(this.sy, this.ty));
-        const tx = Measure.hc(Math.max(this.sx, this.tx));
-        const ty = Measure.hc(Math.max(this.sy, this.ty));
-
+    protected onselect(sx: number, sy: number, tx: number, ty: number, g: Gratility.Backend) {
         if (sx === tx && sy === ty) {
             g.stamp.deselect();
             return;

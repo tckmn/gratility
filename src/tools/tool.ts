@@ -1,5 +1,7 @@
 import * as Gratility from '../gratility.js';
 import * as Data from '../data.js';
+import * as Draw from '../draw.js';
+import * as Measure from '../measure.js';
 
 export abstract class Tool {
     abstract readonly repeat: boolean;
@@ -40,5 +42,58 @@ export abstract class DragTool extends Tool {
                 g.data.add(new Data.Change(n, this.layer, cell, this.draw(cell)));
             }
         }
+    }
+}
+
+export abstract class SelectTool extends Tool {
+    private sx = 0;
+    private sy = 0;
+    private tx = 0;
+    private ty = 0;
+    private elt: SVGElement | undefined;
+
+    protected abstract onselect(sx: number, sy: number, tx: number, ty: number, g: Gratility.Backend): void;
+
+    public ondown(x: number, y: number, g: Gratility.Backend) {
+        this.sx = x;
+        this.sy = y;
+        this.tx = x;
+        this.ty = y;
+        this.elt = Draw.draw(g.image.copypaste, 'rect', {
+            x: x,
+            y: y,
+            width: 0,
+            height: 0,
+            fill: 'rgba(0,0,0,0.25)',
+            stroke: '#000'
+        });
+    }
+
+    public onmove(x: number, y: number) {
+        this.tx = x;
+        this.ty = y;
+
+        const sx = Measure.physhc(Math.min(this.sx, this.tx));
+        const sy = Measure.physhc(Math.min(this.sy, this.ty));
+        const tx = Measure.physhc(Math.max(this.sx, this.tx));
+        const ty = Measure.physhc(Math.max(this.sy, this.ty));
+
+        if (this.elt !== undefined) {
+            this.elt.setAttribute('x', sx.toString());
+            this.elt.setAttribute('y', sy.toString());
+            this.elt.setAttribute('width', (tx-sx).toString());
+            this.elt.setAttribute('height', (ty-sy).toString());
+        }
+    }
+
+    public onup(g: Gratility.Backend) {
+        if (this.elt !== undefined) g.image.copypaste.removeChild(this.elt);
+
+        const sx = Measure.hc(Math.min(this.sx, this.tx));
+        const sy = Measure.hc(Math.min(this.sy, this.ty));
+        const tx = Measure.hc(Math.max(this.sx, this.tx));
+        const ty = Measure.hc(Math.max(this.sy, this.ty));
+
+        this.onselect(sx, sy, tx, ty, g);
     }
 }

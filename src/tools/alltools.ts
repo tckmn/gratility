@@ -1,6 +1,7 @@
 import * as Tool from './tool.js';
 
 import CopyTool      from './copy.js';
+import FuncTool      from './func.js';
 import LineTool      from './line.js';
 import PanTool       from './pan.js';
 import PasteTool     from './paste.js';
@@ -12,6 +13,7 @@ import UndoTool      from './undo.js';
 import ZoomTool      from './zoom.js';
 
 export { default as CopyTool      } from './copy.js';
+export { default as FuncTool      } from './func.js';
 export { default as LineTool      } from './line.js';
 export { default as PanTool       } from './pan.js';
 export { default as PasteTool     } from './paste.js';
@@ -32,6 +34,7 @@ export { default as ZoomTool      } from './zoom.js';
  */
 export const tidtotool = new Map<string, (s: string) => Tool.Tool>([
     ['copy',      CopyTool.load],
+    ['func',      FuncTool.load],
     ['line',      LineTool.load],
     ['pan',       PanTool.load],
     ['paste',     PasteTool.load],

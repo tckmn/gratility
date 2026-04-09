@@ -208,6 +208,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     case 'undo': tool = new Tools.UndoTool(true); break;
     case 'redo': tool = new Tools.UndoTool(false); break;
     case 'transform': tool = new Tools.TransformTool(parseInt(args[0], 10)); break;
+    case 'func': tool = new Tools.FuncTool(args[0]); break;
     default: Courier.alert('unknown tool??'); return;
     }
 
