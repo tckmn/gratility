@@ -1,17 +1,14 @@
 import * as Event from './event.js';
 import * as Stamp from './stamp.js';
-import * as Color from './color.js';
 import * as Data from './data.js';
 import * as Draw from './draw.js';
 import * as File from './file.js';
 import * as Toolbox from './toolbox.js';
-import MenuManager from './menu.js';
 import ViewManager from './view.js';
 import Image from './image.js';
 import * as Gratility from './gratility.js';
 
 
-// TODO make this better i guess
 Draw.initialize(document);
 const svg = document.getElementById('grid') as unknown as SVGElement;
 
@@ -34,10 +31,6 @@ Event.initialize(frontend, backend, svg, document.body);
 // TODO better
 image.grid(-500, 500, -500, 500);
 
-// TODO this stuff should really go somewhere else
-for (const multisel of Array.from(document.getElementsByClassName('multisel')) as Array<HTMLElement>) {
-}
-
 window.addEventListener('beforeunload', e => {
     if (data.file?.unsavedChanges()) {
         e.preventDefault();
@@ -45,5 +38,4 @@ window.addEventListener('beforeunload', e => {
     }
 });
 
-// TODO this should definitely definitely go somewhere else
 document.getElementById('toolbar')?.addEventListener('wheel', e => e.stopPropagation());

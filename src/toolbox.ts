@@ -197,8 +197,6 @@ export class Toolbox {
             return true;
         });
 
-        c.space();
-
         const renametxt = document.createElement('input');
         renametxt.setAttribute('placeholder', 'toolbox name...');
         renametxt.value = this.name;
@@ -220,6 +218,11 @@ export class Toolbox {
             e.stopPropagation();
             if (e.key === 'Enter') if (renamefn()) c.close();
             if (e.key === 'Escape') renametxt.blur();
+        });
+
+        c.btn('⇅ import/export', () => {
+            // TODO
+            return true;
         });
 
         c.space();
@@ -246,6 +249,11 @@ export class Toolbox {
             e.stopPropagation();
             if (e.key === 'Enter') if (addfn()) c.close();
             if (e.key === 'Escape') addtxt.blur();
+        });
+
+        c.btn('⇅ import/export', () => {
+            // TODO
+            return true;
         });
     }
 
