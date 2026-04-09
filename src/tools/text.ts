@@ -10,8 +10,8 @@ export default class TextTool extends Tool.DragTool {
     public readonly repeat = false;
     public readonly tid = 'text';
     public name(): string { return 'Text'; }
-    public save() { return this.spec.val; }
-    public static load(s: string) { return new TextTool(new Data.TextSpec(0, s)); } // TODO
+    public save() { return this.spec.color + '!' + this.spec.val; }
+    public static load(s: string) { return new TextTool(new Data.TextSpec(parseInt(s.split('!')[0], 10), s.slice(s.indexOf('!')+1))); }
 
     constructor(private spec: Data.TextSpec) {
         super();
@@ -48,9 +48,8 @@ export default class TextTool extends Tool.DragTool {
             if (e.key === 'Enter' || e.key === 'Escape') {
                 this.deselect();
             } else if (e.key === 'Backspace') {
-                // TODO delete if no more text
                 g.data.add(new Data.Change(this.n, Data.Layer.TEXT, pre,
-                                           new Data.TextTile(new Data.TextSpec(color, text.slice(0, text.length-1)))));
+                                           text.length === 1 ? undefined : new Data.TextTile(new Data.TextSpec(color, text.slice(0, text.length-1)))));
             } else if (e.key.length === 1) {
                 g.data.add(new Data.Change(this.n, Data.Layer.TEXT, pre,
                                            new Data.TextTile(new Data.TextSpec(color, text + e.key))));

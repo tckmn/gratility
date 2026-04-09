@@ -236,7 +236,7 @@ export class TextTile extends Tile {
     constructor(
         public spec: TextSpec
     ) { super(); }
-    public eq(other: TextTile): boolean { return this.spec === other.spec; }
+    public eq(other: TextTile): boolean { return this.spec.eq(other.spec); }
     public serialize(bs: BitStream) {
         bs.write(COLOR_BITS, this.spec.color);
         bs.writeString(this.spec.val);
@@ -253,7 +253,8 @@ export class TextTile extends Tile {
                 this.spec.val.length === 3 ? 0.4 :
                 0.3
             ),
-            textContent: this.spec.val
+            textContent: this.spec.val,
+            fill: Color.colors[this.spec.color]
         });
     }
 }
