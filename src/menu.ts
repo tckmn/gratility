@@ -102,11 +102,10 @@ menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
         resolve = manager.addToolEntry.tbind;
         btn.textContent = 'save edits';
 
-        const tool = manager.addToolEntry.tool;
-        const panel = menu.popup.querySelector(`[data-tool="${manager.addToolEntry.tparam.split(':')[0]}"]`)!;
-        panel.classList.add('addtool-active');
-        panel.scrollIntoView();
-        // TODO set args
+        const menuItem = manager.addToolEntry.menuItem();
+        menuItem.element.classList.add('addtool-active');
+        menuItem.element.scrollIntoView();
+        menuItem.toHTML(manager.addToolEntry.spec());
     }
 });
 
@@ -159,7 +158,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     const menuItem = Toolbox.MenuItem.lookup.get(el.dataset.tool!)!;
     const tparam = menuItem.toStr();
     const tool = menuItem.fromHTML();
-    if (tool === undefined) return; // TODO better feedback? or maybe generation always already showed a message
+    if (tool === undefined) return;
 
     if (manager.addToolEntry === undefined) {
         manager.addToolBox?.addBind(resolve, tparam, tool);

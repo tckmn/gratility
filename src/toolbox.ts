@@ -30,6 +30,7 @@ export class ToolboxEntry {
 
     constructor(public tbind: number | string | boolean, public tparam: string, public tool: Tool.Tool) {}
     public mid(): string { return this.tparam.split(':')[0]; }
+    public spec(): string { return this.tparam.slice(this.tparam.indexOf(':')+1); }
     public menuItem(): MenuItem { return MenuItem.lookup.get(this.mid())!; }
     public replace(tbind: number | string | boolean, tparam: string, tool: Tool.Tool) { this.tbind = tbind; this.tparam = tparam; this.tool = tool; }
 
@@ -392,9 +393,11 @@ class Param<T> {
     constructor(private source: ParamSource,
                 private consumeFunc: (s: string) => [T, string],
                 public produce: () => string,
-                private readFunc: () => T)
+                private readFunc: () => T,
+                private writeFunc: (s: string) => string)
                 { this.val = readFunc(); }
     public fromHTML() { this.val = this.readFunc(); }
+    public toHTML(s: string): string { return this.writeFunc(s); }
     public consume(s: string): string { const ret = this.consumeFunc(s); this.val = ret[0]; return ret[1]; }
 }
 
@@ -429,7 +432,10 @@ class ParamSource {
         this.element.append(makeArg('label', name, el));
 
         // TODO lol this is bad
-        const param = new Param<number>(this, consumeNum, () => Math.min(max, Math.max(min, parseInt(el.value, 10))).toString() + ':', () => Math.min(max, Math.max(min, parseInt(el.value, 10))));
+        const param = new Param<number>(this, consumeNum,
+                                        () => Math.min(max, Math.max(min, parseInt(el.value, 10))).toString() + ':',
+                                        () => Math.min(max, Math.max(min, parseInt(el.value, 10))),
+                                        s => { el.value = s.split(':')[0]; return s.slice(s.indexOf(':')+1); });
         this.params.push(param);
         return param;
     }
@@ -438,7 +444,7 @@ class ParamSource {
         const el = document.createElement('input');
         this.element.append(makeArg('label', name, el));
 
-        const param = new Param<string>(this, s => [s, ''], () => el.value, () => el.value);
+        const param = new Param<string>(this, s => [s, ''], () => el.value, () => el.value, s => { el.value = s; return ''; });
         this.params.push(param);
         return param;
     }
@@ -469,7 +475,11 @@ class ParamSource {
         children[0].classList.add('active');
         this.element.append(makeArg('label', name, colorpicker));
 
-        const param = new Param<number>(this, consumeNum, () => `${val}:`, () => val);
+        const param = new Param<number>(this, consumeNum, () => `${val}:`, () => val, s => {
+            const i = parseInt(s.split(':')[0], 10);
+            children[optional ? i+1 : i].click();
+            return s.slice(s.indexOf(':')+1);
+        });
         this.params.push(param);
         return param;
     }
@@ -499,7 +509,9 @@ class ParamSource {
         this.element.append(makeArg('span', name, multisel));
 
         // TODO should this default to [0] or should there be error handling somehow
-        const param = new Param<T>(this, s => [(options.find(o => o[0] === s[0]) ?? options[0])[2], s.slice(1)], () => val[0], () => val[2]);
+        const param = new Param<T>(this, s => [(options.find(o => o[0] === s[0]) ?? options[0])[2], s.slice(1)], () => val[0], () => val[2], s => {
+            children[options.findIndex(o => o[0] === s[0])].click(); return s.slice(1);
+        });
         this.params.push(param);
         return param;
     }
@@ -528,12 +540,18 @@ class ParamSource {
         this.element.append(makeArg('span', name, multisel));
 
         const param = new Param<T[]>(this, s => [options.filter(o => s.split(':')[0].includes(o[0])).map(o => o[2]), s.slice(s.indexOf(':')+1)],
-                                     () => val.map(o => o[0]).join('') + ':', () => val.map(o => o[2]));
+                                     () => val.map(o => o[0]).join('') + ':', () => val.map(o => o[2]), s => {
+                                         for (let i = 0; i < options.length; ++i) {
+                                             children[i].classList.toggle('active', s.split(':')[0].includes(options[i][0]));
+                                         }
+                                         return s.slice(s.indexOf(':')+1);
+                                     });
         this.params.push(param);
         return param;
     }
 
     public fromHTML() { for (const p of this.params) p.fromHTML(); }
+    public toHTML(s: string) { for (const p of this.params) s = p.toHTML(s); }
     public inject(s: string) { for (const p of this.params) s = p.consume(s); }
     public extract(): string { return this.params.map(p => p.produce()).join(''); }
 }
@@ -545,6 +563,7 @@ export class MenuItem {
     public readonly element: HTMLElement;
     private readonly generate: () => Tool.Tool | undefined;
 
+    // if f returns undefined, it should always show a Courier alert explaining why
     constructor(private mid: string, public name: string, f: (p: ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
         MenuItem.lookup.set(mid, this);
         this.element = document.createElement('div');
@@ -557,6 +576,7 @@ export class MenuItem {
     }
 
     public fromHTML(): Tool.Tool | undefined { this.psource.fromHTML(); return this.generate(); }
+    public toHTML(s: string) { this.psource.toHTML(s); }
     public fromStr(s: string): Tool.Tool | undefined { this.psource.inject(s); return this.generate(); }
     public toStr(): string { return this.mid + ':' + this.psource.extract(); }
 }

@@ -5,7 +5,6 @@ import * as Measure from '../measure.js';
 
 export abstract class Tool {
     abstract readonly repeat: boolean;
-    setargs(args: Array<HTMLElement>) {}
     icon(): SVGElement | void {}
     ondown(x: number, y: number, g: Gratility.Backend): void {}
     onmove(x: number, y: number, g: Gratility.Backend): void {}
