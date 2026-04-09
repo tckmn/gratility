@@ -7,11 +7,6 @@ import * as Measure from '../measure.js';
 export default class CopyTool extends Tool.SelectTool {
 
     public readonly repeat = false;
-    public readonly tid = 'copy';
-    public name(): string { return this.isCut ? 'Cut' : 'Copy'; }
-    public panel(): string { return this.isCut ? 'cut' : 'copy'; }
-    public save() { return this.isCut ? 'x' : 'c'; }
-    public static load(s: string) { return new CopyTool(s === 'x'); }
 
     public constructor(private isCut: boolean) { super(); }
 

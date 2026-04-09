@@ -8,10 +8,6 @@ import * as Event from '../event.js';
 export default class TextTool extends Tool.DragTool {
 
     public readonly repeat = false;
-    public readonly tid = 'text';
-    public name(): string { return 'Text'; }
-    public save() { return this.spec.color + '!' + this.spec.val; }
-    public static load(s: string) { return new TextTool(new Data.TextSpec(parseInt(s.split('!')[0], 10), s.slice(s.indexOf('!')+1))); }
 
     constructor(private spec: Data.TextSpec) {
         super();

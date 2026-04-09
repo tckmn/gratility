@@ -8,11 +8,6 @@ import * as Stamp from '../stamp.js';
 export default class FuncTool extends Tool.SelectTool {
 
     public readonly repeat = false;
-    public readonly tid = 'func';
-    public name(): string { return `Func(${this.funcName})`; }
-    public panel(): string { return 'func'; }
-    public save() { return this.funcName; }
-    public static load(s: string) { return new FuncTool(s); }
 
     public constructor(private funcName: string) { super(); }
 

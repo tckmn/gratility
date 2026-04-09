@@ -5,10 +5,6 @@ import * as Measure from '../measure.js';
 export default class PasteTool extends Tool.Tool {
 
     public readonly repeat = false;
-    public readonly tid = 'paste';
-    public name(): string { return 'Paste'; }
-    public save() { return ''; }
-    public static load() { return new PasteTool(); }
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
         const xoff = Math.round(x / Measure.CELL) * 2;

@@ -7,8 +7,6 @@ import * as Measure from '../measure.js';
 export default class LineTool extends Tool.Tool {
 
     public readonly repeat = false;
-    public readonly tid = 'line';
-    public name(): string { return 'Line'; }
     public icon(): SVGElement {
         return Draw.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
@@ -16,18 +14,6 @@ export default class LineTool extends Tool.Tool {
                 new Data.LineTile(this.spec, false).draw(0, 1)
             ]
         });
-    }
-    public save() { return [
-        this.spec.isEdge ? 'E' : 'L',
-        this.spec.color.toString(),
-        this.spec.thickness.toString(),
-        this.spec.head.toString()
-    ].join(' '); }
-    public static load(s: string) {
-        const ss = s.split(' '), ns = ss.map(x => parseInt(x, 10));
-        return new LineTool(new Data.LineSpec(
-            ss[0] === 'E', ns[1], ns[2], ns[3]
-        ));
     }
 
     constructor(private spec: Data.LineSpec) {

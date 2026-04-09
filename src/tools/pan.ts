@@ -4,10 +4,6 @@ import * as Gratility from '../gratility.js';
 export default class PanTool extends Tool.Tool {
 
     public readonly repeat = false;
-    public readonly tid = 'pan';
-    public name(): string { return 'Pan'; }
-    public save() { return ''; }
-    public static load() { return new PanTool(); }
 
     private mx = 0;
     private my = 0;

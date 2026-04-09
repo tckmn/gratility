@@ -23,25 +23,3 @@ export { default as TextTool      } from './text.js';
 export { default as TransformTool } from './transform.js';
 export { default as UndoTool      } from './undo.js';
 export { default as ZoomTool      } from './zoom.js';
-
-/*
- * TODO:
- * these strings must be manually checked to match the "tid" instance of each class.
- * afaict, there's no good way to fix this with typescript's """type system""",
- * because this needs to be accessible both statically and from an instance.
- * you can't even put static constraints on an interface.
- * object-oriented programming is a blight upon this world :(
- */
-export const tidtotool = new Map<string, (s: string) => Tool.Tool>([
-    ['copy',      CopyTool.load],
-    ['func',      FuncTool.load],
-    ['line',      LineTool.load],
-    ['pan',       PanTool.load],
-    ['paste',     PasteTool.load],
-    ['shape',     ShapeTool.load],
-    ['surface',   SurfaceTool.load],
-    ['text',      TextTool.load],
-    ['transform', TransformTool.load],
-    ['undo',      UndoTool.load],
-    ['zoom',      ZoomTool.load],
-]);

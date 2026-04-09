@@ -8,17 +8,17 @@ import * as Courier from './courier.js';
 const DEFAULT_TOOLS = `main
 m1::pan:
 k ::pan:
-ks::surface:0
-kr::line:L 8 2 0
-ke::line:E 0 2 0
-kt::text:
-kz::undo:u
-kx::undo:r
-kc::copy:c
-kd::copy:x
+ks::surface:0:
+kr::line:P8:2N
+ke::line:E0:2N
+kt::text:0:
+kz::undo:
+kx::redo:
+kc::copy:
+kd::cut:
 kv::paste:
-w1::zoom:1
-w0::zoom:-1`;
+w1::zoomin:
+w0::zoomout:`;
 
 // for load()
 function onesplit(s: string, delim: string): [string, string | undefined] {
@@ -28,7 +28,10 @@ function onesplit(s: string, delim: string): [string, string | undefined] {
 
 export class ToolboxEntry {
 
-    constructor(public tbind: number | string | boolean, public tool: Tool.Tool) {}
+    constructor(public tbind: number | string | boolean, public tparam: string, public tool: Tool.Tool) {}
+    public mid(): string { return this.tparam.split(':')[0]; }
+    public menuItem(): MenuItem { return MenuItem.lookup.get(this.mid())!; }
+    public replace(tbind: number | string | boolean, tparam: string, tool: Tool.Tool) { this.tbind = tbind; this.tparam = tparam; this.tool = tool; }
 
     public describeBind(): string {
         switch (typeof this.tbind) {
@@ -50,24 +53,25 @@ export class ToolboxEntry {
         // the delimiter is :: to avoid any confusion about keybinds to Space
         // maybe i should just globally turn ' ' into 'Space' everywhere,
         // but whatever
-        return `${this.saveBind()}::${this.tool.tid}:${this.tool.save()}`;
+        return `${this.saveBind()}::${this.tparam}`;
     }
 
     static load(s: string): ToolboxEntry {
         const [bind, rest] = onesplit(s, '::');
-        if (rest === undefined) throw new Error('malformed toolbox entry');
-        const [tid, spec] = onesplit(rest, ':');
-        if (spec === undefined) throw new Error('malformed toolbox entry');
-        const toolfn = Tools.tidtotool.get(tid);
-        if (toolfn === undefined) throw new Error('malformed toolbox entry');
+        if (rest === undefined) { Courier.alert('malformed toolbox entry: no bind'); throw new Error(); }
+        const [mid, spec] = onesplit(rest, ':');
+        if (spec === undefined) { Courier.alert('malformed toolbox entry: no menu id'); throw new Error(); }
+        const menuItem = MenuItem.lookup.get(mid);
+        if (menuItem === undefined) { Courier.alert('malformed toolbox entry: bad menu id'); throw new Error(); }
         const bindtype = bind[0];
         const bindval = bind.slice(1);
-        const tool = toolfn(spec);
+        const tool = menuItem.fromStr(spec);
+        if (tool === undefined) { Courier.alert('malformed toolbox entry: tool gen failed'); throw new Error(); }
         switch (bindtype) {
-        case 'm': return new ToolboxEntry(parseInt(bindval, 10), tool);
-        case 'k': return new ToolboxEntry(bindval, tool);
-        case 'w': return new ToolboxEntry(bindval === '1', tool);
-        default: throw new Error('malformed toolbox entry');
+        case 'm': return new ToolboxEntry(parseInt(bindval, 10), rest, tool);
+        case 'k': return new ToolboxEntry(bindval, rest, tool);
+        case 'w': return new ToolboxEntry(bindval === '1', rest, tool);
+        default: Courier.alert('malformed toolbox entry: bad bind'); throw new Error();
         }
     }
 
@@ -79,7 +83,7 @@ export class ToolboxEntry {
         container.appendChild(bind);
 
         const name = document.createElement('div');
-        name.textContent = this.tool.name();
+        name.textContent = this.menuItem().name;
         container.appendChild(name);
 
         const icon = document.createElement('div');
@@ -105,9 +109,9 @@ export class Toolbox {
         return this.tools.some(e => e.tbind === tbind);
     }
 
-    public addBind(tbind: number | string | boolean, tool: Tool.Tool): boolean {
+    public addBind(tbind: number | string | boolean, tparam: string, tool: Tool.Tool): boolean {
         if (this.hasBind(tbind)) return false;
-        this.tools.push(new ToolboxEntry(tbind, tool));
+        this.tools.push(new ToolboxEntry(tbind, tparam, tool));
         return true;
     }
 
@@ -150,7 +154,7 @@ export class Toolbox {
         if (row !== undefined) row.classList.add('activerow');
 
         if (te !== undefined) {
-            c.lbl(`tool ${te.tool.name()}`);
+            c.lbl(`tool ${te.menuItem().name}`);
 
             c.btn('✎ edit tool', () => {
                 this.gf.menu.addToolBox = this;
@@ -160,7 +164,7 @@ export class Toolbox {
             });
 
             c.btn('× delete tool', () => {
-                this.gf.menu.confirm(`really delete tool ${te.tool.name()}?`, [
+                this.gf.menu.confirm(`really delete tool ${te.menuItem().name}?`, [
                     ['delete it', () => {
                         this.delBind(te);
                         this.gf.toolbox.saveRefresh();
@@ -298,7 +302,7 @@ export class Toolboxbox {
 
         group.append(new MenuItem('surface', 'Surface', (param) => {
             const color = param.color('color');
-            return () => new Tools.SurfaceTool(new Data.SurfaceSpec(color.get()));
+            return () => new Tools.SurfaceTool(new Data.SurfaceSpec(color.val));
         }, 'full').element);
 
         group.append(new MenuItem('line', 'Line', (param) => {
@@ -306,7 +310,7 @@ export class Toolboxbox {
             const color = param.color('color');
             const thickness = param.multi('thickness', [['1', 'thin', 1], ['2', 'normal', 2], ['3', 'thick', 3]]);
             const head = param.multi('head', [['N', 'none', Data.Head.NONE], ['A', 'arrow', Data.Head.ARROW]]);
-            return () => new Tools.LineTool(new Data.LineSpec(type.get(), color.get(), thickness.get(), head.get()));
+            return () => new Tools.LineTool(new Data.LineSpec(type.val, color.val, thickness.val, head.val));
         }, 'full').element);
 
         group.append(new MenuItem('shape', 'Shape', (param) => {
@@ -325,23 +329,23 @@ export class Toolboxbox {
             const fill = param.color('fill', true);
             const outline = param.color('outline', true);
             return () => {
-                if (location.get().length === 0) {
+                if (location.val.length === 0) {
                     Courier.alert('shape should be placeable in at least one location');
                     return;
                 }
-                if (outline.get() === -1 && size.get() === -1) {
+                if (outline.val === -1 && size.val === -1) {
                     Courier.alert('shape should should have at least one of fill or outline');
                     return;
                 }
-                return new Tools.ShapeTool(new Data.ShapeSpec(type.get(), fill.get() === -1 ? undefined : fill.get(), outline.get() === -1 ? undefined : outline.get(), size.get()),
-                                           location.get().reduce((a,b) => a+b, 0));
+                return new Tools.ShapeTool(new Data.ShapeSpec(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, size.val),
+                                           location.val.reduce((a,b) => a+b, 0));
             };
         }, 'full').element);
 
         group.append(new MenuItem('text', 'Text', (param) => {
             const color = param.color('color');
             const preset = param.text('preset');
-            return () => new Tools.TextTool(new Data.TextSpec(color.get(), preset.get()));
+            return () => new Tools.TextTool(new Data.TextSpec(color.val, preset.val));
         }, 'full').element);
 
         group = makeGroup(menuCont, 'movement');
@@ -360,7 +364,7 @@ export class Toolboxbox {
                 ['/', '\u00a0⤡\u00a0', 2],
                 ['\\', '\u00a0⤢\u00a0', 3]
             ]);
-            return () => new Tools.TransformTool(direction.get());
+            return () => new Tools.TransformTool(direction.val);
         }, 'natwidth').element);
         group.append(new MenuItem('rotate', 'Rotate', (param) => {
             const direction = param.multi('direction', [
@@ -368,11 +372,11 @@ export class Toolboxbox {
                 ['R', '\u00a0↷\u00a0', 11],
                 ['F', '180°', 12]
             ]);
-            return () => new Tools.TransformTool(direction.get());
+            return () => new Tools.TransformTool(direction.val);
         }, 'natwidth').element);
         group.append(new MenuItem('func', 'Func', (param) => {
             const name = param.text('name');
-            return () => new Tools.FuncTool(name.get());
+            return () => new Tools.FuncTool(name.val);
         }, 'natwidth').element);
 
         group = makeGroup(menuCont, 'misc');
@@ -384,18 +388,17 @@ export class Toolboxbox {
 }
 
 class Param<T> {
-    private val: T | undefined;
-    constructor(private source: ParamSource, private consumeFunc: (s: string) => [T, string], private readFunc: () => T) {}
-    public get(): T {
-        if (this.val !== undefined) return this.val;
-        return this.readFunc();
-    }
+    public val: T;
+    constructor(private source: ParamSource,
+                private consumeFunc: (s: string) => [T, string],
+                public produce: () => string,
+                private readFunc: () => T)
+                { this.val = readFunc(); }
+    public fromHTML() { this.val = this.readFunc(); }
     public consume(s: string): string { const ret = this.consumeFunc(s); this.val = ret[0]; return ret[1]; }
-    public clean() { this.val = undefined; }
 }
 
 function consumeNum(s: string): [number, string] { const idx = s.indexOf(':'); return [parseInt(s.slice(0, idx), 10), s.slice(idx+1)]; }
-function consumeStr(s: string): [string, string] { return [s, '']; }
 
 function makeGroup(cont: HTMLElement, name: string) {
     const group = document.createElement('section');
@@ -425,7 +428,8 @@ class ParamSource {
         el.setAttribute('max', max.toString());
         this.element.append(makeArg('label', name, el));
 
-        const param = new Param<number>(this, consumeNum, () => Math.min(max, Math.max(min, parseInt(el.value, 10))));
+        // TODO lol this is bad
+        const param = new Param<number>(this, consumeNum, () => Math.min(max, Math.max(min, parseInt(el.value, 10))).toString() + ':', () => Math.min(max, Math.max(min, parseInt(el.value, 10))));
         this.params.push(param);
         return param;
     }
@@ -434,7 +438,7 @@ class ParamSource {
         const el = document.createElement('input');
         this.element.append(makeArg('label', name, el));
 
-        const param = new Param<string>(this, consumeStr, () => el.value);
+        const param = new Param<string>(this, s => [s, ''], () => el.value, () => el.value);
         this.params.push(param);
         return param;
     }
@@ -465,7 +469,7 @@ class ParamSource {
         children[0].classList.add('active');
         this.element.append(makeArg('label', name, colorpicker));
 
-        const param = new Param<number>(this, consumeNum, () => val);
+        const param = new Param<number>(this, consumeNum, () => `${val}:`, () => val);
         this.params.push(param);
         return param;
     }
@@ -475,7 +479,7 @@ class ParamSource {
         const multisel = document.createElement('span');
         multisel.classList.add('multisel');
         const children: Array<HTMLButtonElement> = [];
-        let val = options[0][2];
+        let val = options[0];
 
         for (const opt of options) {
             const el = document.createElement('button');
@@ -483,7 +487,7 @@ class ParamSource {
             el.addEventListener('click', () => {
                 for (const ch of children) ch.classList.remove('active');
                 el.classList.toggle('active');
-                val = opt[2];
+                val = opt;
             });
             multisel.append(el);
             children.push(el);
@@ -494,7 +498,8 @@ class ParamSource {
         children[0].classList.add('active');
         this.element.append(makeArg('span', name, multisel));
 
-        const param = new Param<T>(this, 0 as never, () => val);
+        // TODO should this default to [0] or should there be error handling somehow
+        const param = new Param<T>(this, s => [(options.find(o => o[0] === s[0]) ?? options[0])[2], s.slice(1)], () => val[0], () => val[2]);
         this.params.push(param);
         return param;
     }
@@ -503,7 +508,7 @@ class ParamSource {
         const multisel = document.createElement('span');
         multisel.classList.add('multisel');
         const children: Array<HTMLButtonElement> = [];
-        let val: Array<T> = [];
+        let val: Array<[string, string, T]> = [];
 
         for (const opt of options) {
             const el = document.createElement('button');
@@ -511,7 +516,7 @@ class ParamSource {
             el.addEventListener('click', () => {
                 el.classList.toggle('active');
                 val = children
-                    .map((ch, i) => ch.classList.contains('active') ? options[i][2] : undefined)
+                    .map((ch, i) => ch.classList.contains('active') ? options[i] : undefined)
                     .filter(x => x !== undefined);
             });
             multisel.append(el);
@@ -522,25 +527,28 @@ class ParamSource {
 
         this.element.append(makeArg('span', name, multisel));
 
-        const param = new Param<T[]>(this, 0 as never, () => val);
+        const param = new Param<T[]>(this, s => [options.filter(o => s.split(':')[0].includes(o[0])).map(o => o[2]), s.slice(s.indexOf(':')+1)],
+                                     () => val.map(o => o[0]).join('') + ':', () => val.map(o => o[2]));
         this.params.push(param);
         return param;
     }
 
+    public fromHTML() { for (const p of this.params) p.fromHTML(); }
     public inject(s: string) { for (const p of this.params) s = p.consume(s); }
-    public reject() { for (const p of this.params) p.clean(); }
+    public extract(): string { return this.params.map(p => p.produce()).join(''); }
 }
 
-class MenuItem {
+export class MenuItem {
     public static lookup: Map<string, MenuItem> = new Map();
 
     private readonly psource: ParamSource;
     public readonly element: HTMLElement;
     private readonly generate: () => Tool.Tool | undefined;
 
-    constructor(private mid: string, private name: string, f: (p: ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
+    constructor(private mid: string, public name: string, f: (p: ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
         MenuItem.lookup.set(mid, this);
         this.element = document.createElement('div');
+        this.element.dataset.tool = mid;
         this.element.classList.add('settool');
         if (extraClass !== undefined) this.element.classList.add(extraClass);
         this.element.append(document.createTextNode(name));
@@ -548,6 +556,7 @@ class MenuItem {
         this.generate = f(this.psource);
     }
 
-    public fromHTML(): Tool.Tool | undefined { return this.generate(); }
+    public fromHTML(): Tool.Tool | undefined { this.psource.fromHTML(); return this.generate(); }
     public fromStr(s: string): Tool.Tool | undefined { this.psource.inject(s); return this.generate(); }
+    public toStr(): string { return this.mid + ':' + this.psource.extract(); }
 }

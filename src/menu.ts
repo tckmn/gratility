@@ -103,11 +103,10 @@ menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
         btn.textContent = 'save edits';
 
         const tool = manager.addToolEntry.tool;
-        const panel = menu.popup.querySelector(`[data-tool="${tool.panel()}"]`)!;
+        const panel = menu.popup.querySelector(`[data-tool="${manager.addToolEntry.tparam.split(':')[0]}"]`)!;
         panel.classList.add('addtool-active');
         panel.scrollIntoView();
-        const args = Array.from(panel.getElementsByClassName('arg')) as Array<HTMLElement>;
-        tool.setargs(args);
+        // TODO set args
     }
 });
 
@@ -157,66 +156,15 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
         return;
     }
 
-    const args = (Array.from(el.getElementsByClassName('arg')) as Array<HTMLElement>).map(el => {
-        if (el.tagName === 'INPUT') {
-            return (el as HTMLInputElement).value;
-        } else if (el.dataset.value !== undefined) {
-            return el.dataset.value;
-        } else {
-            return '???'; // TODO
-        }
-    });
-
-    let tool;
-    switch (el.dataset.tool) {
-    case 'surface': tool = new Tools.SurfaceTool(new Data.SurfaceSpec(parseInt(args[0], 10))); break;
-    case 'line':
-        tool = new Tools.LineTool(new Data.LineSpec(
-            parseInt(args[0]) === 1,
-            parseInt(args[1]),
-            parseInt(args[2]),
-            parseInt(args[3])
-        ));
-        break;
-    case 'shape':
-        if (!(parseInt(args[1], 10) >= 1 && parseInt(args[1], 10) <= 5)) {
-            Courier.alert('shape size should be between 1 and 5');
-            return;
-        }
-        if (args[2] === '') {
-            Courier.alert('shape should be placeable in at least one location');
-            return;
-        }
-        if (args[3] === '' && args[4] === '') {
-            Courier.alert('shape should should have at least one of fill or outline');
-            return;
-        }
-        tool = new Tools.ShapeTool(new Data.ShapeSpec(
-            parseInt(args[0], 10),
-            args[3] === '' ? undefined : parseInt(args[3], 10),
-            args[4] === '' ? undefined : parseInt(args[4], 10),
-            parseInt(args[1], 10)
-        ), args[2].split('|').map(x => parseInt(x, 10)).reduce((x,y) => x+y, 0));
-        break;
-    case 'text': tool = new Tools.TextTool(new Data.TextSpec(parseInt(args[0], 10), args[1])); break;
-    case 'pan': tool = new Tools.PanTool(); break;
-    case 'zoomin': tool = new Tools.ZoomTool(1); break;
-    case 'zoomout': tool = new Tools.ZoomTool(-1); break;
-    case 'copy': tool = new Tools.CopyTool(false); break;
-    case 'cut': tool = new Tools.CopyTool(true); break;
-    case 'paste': tool = new Tools.PasteTool(); break;
-    case 'undo': tool = new Tools.UndoTool(true); break;
-    case 'redo': tool = new Tools.UndoTool(false); break;
-    case 'transform': tool = new Tools.TransformTool(parseInt(args[0], 10)); break;
-    case 'func': tool = new Tools.FuncTool(args[0]); break;
-    default: Courier.alert('unknown tool??'); return;
-    }
+    const menuItem = Toolbox.MenuItem.lookup.get(el.dataset.tool!)!;
+    const tparam = menuItem.toStr();
+    const tool = menuItem.fromHTML();
+    if (tool === undefined) return; // TODO better feedback? or maybe generation always already showed a message
 
     if (manager.addToolEntry === undefined) {
-        manager.addToolBox?.addBind(resolve, tool);
+        manager.addToolBox?.addBind(resolve, tparam, tool);
     } else {
-        manager.addToolEntry.tbind = resolve;
-        manager.addToolEntry.tool = tool;
+        manager.addToolEntry.replace(resolve, tparam, tool);
     }
 
     manager.gf.toolbox.saveRefresh();

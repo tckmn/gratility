@@ -29,8 +29,6 @@ function atlocs(x: number, y: number, locs: number): [number, number] {
 export default class ShapeTool extends Tool.DragTool {
 
     public readonly repeat = false;
-    public readonly tid = 'shape';
-    public name(): string { return 'Shape'; }
     public icon() {
         return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
@@ -38,22 +36,6 @@ export default class ShapeTool extends Tool.DragTool {
                 new Data.ShapeTile([this.spec]).draw(1, 1)
             ]
         });
-    }
-    public save() { return [
-        this.spec.shape.toString(),
-        this.spec.fill === undefined ? '-' : this.spec.fill.toString(),
-        this.spec.outline === undefined ? '-' : this.spec.outline.toString(),
-        this.spec.size.toString(),
-        this.locs.toString()
-    ].join(' '); }
-    public static load(s: string) {
-        const ss = s.split(' '), ns = ss.map(x => parseInt(x, 10));
-        return new ShapeTool(new Data.ShapeSpec(
-            ns[0],
-            ss[1] === '-' ? undefined : ns[1],
-            ss[2] === '-' ? undefined : ns[2],
-            ns[3]
-        ), ns[4]);
     }
 
     constructor(

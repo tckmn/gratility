@@ -6,11 +6,6 @@ import * as Gratility from '../gratility.js';
 export default class TransformTool extends Tool.Tool {
 
     public readonly repeat = false;
-    public readonly tid = 'transform';
-    public name(): string { return this.trnum < 10 ? 'Flip' : 'Rotate'; } // TODO say what kind
-    public panel(): string { return this.trnum < 10 ? 'flip' : 'rotate'; }
-    public save() { return this.trnum.toString(); }
-    public static load(s: string) { return new TransformTool(parseInt(s, 10)); }
 
     public constructor(private trnum: number) { super(); }
 

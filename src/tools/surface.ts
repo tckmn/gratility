@@ -7,8 +7,6 @@ import * as Measure from '../measure.js';
 export default class SurfaceTool extends Tool.DragTool {
 
     public readonly repeat = false;
-    public readonly tid = 'surface';
-    public name(): string { return 'Surface'; }
     public icon(): SVGElement {
         return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
@@ -17,8 +15,6 @@ export default class SurfaceTool extends Tool.DragTool {
             ]
         });
     }
-    public save() { return this.spec.color.toString(); }
-    public static load(s: string) { return new SurfaceTool(new Data.SurfaceSpec(parseInt(s, 10))); }
 
     constructor(private spec: Data.SurfaceSpec) {
         super();
