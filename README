@@ -1,5 +1,5 @@
 to build web version:
-  tsc
+  make
   firefox dist/gratility.html
 
 to build command line version:
