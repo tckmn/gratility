@@ -36,25 +36,6 @@ image.grid(-500, 500, -500, 500);
 
 // TODO this stuff should really go somewhere else
 for (const multisel of Array.from(document.getElementsByClassName('multisel')) as Array<HTMLElement>) {
-    const any = multisel.classList.contains('any');
-    const children = Array.from(multisel.children) as Array<HTMLElement>;
-    for (const child of children) {
-        child.addEventListener('click', () => {
-            if (!any) for (const ch of children) ch.classList.remove('active');
-            child.classList.toggle('active');
-            multisel.dataset.value = children
-                .filter(ch => ch.classList.contains('active'))
-                .map(ch => ch.dataset.multisel)
-                .join('|');
-        });
-    }
-
-    if (any) {
-        multisel.dataset.value = '';
-    } else {
-        children[0].classList.add('active');
-        multisel.dataset.value = children[0].dataset.multisel;
-    }
 }
 
 window.addEventListener('beforeunload', e => {

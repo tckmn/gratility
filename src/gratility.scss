@@ -164,9 +164,9 @@ div.overlay {
 
 .multisel button {
     border: 1px solid #444;
-    border-radius: 5px;
-    &.left, &.mid { border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
-    &.right, &.mid { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    border-right: none;
+    &.left { border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+    &.right { border-right: 1px solid #444; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
     &.active { background-color: #161; color: #eee; }
     &.active:hover { background-color: #040; }
 }
@@ -209,7 +209,7 @@ section.group {
     border: 1px dashed #666;
     border-radius: 10px;
     margin-top: 30px;
-    &.first { margin-top: 10px; }
+    &:first-child { margin-top: 10px; }
     padding: 10px 10px;
 
     > span:first-child {

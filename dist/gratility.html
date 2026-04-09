@@ -16,12 +16,6 @@
                 <div id='toolbox'>
                 </div>
                 <div style='flex:1'></div>
-                <!-- <button class='menuaction' data-menu='addtool'>+ add tool...</button> -->
-                <!-- <button class='menuaction' data-menu='toolbox'>save/load toolbox</button> -->
-                <!-- <button class='menuaction' data-menu='colors'>save/load colors</button> -->
-                <!-- <button class='menuaction' data-menu='tedit'>toggle edit mode</button> -->
-                <!-- <button class='menuaction' data-menu='dark'>toggle dark mode</button> -->
-                <!-- <button class='menuaction' data-menu='server'>connect to server</button> -->
                 <div id='importexport'>
                     <span class='menuinput multisel' id='iesel'><!--
                         --><button class='left' data-multisel='full'>full page</button><!--
@@ -62,102 +56,7 @@
                     <input class='menuinput' data-menu='binding' data-event='pointerdown=bindmouse;keydown=bindkey;wheel=bindwheel;paste=nop;contextmenu=nop'>
                 </div>
                 <p><strong>action</strong></p>
-                <div id='actions' class='menuinput big' data-menu='actions' data-events='div.settool@click=settool'>
-                    <section class='group first'>
-                        <span>drawing</span>
-                        <div class='settool full' data-tool='surface'>Surface
-                            <label>color: <span class='arg colorpicker'></span></label>
-                        </div>
-                        <div class='settool full' data-tool='line'>Line
-                            <span>type:
-                                <span class='arg menuinput multisel'><!--
-                                    --><button class='left' data-multisel='0'>path</button><!--
-                                    --><button class='right' data-multisel='1'>edge</button><!--
-                                --></span>
-                            </span>
-                            <label>color: <span class='arg colorpicker'></span></label>
-                            <span>thickness:
-                                <span class='arg menuinput multisel'><!--
-                                    --><button class='left' data-multisel='1'>thin</button><!--
-                                    --><button class='mid' data-multisel='2'>normal</button><!--
-                                    --><button class='right' data-multisel='3'>thick</button><!--
-                                --></span>
-                            </span>
-                            <span>head:
-                                <span class='arg menuinput multisel'><!--
-                                    --><button class='left' data-multisel='0'>none</button><!--
-                                    --><button class='right' data-multisel='1'>arrow</button><!--
-                                --></span>
-                            </span>
-                        </div>
-                        <div class='settool full' data-tool='shape'>Shape
-                            <span>shape:
-                                <span class='arg menuinput multisel'><!--
-                                    --><button class='left' data-multisel='0'>circle</button><!--
-                                    --><button class='mid' data-multisel='1'>square</button><!--
-                                    --><button class='mid' data-multisel='2'>flag</button><!--
-                                    --><button class='right' data-multisel='3'>star</button><!--
-                                --></span>
-                            </span>
-                            <label>size: <input class='arg' type='number' size=3 min=1 max=5></label>
-                            <span>location:
-                                <span class='arg menuinput multisel any'><!--
-                                    --><button class='left' data-multisel='4'>center</button><!--
-                                    --><button class='mid' data-multisel='2'>edge</button><!--
-                                    --><button class='right' data-multisel='1'>corner</button><!--
-                                --></span>
-                            </span>
-                            <label>fill: <span class='arg colorpicker optional'></span></label>
-                            <label>outline: <span class='arg colorpicker optional'></span></label>
-                        </div>
-                        <div class='settool full' data-tool='text'>Text
-                            <label>color: <span class='arg colorpicker'></span></label>
-                            <label>preset: <input class='arg'></label>
-                        </div>
-                    </section>
-
-                    <section class='group'>
-                        <span>movement</span>
-                        <div class='settool' data-tool='pan'>Pan</div>
-                        <div class='settool' data-tool='zoomin'>Zoom in</div>
-                        <div class='settool' data-tool='zoomout'>Zoom out</div>
-                    </section>
-
-                    <section class='group'>
-                        <span>stamps</span>
-                        <div class='settool' data-tool='copy'>Copy</div>
-                        <div class='settool' data-tool='cut'>Cut</div>
-                        <div class='settool' data-tool='paste'>Paste</div>
-                        <div class='settool natwidth' data-tool='transform'>Flip
-                            <span>direction:
-                                <span class='arg menuinput multisel'><!--
-                                    --><button class='left' data-multisel='0'>&nbsp;↔&nbsp;</button><!--
-                                    --><button class='mid' data-multisel='1'>&nbsp;↕&nbsp;</button><!--
-                                    --><button class='mid' data-multisel='2'>&nbsp;⤡&nbsp;</button><!--
-                                    --><button class='right' data-multisel='3'>&nbsp;⤢&nbsp;</button><!--
-                                --></span>
-                            </span>
-                        </div>
-                        <div class='settool natwidth' data-tool='transform'>Rotate
-                            <span>direction:
-                                <span class='arg menuinput multisel'><!--
-                                    --><button class='left' data-multisel='10'>&nbsp;↶&nbsp;</button><!--
-                                    --><button class='mid' data-multisel='11'>&nbsp;↷&nbsp;</button><!--
-                                    --><button class='right' data-multisel='12'>180&deg;</button><!--
-                                --></span>
-                            </span>
-                        </div>
-                        <div class='settool natwidth' data-tool='func'>Func
-                            <label>name: <input class='arg'></label>
-                        </div>
-                    </section>
-
-                    <section class='group'>
-                        <span>misc</span>
-                        <div class='settool' data-tool='undo'>Undo</div>
-                        <div class='settool' data-tool='redo'>Redo</div>
-                    </section>
-                </div>
+                <div id='actions' class='menuinput big' data-menu='actions' data-events='div.settool@click=settool'></div>
                 <button class='menuinput' data-menu='go' data-event='click=go'>add</button>
             </div>
 

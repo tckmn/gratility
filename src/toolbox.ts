@@ -292,12 +292,93 @@ export class Toolboxbox {
     }
 
     private generateMenu(menuCont: HTMLElement) {
-        const group = makeGroup(menuCont, 'drawing');
+        let group;
+
+        group = makeGroup(menuCont, 'drawing');
 
         group.append(new MenuItem('surface', 'Surface', (param) => {
             const color = param.color('color');
             return () => new Tools.SurfaceTool(new Data.SurfaceSpec(color.get()));
         }, 'full').element);
+
+        group.append(new MenuItem('line', 'Line', (param) => {
+            const type = param.multi('type', [['P', 'path', false], ['E', 'edge', true]]);
+            const color = param.color('color');
+            const thickness = param.multi('thickness', [['1', 'thin', 1], ['2', 'normal', 2], ['3', 'thick', 3]]);
+            const head = param.multi('head', [['N', 'none', Data.Head.NONE], ['A', 'arrow', Data.Head.ARROW]]);
+            return () => new Tools.LineTool(new Data.LineSpec(type.get(), color.get(), thickness.get(), head.get()));
+        }, 'full').element);
+
+        group.append(new MenuItem('shape', 'Shape', (param) => {
+            const type = param.multi('type', [
+                ['C', 'circle', Data.Shape.CIRCLE],
+                ['S', 'square', Data.Shape.SQUARE],
+                ['F', 'flag', Data.Shape.FLAG],
+                ['R', 'star', Data.Shape.STAR]
+            ]);
+            const size = param.num('size', 1, 5);
+            const location = param.multiAny('location', [
+                ['C', 'center', 4],
+                ['E', 'edge', 2],
+                ['R', 'corner', 1]
+            ]);
+            const fill = param.color('fill', true);
+            const outline = param.color('outline', true);
+            return () => {
+                if (location.get().length === 0) {
+                    Courier.alert('shape should be placeable in at least one location');
+                    return;
+                }
+                if (outline.get() === -1 && size.get() === -1) {
+                    Courier.alert('shape should should have at least one of fill or outline');
+                    return;
+                }
+                return new Tools.ShapeTool(new Data.ShapeSpec(type.get(), fill.get() === -1 ? undefined : fill.get(), outline.get() === -1 ? undefined : outline.get(), size.get()),
+                                           location.get().reduce((a,b) => a+b, 0));
+            };
+        }, 'full').element);
+
+        group.append(new MenuItem('text', 'Text', (param) => {
+            const color = param.color('color');
+            const preset = param.text('preset');
+            return () => new Tools.TextTool(new Data.TextSpec(color.get(), preset.get()));
+        }, 'full').element);
+
+        group = makeGroup(menuCont, 'movement');
+        group.append(new MenuItem('pan', 'Pan', () => () => new Tools.PanTool()).element);
+        group.append(new MenuItem('zoomin', 'Zoom in', () => () => new Tools.ZoomTool(1)).element);
+        group.append(new MenuItem('zoomout', 'Zoom out', () => () => new Tools.ZoomTool(-1)).element);
+
+        group = makeGroup(menuCont, 'stamps');
+        group.append(new MenuItem('copy', 'Copy', () => () => new Tools.CopyTool(false)).element);
+        group.append(new MenuItem('cut', 'Cut', () => () => new Tools.CopyTool(true)).element);
+        group.append(new MenuItem('paste', 'Paste', () => () => new Tools.PasteTool()).element);
+        group.append(new MenuItem('flip', 'Flip', (param) => {
+            const direction = param.multi('direction', [
+                ['|', '\u00a0↔\u00a0', 0],
+                ['-', '\u00a0↕\u00a0', 1],
+                ['/', '\u00a0⤡\u00a0', 2],
+                ['\\', '\u00a0⤢\u00a0', 3]
+            ]);
+            return () => new Tools.TransformTool(direction.get());
+        }, 'natwidth').element);
+        group.append(new MenuItem('rotate', 'Rotate', (param) => {
+            const direction = param.multi('direction', [
+                ['L', '\u00a0↶\u00a0', 10],
+                ['R', '\u00a0↷\u00a0', 11],
+                ['F', '180°', 12]
+            ]);
+            return () => new Tools.TransformTool(direction.get());
+        }, 'natwidth').element);
+        group.append(new MenuItem('func', 'Func', (param) => {
+            const name = param.text('name');
+            return () => new Tools.FuncTool(name.get());
+        }, 'natwidth').element);
+
+        group = makeGroup(menuCont, 'misc');
+        group.append(new MenuItem('undo', 'Undo', () => () => new Tools.UndoTool(true)).element);
+        group.append(new MenuItem('redo', 'Redo', () => () => new Tools.UndoTool(false)).element);
+
     }
 
 }
@@ -314,6 +395,7 @@ class Param<T> {
 }
 
 function consumeNum(s: string): [number, string] { const idx = s.indexOf(':'); return [parseInt(s.slice(0, idx), 10), s.slice(idx+1)]; }
+function consumeStr(s: string): [string, string] { return [s, '']; }
 
 function makeGroup(cont: HTMLElement, name: string) {
     const group = document.createElement('section');
@@ -324,17 +406,38 @@ function makeGroup(cont: HTMLElement, name: string) {
     cont.append(group);
     return group;
 }
-function makeArg(name: string, el: HTMLElement) {
-    const arg = document.createElement('label');
+function makeArg(tag: string, name: string, el: HTMLElement) {
+    const arg = document.createElement(tag);
     arg.append(document.createTextNode(`${name}: `));
     arg.append(el);
     return arg;
 }
 
 class ParamSource {
-    // lol no existential types in typescript
-    private params: Array<Param<number> | Param<string>> = [];
+    private params: Array<Param<any>> = [];
     constructor(private element: HTMLElement) {}
+
+    public num(name: string, min: number, max: number): Param<number> {
+        const el = document.createElement('input');
+        el.setAttribute('type', 'number');
+        el.setAttribute('size', '3');
+        el.setAttribute('min', min.toString());
+        el.setAttribute('max', max.toString());
+        this.element.append(makeArg('label', name, el));
+
+        const param = new Param<number>(this, consumeNum, () => Math.min(max, Math.max(min, parseInt(el.value, 10))));
+        this.params.push(param);
+        return param;
+    }
+
+    public text(name: string): Param<string> {
+        const el = document.createElement('input');
+        this.element.append(makeArg('label', name, el));
+
+        const param = new Param<string>(this, consumeStr, () => el.value);
+        this.params.push(param);
+        return param;
+    }
 
     public color(name: string, optional: boolean = false): Param<number> {
         const colorpicker = document.createElement('span');
@@ -342,23 +445,10 @@ class ParamSource {
         const children: Array<HTMLSpanElement> = [];
         let val = optional ? -1 : 0;
 
-        // TODO less repetition
-        if (optional) {
+        const sqr = (color: string, i: number) => {
             const el = document.createElement('span');
-            el.classList.add('transparent');
-            el.addEventListener('click', () => {
-                for (const ch of children) ch.classList.remove('active');
-                el.classList.add('active');
-                val = -1;
-            });
-
-            colorpicker.appendChild(el);
-            children.push(el);
-        }
-
-        Color.colors.forEach((color, i) => {
-            const el = document.createElement('span');
-            el.style.backgroundColor = color;
+            if (color === 'transparent') el.classList.add('transparent');
+            else el.style.backgroundColor = color;
             el.addEventListener('click', () => {
                 for (const ch of children) ch.classList.remove('active');
                 el.classList.add('active');
@@ -367,12 +457,72 @@ class ParamSource {
 
             colorpicker.appendChild(el);
             children.push(el);
-        });
+        };
+
+        if (optional) sqr('transparent', -1);
+        Color.colors.forEach((color, i) => { sqr(color, i); });
 
         children[0].classList.add('active');
-        this.element.append(makeArg(name, colorpicker));
+        this.element.append(makeArg('label', name, colorpicker));
 
         const param = new Param<number>(this, consumeNum, () => val);
+        this.params.push(param);
+        return param;
+    }
+
+    // TODO repetition here and multiAny kinda sucks
+    public multi<T>(name: string, options: Array<[string, string, T]>): Param<T> {
+        const multisel = document.createElement('span');
+        multisel.classList.add('multisel');
+        const children: Array<HTMLButtonElement> = [];
+        let val = options[0][2];
+
+        for (const opt of options) {
+            const el = document.createElement('button');
+            el.textContent = opt[1];
+            el.addEventListener('click', () => {
+                for (const ch of children) ch.classList.remove('active');
+                el.classList.toggle('active');
+                val = opt[2];
+            });
+            multisel.append(el);
+            children.push(el);
+        }
+        children[0].classList.add('left');
+        children[children.length-1].classList.add('right');
+
+        children[0].classList.add('active');
+        this.element.append(makeArg('span', name, multisel));
+
+        const param = new Param<T>(this, 0 as never, () => val);
+        this.params.push(param);
+        return param;
+    }
+
+    public multiAny<T>(name: string, options: Array<[string, string, T]>): Param<T[]> {
+        const multisel = document.createElement('span');
+        multisel.classList.add('multisel');
+        const children: Array<HTMLButtonElement> = [];
+        let val: Array<T> = [];
+
+        for (const opt of options) {
+            const el = document.createElement('button');
+            el.textContent = opt[1];
+            el.addEventListener('click', () => {
+                el.classList.toggle('active');
+                val = children
+                    .map((ch, i) => ch.classList.contains('active') ? options[i][2] : undefined)
+                    .filter(x => x !== undefined);
+            });
+            multisel.append(el);
+            children.push(el);
+        }
+        children[0].classList.add('left');
+        children[children.length-1].classList.add('right');
+
+        this.element.append(makeArg('span', name, multisel));
+
+        const param = new Param<T[]>(this, 0 as never, () => val);
         this.params.push(param);
         return param;
     }
@@ -386,9 +536,9 @@ class MenuItem {
 
     private readonly psource: ParamSource;
     public readonly element: HTMLElement;
-    private readonly generate: () => Tool.Tool;
+    private readonly generate: () => Tool.Tool | undefined;
 
-    constructor(private mid: string, private name: string, f: (p: ParamSource) => (() => Tool.Tool), extraClass: string | undefined = undefined) {
+    constructor(private mid: string, private name: string, f: (p: ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
         MenuItem.lookup.set(mid, this);
         this.element = document.createElement('div');
         this.element.classList.add('settool');
@@ -398,6 +548,6 @@ class MenuItem {
         this.generate = f(this.psource);
     }
 
-    public fromHTML(): Tool.Tool { return this.generate(); }
-    public fromStr(s: string): Tool.Tool { this.psource.inject(s); return this.generate(); }
+    public fromHTML(): Tool.Tool | undefined { return this.generate(); }
+    public fromStr(s: string): Tool.Tool | undefined { this.psource.inject(s); return this.generate(); }
 }
