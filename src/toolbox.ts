@@ -42,6 +42,17 @@ export class ToolboxEntry {
         }
     }
 
+    public renderBind(): HTMLElement {
+        const el = document.createElement('span');
+        el.classList.add('pic');
+        switch (typeof this.tbind) {
+        case 'number': el.classList.add('mouse'); el.textContent = this.tbind.toString(); break;
+        case 'string': el.classList.add('key'); el.textContent = this.tbind === ' ' ? '␣' : this.tbind; break;
+        case 'boolean': el.classList.add('mouse'); el.textContent = this.tbind ? '⇑' : '⇓'; break;
+        }
+        return el;
+    }
+
     private saveBind(): string {
         switch (typeof this.tbind) {
         case 'number': return `m${this.tbind}`;
@@ -79,9 +90,7 @@ export class ToolboxEntry {
     public display(toolbox: Toolbox): HTMLElement {
         const container = document.createElement('div');
 
-        const bind = document.createElement('div');
-        bind.textContent = this.describeBind();
-        container.appendChild(bind);
+        container.appendChild(this.renderBind());
 
         const name = document.createElement('div');
         name.textContent = this.menuItem().name;
