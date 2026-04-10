@@ -560,7 +560,7 @@ class ParamSource {
         const multisel = document.createElement('span');
         multisel.classList.add('multisel');
         const children: Array<HTMLButtonElement> = [];
-        let val: Array<[string, string, T]> = [];
+        let val: Array<[string, string, T]> = [options[0]];
 
         for (const opt of options) {
             const el = document.createElement('button');
@@ -575,6 +575,7 @@ class ParamSource {
             children.push(el);
         }
 
+        children[0].classList.add('active');
         this.element.append(makeArg('span', name, multisel));
 
         const param = new Param<T[]>(this, s => [options.filter(o => s.split(':')[0].includes(o[0])).map(o => o[2]), s.slice(s.indexOf(':')+1)],
