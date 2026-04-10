@@ -134,6 +134,7 @@ export class Toolbox {
     public save() { this.gf.toolbox.save(); }
     public saveStr(): string { return this.name + this.tools.map(t => '\n' + t.save()).join(''); }
     static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
+    public replace(s: string) { this.name = s.split('\n')[0]; this.tools.splice(0, Infinity, ...s.split('\n').slice(1).map(ToolboxEntry.load)); this.gf.toolbox.refresh(); } // TODO remove duplication
 
     public display(container: HTMLElement) {
         const title = document.createElement('div');
@@ -230,7 +231,8 @@ export class Toolbox {
         });
 
         c.btn('⇅ import/export', () => {
-            // TODO
+            this.gf.menu.addToolBox = this;
+            this.gf.menu.open('ietool');
             return true;
         });
 
@@ -261,7 +263,8 @@ export class Toolbox {
         });
 
         c.btn('⇅ import/export', () => {
-            // TODO
+            this.gf.menu.addToolBox = undefined;
+            this.gf.menu.open('ietool');
             return true;
         });
     }
@@ -281,12 +284,12 @@ export class Toolboxbox {
         this.load(localStorage.toolbox ?? DEFAULT_TOOLS);
     }
 
-    public save() { localStorage.toolbox = this.toolboxes.map(b => b.saveStr()).join('\n:\n'); }
-    private load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.recompute(); this.rerender(); }
+    public save() { localStorage.toolbox = this.saveStr(); }
+    public saveStr() { return this.toolboxes.map(b => b.saveStr()).join('\n:\n'); }
+    public load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.refresh(); }
 
-    public saveRefresh() {
-        this.recompute(); this.rerender(); this.save();
-    }
+    public refresh() { this.recompute(); this.rerender(); }
+    public saveRefresh() { this.refresh(); this.save(); }
 
     public delToolbox(t: Toolbox) {
         const idx = this.toolboxes.indexOf(t);
