@@ -80,16 +80,27 @@ section#toolbar {
         svg { width: 1rem; height: 1rem; }
     }
 
-    div#file {
-        text-wrap: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        font-family: monospace;
-        padding: 0.5rem;
+    div#filecont {
         margin-top: 0.5rem;
-        cursor: pointer;
-        background-color: #eee;
-        &:hover { background-color: #ddd; }
+        display: flex;
+        > div {
+            background-color: #eee;
+            padding: 0.5rem;
+            cursor: pointer;
+            &:hover { background-color: #ddd; }
+        }
+        > div#file {
+            flex: 1;
+            text-wrap: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            font-family: monospace;
+        }
+        > div#filesetting {
+            display: none;
+            border-left: 1px dashed #888;
+        }
+        &.setting > div#filesetting { display: block; }
     }
 
     div#server {

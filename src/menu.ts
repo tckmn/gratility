@@ -21,6 +21,14 @@ function download(fname: string, data: Uint8Array<ArrayBuffer> | string, content
     setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+function copy(s: string) {
+    navigator.clipboard.writeText(s).then(() => {
+        Courier.alert('copied to clipboard!');
+    }, e => {
+        Courier.alert(`failed to copy to clipboard: ${e}`);
+    });
+}
+
 // TODO full page import
 // TODO refactor some of this
 // TODO give feedback when no stamp
@@ -52,11 +60,7 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     ['dltxt', (manager: MenuManager) => {
         const stamp = manager.state.get('iesel') === 'full' ? Stamp.unsafeWrap(manager.gb.data.listcells()) : manager.gb.stamp.current();
         if (stamp === undefined) return;
-        navigator.clipboard.writeText(btoa(String.fromCharCode.apply(null, Data.serializeStamp(stamp.cells) as unknown as number[]))).then(() => {
-            Courier.alert('copied to clipboard!');
-        }, e => {
-            Courier.alert(`failed to copy to clipboard: ${e}`);
-        });
+        copy(btoa(String.fromCharCode.apply(null, Data.serializeStamp(stamp.cells) as unknown as number[])));
     }],
 
     ['dlstamp', (manager: MenuManager) => {
@@ -177,7 +181,7 @@ menuevents.set('addtool-close', (manager: MenuManager, menu: Menu) => {
 // ###### SERVER MENU ###### //
 
 menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
-    manager.gb.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.gb.data.file?.sendWS({
         m: 'login',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -186,7 +190,7 @@ menuevents.set('server-login', (manager: MenuManager, menu: Menu) => {
 });
 
 menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
-    manager.gb.data.file?.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
+    manager.gb.data.file?.sendWS({
         m: 'register',
         username: (menu.inputs.get('username') as HTMLInputElement).value,
         password: (menu.inputs.get('password') as HTMLInputElement).value
@@ -235,6 +239,21 @@ menuevents.set('file-newserver', (manager: MenuManager, menu: Menu) => {
     manager.close();
 });
 
+// ###### FILE SETTINGS MENU ###### //
+
+menuevents.set('filesetting-open', (manager: MenuManager, menu: Menu) => {
+    const link = document.createElement('a');
+    const url = manager.gb.data.file!.getURL();
+    link.textContent = 'copy link to this document';
+    link.setAttribute('href', url);
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        copy(url);
+    });
+    const cont = menu.popup.firstElementChild!;
+    while (cont.firstChild) cont.firstChild.remove();
+    cont.append(link);
+});
 
 
 class Menu {

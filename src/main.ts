@@ -18,7 +18,7 @@ const stamp = new Stamp.StampManager(image);
 const view = new ViewManager(image);
 const backend = new Gratility.Backend(image, data, stamp, view);
 
-data.connect(document.getElementById('file')!, document.getElementById('server')!);
+data.connect(document.getElementById('filecont')!, document.getElementById('server')!);
 
 const frontend = new Gratility.Frontend(backend,
     document.getElementById('actions')!,

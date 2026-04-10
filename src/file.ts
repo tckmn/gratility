@@ -34,24 +34,28 @@ export class FileManager {
                        private readonly serverCont: HTMLElement,
                        private readonly data: Data.DataManager) {
         this.connectDB();
-        if (localStorage.token) {
-            this.connectWS(localStorage.serverOverride || 'wss://gratility.tck.mn/ws/', {
-                m: 'token', token: localStorage.token
-            });
-        }
-        if (localStorage.lastfile) {
+        this.connectWS(
+            localStorage.serverOverride || (location.protocol === 'file:' ? 'ws://localhost:4784/' : 'wss://gratility.tck.mn/ws/'),
+            localStorage.token ? { m: 'token', token: localStorage.token } : undefined);
+        if (location.search) {
+            this.open(File.destringify(atob(location.search.slice(1))));
+        } else if (localStorage.lastfile) {
             this.open(File.destringify(localStorage.lastfile));
         }
     }
 
-    public connectWS(url: string, initmsg: any) {
+    private setText(s: string) { this.fileCont.firstElementChild!.textContent = s; }
+    private setSetting(b: boolean) { this.fileCont.classList.toggle('setting', b); }
+    public getURL() { return location.href.split('?')[0] + '?' + btoa(localStorage.lastfile); } // TODO bad
+    public sendWS(msg: any) { if (this.ws === undefined) Courier.alert('not connected to server'); else this.ws?.send(JSON.stringify(msg)); }
+
+    private connectWS(url: string, initmsg: any) {
         this.ws = new WebSocket(url);
         this.ws.binaryType = 'arraybuffer';
         this.ws.addEventListener('open', () => {
             this.serverCont.classList.remove('nc', 'dc');
             this.serverCont.classList.add('c');
-            Courier.alert('connected to server');
-            this.ws?.send(JSON.stringify(initmsg));
+            if (initmsg !== undefined) this.ws?.send(JSON.stringify(initmsg));
             this.onopen(Schema.SERVER);
         });
         this.ws.addEventListener('error', () => {
@@ -174,11 +178,13 @@ export class FileManager {
         const docname = this.emoji[f.schema] + ' ' + f.title;
         if (this.available[f.schema]) {
             if (createNew) f.filename = crypto.randomUUID();
-            this.fileCont.innerText = `${createNew ? 'creating' : 'opening'} ${docname}...`;
+            this.setText(`${createNew ? 'creating' : 'opening'} ${docname}...`);
+            this.setSetting(false);
             (createNew
                 ? f.schema === Schema.LOCAL ? this.newLocal : this.newRemote
                 : f.schema === Schema.LOCAL ? this.openLocal : this.openRemote).bind(this)(f, success => {
-                this.fileCont.innerText = success ? docname : `failed to ${createNew ? 'create' : 'open'} ${docname}`;
+                this.setText(success ? docname : `failed to ${createNew ? 'create' : 'open'} ${docname}`);
+                this.setSetting(success);
                 if (success) localStorage.lastfile = f.stringify();
             });
         } else {

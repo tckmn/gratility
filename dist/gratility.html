@@ -32,7 +32,10 @@
                     <button class='menuaction' data-menu='dlstamp'>file</button>
                     <button class='menuaction' data-menu='dlsvg'>.svg</button>
                 </div>
-                <div class='menuaction' data-menu='file' id='file'>❗ not saving changes</div>
+                <div id='filecont'>
+                    <div class='menuaction' data-menu='file' id='file'>❗ not saving changes</div>
+                    <div class='menuaction' data-menu='filesetting' id='filesetting'>⚙︎</div>
+                </div>
                 <div class='menuaction nc' data-menu='server' id='server'><span>server:
                     <span class='nc'>not connected</span>
                     <span class='c'>connected</span>
@@ -77,6 +80,10 @@
                 <label><input class='menuinput' data-menu='newservertitle' placeholder='enter title...'> <button class='menuinput' data-menu='newserver' data-event='click=newserver'>new server file</button></label>
                 <div id='serverfilelist' class='filelist'></div>
             </div></div>
+
+            <div data-menu='filesetting' class='small'>
+                <div></div>
+            </div>
 
             <div data-menu='confirm' class='small'>
                 <div id='confmsg'></div>
