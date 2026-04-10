@@ -113,7 +113,7 @@ export class ToolboxEntry {
 
 export class Toolbox {
 
-    constructor(private readonly gf: Gratility.Frontend, public name: string, public readonly tools: Array<ToolboxEntry> = []) {}
+    constructor(private readonly gf: Gratility.Frontend, public enabled: boolean, public name: string, public readonly tools: Array<ToolboxEntry> = []) {}
 
     public hasBind(tbind: number | string | boolean): boolean {
         return this.tools.some(e => e.tbind === tbind);
@@ -132,22 +132,32 @@ export class Toolbox {
 
     // oops naming lol
     public save() { this.gf.toolbox.save(); }
-    public saveStr(): string { return this.name + this.tools.map(t => '\n' + t.save()).join(''); }
-    static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s.split('\n')[0], s.split('\n').slice(1).map(ToolboxEntry.load)); }
-    public replace(s: string) { this.name = s.split('\n')[0]; this.tools.splice(0, Infinity, ...s.split('\n').slice(1).map(ToolboxEntry.load)); this.gf.toolbox.refresh(); } // TODO remove duplication
+    public saveStr(): string { return (this.enabled ? '*' : '-') + this.name + this.tools.map(t => '\n' + t.save()).join(''); }
+    static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s[0] === '*', s.split('\n')[0].slice(1), s.split('\n').slice(1).map(ToolboxEntry.load)); }
+    public replace(s: string) { this.enabled = s[0] === '*'; this.name = s.split('\n')[0].slice(1); this.tools.splice(0, Infinity, ...s.split('\n').slice(1).map(ToolboxEntry.load)); this.gf.toolbox.refresh(); } // TODO remove duplication
 
     public display(container: HTMLElement) {
+        const cont = document.createElement('div');
+        cont.classList.toggle('disabled', !this.enabled);
+
         const title = document.createElement('div');
         title.classList.add('tbname');
         title.textContent = this.name;
-        container.appendChild(title);
+        cont.appendChild(title);
 
         title.addEventListener('click', e => {
             e.preventDefault();
             this.showMenu(e);
         });
 
-        container.appendChild(this.generateList());
+        cont.appendChild(this.generateList());
+        cont.addEventListener('mousedown', e => {
+            if (e.buttons === 4) {
+                this.enabled = !this.enabled;
+                this.gf.toolbox.saveRefresh();
+            }
+        });
+        container.appendChild(cont);
     }
 
     private generateList(): HTMLElement {
@@ -246,7 +256,7 @@ export class Toolbox {
 
         const addfn = () => {
             if (addtxt.value.replace(/\s/g, '')) {
-                this.gf.toolbox.toolboxes.push(new Toolbox(this.gf, addtxt.value));
+                this.gf.toolbox.toolboxes.push(new Toolbox(this.gf, true, addtxt.value));
                 this.gf.toolbox.saveRefresh();
                 return true;
             } else {
@@ -301,6 +311,7 @@ export class Toolboxbox {
         this.keyTools.clear();
         this.wheelTools.clear();
         for (const toolbox of this.toolboxes) {
+            if (!toolbox.enabled) continue;
             for (const entry of toolbox.tools) {
                 switch (typeof entry.tbind) {
                 case 'number': this.mouseTools.set(entry.tbind, entry.tool); break;

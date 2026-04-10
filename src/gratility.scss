@@ -28,50 +28,58 @@ section#toolbar {
         overflow-y: scroll;
         scrollbar-width: none;
 
-        > div.tbname {
-            font-size: 9pt;
-            text-align: center;
-            color: #555;
-            background-color: #ddd;
+        > div {
             margin-top: 1rem;
-            cursor: pointer;
-            &:hover { background-color: #ccc; }
             &:first-child { margin-top: 0; }
-        }
+            &.disabled {
+                filter: opacity(0.3);
+                > div.tbname:hover { background-color: #ddd; }
+                > div.tbtools > div:hover { background-color: transparent; }
+            }
 
-        > div.tbtools {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            grid-column-gap: 0.5rem;
-            font-size: 11pt;
-            > div {
-                display: grid;
-                grid-column: 1 / 4;
-                grid-template-columns: subgrid;
+            > div.tbname {
+                font-size: 9pt;
+                text-align: center;
+                color: #555;
+                background-color: #ddd;
                 cursor: pointer;
-                margin: 0 2px;
-                &:hover { background-color: #eee; }
-                &.activerow { background-color: #dfd; }
-                span.pic {
-                    font-size: 8pt;
-                    margin: 1px 0;
-                    vertical-align: middle;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    &.key {
-                        background-color: #e8e8e8;
-                        border: 1px solid #bbb;
-                        border-radius: 3px;
-                        padding: 0 3px;
-                        box-shadow: 0 1px 1px rgba(0,0,0,0.2), 0 2px 0 0 rgba(255,255,255,0.7) inset;
-                    }
-                    &.mouse::before {
-                        content: '🖰';
-                        position: absolute;
-                        font-size: 15pt;
-                        margin-top: 7px;
-                        color: #888;
+                &:hover { background-color: #ccc; }
+            }
+
+            > div.tbtools {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                grid-column-gap: 0.5rem;
+                font-size: 11pt;
+                > div {
+                    display: grid;
+                    grid-column: 1 / 4;
+                    grid-template-columns: subgrid;
+                    cursor: pointer;
+                    margin: 0 2px;
+                    &:hover { background-color: #eee; }
+                    &.activerow { background-color: #dfd; }
+                    span.pic {
+                        font-size: 8pt;
+                        margin: 1px 0;
+                        vertical-align: middle;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        &.key {
+                            background-color: #e8e8e8;
+                            border: 1px solid #bbb;
+                            border-radius: 3px;
+                            padding: 0 3px;
+                            box-shadow: 0 1px 1px rgba(0,0,0,0.2), 0 2px 0 0 rgba(255,255,255,0.7) inset;
+                        }
+                        &.mouse::before {
+                            content: '🖰';
+                            position: absolute;
+                            font-size: 15pt;
+                            margin-top: 7px;
+                            color: #888;
+                        }
                     }
                 }
             }
