@@ -151,6 +151,7 @@ div#menupopups > div {
 
     &.small { width: 40vw; height: 40vh; left: 30vw; top: 30vh; }
     .big { flex: 1; }
+    > div.scroll { overflow-y: auto; }
 }
 
 div.menuclose {
@@ -164,7 +165,9 @@ div.menuclose {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background-color: #f00;
+    background-color: #e77;
+    &:hover { background-color: #d66; }
+    color: #fff;
     font-weight: bold;
 }
 
@@ -188,13 +191,16 @@ div.overlay {
     z-index: 98;
 }
 
-.multisel button {
-    border: 1px solid #444;
-    border-right: none;
-    &.left { border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
-    &.right { border-right: 1px solid #444; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
-    &.active { background-color: #161; color: #eee; }
-    &.active:hover { background-color: #040; }
+.multisel {
+    button {
+        border: 1px solid #444;
+        border-right: none;
+        &:first-child { border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+        &:last-child { border-right: 1px solid #444; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
+        &.active { background-color: #161; color: #eee; }
+        &.active:hover { background-color: #040; }
+    }
+    &.nobot button { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 }
 
 .colorpicker span {
@@ -272,5 +278,15 @@ div#actions {
             padding: 5px 10px;
             margin-left: 20px;
         }
+    }
+}
+
+div.filelist {
+    > div {
+        padding: 1px 8px;
+        margin: 5px 2px;
+        background-color: #f4f4f4;
+        &:hover { background-color: #eee; }
+        cursor: pointer;
     }
 }

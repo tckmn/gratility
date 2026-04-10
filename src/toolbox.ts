@@ -519,8 +519,6 @@ class ParamSource {
             multisel.append(el);
             children.push(el);
         }
-        children[0].classList.add('left');
-        children[children.length-1].classList.add('right');
 
         children[0].classList.add('active');
         this.element.append(makeArg('span', name, multisel));
@@ -551,8 +549,6 @@ class ParamSource {
             multisel.append(el);
             children.push(el);
         }
-        children[0].classList.add('left');
-        children[children.length-1].classList.add('right');
 
         this.element.append(makeArg('span', name, multisel));
 

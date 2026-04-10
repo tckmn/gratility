@@ -17,9 +17,9 @@
                 </div>
                 <div style='flex:1'></div>
                 <div id='importexport'>
-                    <span class='menuinput multisel' id='iesel'><!--
-                        --><button class='left' data-multisel='full'>full page</button><!--
-                        --><button class='right' data-multisel='stamp'>current stamp</button><!--
+                    <span class='menustate multisel' data-menu='iesel'><!--
+                        --><button data-multisel='full'>full page</button><!--
+                        --><button data-multisel='stamp'>current stamp</button><!--
                     --></span>
                     <br>
                     import:
@@ -69,14 +69,14 @@
                 </div>
             </div>
 
-            <div data-menu='file' class='small'>
+            <div data-menu='file' class='small'><div class='scroll'>
                 <p>local files:</p>
-                <div id='localfilelist' class='filelist'></div>
                 <label><input class='menuinput' data-menu='newlocaltitle' placeholder='enter title...'> <button class='menuinput' data-menu='newlocal' data-event='click=newlocal'>new local file</button></label>
+                <div id='localfilelist' class='filelist'></div>
                 <p>your server files:</p>
-                <div id='serverfilelist' class='filelist'></div>
                 <label><input class='menuinput' data-menu='newservertitle' placeholder='enter title...'> <button class='menuinput' data-menu='newserver' data-event='click=newserver'>new server file</button></label>
-            </div>
+                <div id='serverfilelist' class='filelist'></div>
+            </div></div>
 
             <div data-menu='confirm' class='small'>
                 <div id='confmsg'></div>

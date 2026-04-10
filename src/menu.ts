@@ -21,9 +21,6 @@ function download(fname: string, data: Uint8Array<ArrayBuffer> | string, content
     setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-// TODO bad
-function isFullPage(): boolean { return document.getElementById('iesel')!.dataset.value === 'full'; }
-
 // TODO full page import
 // TODO refactor some of this
 // TODO give feedback when no stamp
@@ -53,7 +50,7 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     }],
 
     ['dltxt', (manager: MenuManager) => {
-        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.gb.data.listcells()) : manager.gb.stamp.current();
+        const stamp = manager.state.get('iesel') === 'full' ? Stamp.unsafeWrap(manager.gb.data.listcells()) : manager.gb.stamp.current();
         if (stamp === undefined) return;
         navigator.clipboard.writeText(btoa(String.fromCharCode.apply(null, Data.serializeStamp(stamp.cells) as unknown as number[]))).then(() => {
             Courier.alert('copied to clipboard!');
@@ -63,13 +60,13 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
     }],
 
     ['dlstamp', (manager: MenuManager) => {
-        const stamp = isFullPage() ? Stamp.unsafeWrap(manager.gb.data.listcells()) : manager.gb.stamp.current();
+        const stamp = manager.state.get('iesel') === 'full' ? Stamp.unsafeWrap(manager.gb.data.listcells()) : manager.gb.stamp.current();
         if (stamp === undefined) return;
         download('gratility.stamp', Data.serializeStamp(stamp.cells), 'application/octet-stream');
     }],
 
     ['dlsvg', (manager: MenuManager) => {
-        const stamp = isFullPage() ? Stamp.render(manager.gb.data.listcells()) : manager.gb.stamp.current();
+        const stamp = manager.state.get('iesel') === 'full' ? Stamp.render(manager.gb.data.listcells()) : manager.gb.stamp.current();
         if (stamp === undefined) return;
         const svg = Draw.draw(undefined, 'svg');
         stamp.toSVG(svg);
@@ -362,8 +359,9 @@ export default class MenuManager {
     }
 
     private readonly menus: Map<string, Menu> = new Map();
+    public readonly state: Map<string, string> = new Map();
 
-    constructor(public gf: Gratility.Frontend, public gb: Gratility.Backend, btns: Array<HTMLElement>, popups: Array<HTMLElement>) {
+    constructor(public gf: Gratility.Frontend, public gb: Gratility.Backend, btns: Array<HTMLElement>, popups: Array<HTMLElement>, states: Array<HTMLElement>) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
                 if (this.open(btn.dataset.menu as string)) return;
@@ -415,6 +413,32 @@ export default class MenuManager {
                 this.close();
             });
             popup.appendChild(close);
+        }
+
+        for (const state of states) {
+            if (state.classList.contains('multisel')) {
+                // TODO refactor multisel stuff in toolbox.ts + this
+                const k = state.dataset.menu!;
+                const any = state.classList.contains('any');
+                const children = Array.from(state.children) as Array<HTMLElement>;
+                for (const child of children) {
+                    child.addEventListener('click', () => {
+                        if (!any) for (const ch of children) ch.classList.remove('active');
+                        child.classList.toggle('active');
+                        this.state.set(k, children
+                            .filter(ch => ch.classList.contains('active'))
+                            .map(ch => ch.dataset.multisel)
+                            .join('|'));
+                    });
+                }
+
+                if (any) {
+                    this.state.set(k, '');
+                } else {
+                    children[0].classList.add('active');
+                    this.state.set(k, children[0].dataset.multisel!);
+                }
+            }
         }
     }
 

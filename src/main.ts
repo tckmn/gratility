@@ -24,7 +24,8 @@ const frontend = new Gratility.Frontend(backend,
     document.getElementById('actions')!,
     document.getElementById('toolbox')!,
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
-    Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>);
+    Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
+    Array.from(document.getElementsByClassName('menustate')) as Array<HTMLElement>);
 
 Event.initialize(frontend, backend, svg, document.body);
 
