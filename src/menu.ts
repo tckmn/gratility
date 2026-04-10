@@ -202,6 +202,7 @@ menuevents.set('server-register', (manager: MenuManager, menu: Menu) => {
 menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
     const file = manager.gb.data.file;
     if (file === undefined) return;
+
     const localList: HTMLDivElement = menu.popup.querySelector('#localfilelist')!;
     while (localList.firstChild) localList.removeChild(localList.firstChild);
     for (const [s, t] of file.localFiles) {
@@ -213,12 +214,30 @@ menuevents.set('file-open', (manager: MenuManager, menu: Menu) => {
         });
         localList.appendChild(e);
     }
+
+    const serverList: HTMLDivElement = menu.popup.querySelector('#serverfilelist')!;
+    while (serverList.firstChild) serverList.removeChild(serverList.firstChild);
+    for (const [s, t] of file.serverFiles) {
+        const e = document.createElement('div');
+        e.innerText = t;
+        e.addEventListener('click', () => {
+            file.open(new File.File(File.Schema.SERVER, s, t));
+            manager.close();
+        });
+        serverList.appendChild(e);
+    }
 });
 
 menuevents.set('file-newlocal', (manager: MenuManager, menu: Menu) => {
     manager.gb.data.file?.open(new File.File(File.Schema.LOCAL, '', (menu.inputs.get('newlocaltitle') as HTMLInputElement).value), true);
     manager.close();
 });
+
+menuevents.set('file-newserver', (manager: MenuManager, menu: Menu) => {
+    manager.gb.data.file?.open(new File.File(File.Schema.SERVER, '', (menu.inputs.get('newservertitle') as HTMLInputElement).value), true);
+    manager.close();
+});
+
 
 
 class Menu {

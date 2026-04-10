@@ -22,8 +22,13 @@ export class FileManager {
     private dbto: ReturnType<typeof setTimeout> | undefined = undefined;
 
     private currentDocument: Schema | undefined = undefined;
-    private localName: string | undefined = undefined;  // TODO some type theoretic thing about how this is string exactly when currentDocument is LOCAL
+    // this is meaningful exactly when currentDocument is LOCAL (and in that case should always be string)
+    // maybe there is some type theoretic nonsense to be done here,
+    // i really just wnat a dependent type
+    private localName: string | undefined = undefined;
+
     public localFiles: Array<[string, string]> = [];
+    public serverFiles: Array<[string, string]> = [];
 
     public constructor(private readonly fileCont: HTMLElement,
                        private readonly serverCont: HTMLElement,
@@ -92,11 +97,14 @@ export class FileManager {
             const json = JSON.parse(msg.data);
             if (json.alert !== undefined) Courier.alert(json.alert);
             if (json.token !== undefined) localStorage.token = json.token;
+            if (json.wscb !== undefined) { this.wscb(json.wscb); this.wscb = ()=>{}; } // TODO same fail consideration as local
+            if (json.doclist !== undefined) this.serverFiles = json.doclist.map((x: any) => [x.name, x.title]);
         } else if (this.currentDocument === Schema.SERVER) {
             for (const ch of Data.deserializeChanges(new Uint8Array(msg.data))) {
                 this.data.perform(ch);
             }
         } else {
+            this.data.clear();
             this.data.frozen = false;
             Stamp.unsafeWrap(Data.deserializeStamp(new Uint8Array(msg.data))).apply(this.data, 0, 0, true);
             this.wscb(true);
@@ -139,22 +147,27 @@ export class FileManager {
             this.currentDocument = Schema.LOCAL;
             this.localName = f.filename;
             cb(true);
+
+            this.localFiles.push([f.filename, f.title]);
+            tr.objectStore('docs').put(this.localFiles, 'files');
         };
         tr.onerror = () => { Courier.alert('failed to create local file (error)'); cb(false); };
         tr.onabort = () => { Courier.alert('failed to create local file (abort)'); cb(false); };
-        this.localFiles.push([f.filename, f.title]);
-        tr.objectStore('docs').put(this.localFiles, 'files');
     }
 
     private openRemote(f: File, cb: (_: boolean) => void) {
         this.data.frozen = true;
-        // TODO check ws existence
+        this.currentDocument = undefined;
+        // TODO check ws existence here and below
         this.wscb = cb;
         this.ws?.send(JSON.stringify({ m: 'open', name: f.filename }));
     }
 
     private newRemote(f: File, cb: (_: boolean) => void) {
-        // TODO
+        this.data.frozen = true;
+        this.currentDocument = undefined;
+        this.wscb = cb;
+        this.ws?.send(JSON.stringify({ m: 'new', name: f.filename, title: f.title }));
     }
 
     public open(f: File, createNew: boolean = false) {
