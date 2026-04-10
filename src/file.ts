@@ -109,28 +109,40 @@ export class FileManager {
 
     private openLocal(f: File, cb: (_: boolean) => void) {
         this.data.frozen = true;
-        // TODO check db existence
-        this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(f.filename).onsuccess = (ev: Event) => {
+        // TODO check db existence (here and below)
+        // TODO unfreeze when these fail
+        // should it go back to previous document?
+        // should it go to a not-saving-changes state?
+        const req = this.db!.transaction(['docs'], 'readonly').objectStore('docs').get(f.filename);
+        req.onsuccess = (ev: Event) => {
             const res = (ev.target as IDBRequest).result;
             this.data.clear();
             this.data.frozen = false;
             if (res !== undefined) {
                 Stamp.unsafeWrap(Data.deserializeStamp(res)).apply(this.data, 0, 0, true);
-                this.currentDocument = Schema.LOCAL;
-                this.localName = f.filename;
-                cb(true);
-            } else cb(false);
+            } else {
+                Courier.alert('warning: file is blank');
+            }
+            this.currentDocument = Schema.LOCAL;
+            this.localName = f.filename;
+            cb(true);
         };
+        req.onerror = () => { Courier.alert('failed to open local file (error)'); cb(false); };
     }
 
     private newLocal(f: File, cb: (_: boolean) => void) {
-        // TODO handle error on tr, don't clear immediately + freeze
-        this.data.clear();
-        this.currentDocument = Schema.LOCAL;
-        this.localName = f.filename;
-        this.localFiles.push([f.filename, f.title]);
+        this.data.frozen = true;
         const tr = this.db!.transaction(['docs'], 'readwrite');
-        tr.oncomplete = () => { cb(true); };
+        tr.oncomplete = () => {
+            this.data.clear();
+            this.data.frozen = false;
+            this.currentDocument = Schema.LOCAL;
+            this.localName = f.filename;
+            cb(true);
+        };
+        tr.onerror = () => { Courier.alert('failed to create local file (error)'); cb(false); };
+        tr.onabort = () => { Courier.alert('failed to create local file (abort)'); cb(false); };
+        this.localFiles.push([f.filename, f.title]);
         tr.objectStore('docs').put(this.localFiles, 'files');
     }
 
