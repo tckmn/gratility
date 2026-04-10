@@ -383,6 +383,7 @@ export default class MenuManager {
     constructor(public gf: Gratility.Frontend, public gb: Gratility.Backend, btns: Array<HTMLElement>, popups: Array<HTMLElement>, states: Array<HTMLElement>) {
         for (const btn of btns) {
             btn.addEventListener('click', () => {
+                btn.blur();
                 if (this.open(btn.dataset.menu as string)) return;
                 const fn = menuactions.get(btn.dataset.menu as string);
                 if (fn !== undefined) fn(this);
