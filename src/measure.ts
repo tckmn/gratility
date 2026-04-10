@@ -34,3 +34,26 @@ export const enum HC {
 export function hctype(x: number, y: number): HC {
     return (Math.abs(x % 2) << 1) | Math.abs(y % 2);
 }
+
+// lmao surely there is a better way
+// locs is bitmask: 0b center edge corner
+export function atlocs(x: number, y: number, locs: number): [number, number] {
+    const dx = x / HALFCELL, dy = y / HALFCELL;
+    const fx = Math.floor(dx), fy = Math.floor(dy);
+    let best = HALFCELL*HALFCELL*999, bx = fx, by = fy;
+
+    for (let xp = 0; xp <= 1; ++xp) {
+        for (let yp = 0; yp <= 1; ++yp) {
+            if ((locs & (1 << (xp+yp))) === 0) continue;
+            const tryx = fx + (fx % 2 === 0 ? xp : 1-xp), tryy = fy + (fy % 2 === 0 ? yp : 1-yp);
+            const dist = (dx-tryx)*(dx-tryx) + (dy-tryy)*(dy-tryy);
+            if (dist < best) {
+                best = dist;
+                bx = tryx;
+                by = tryy;
+            }
+        }
+    }
+
+    return [bx, by];
+}

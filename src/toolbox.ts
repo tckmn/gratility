@@ -376,8 +376,19 @@ export class Toolboxbox {
 
         group.append(new MenuItem('text', 'Text', (param) => {
             const color = param.color('color');
+            const location = param.multiAny('location', [
+                ['C', 'center', 4],
+                ['E', 'edge', 2],
+                ['R', 'corner', 1]
+            ]);
             const preset = param.text('preset');
-            return () => new Tools.TextTool(new Data.TextSpec(color.val, preset.val));
+            return () => {
+                if (location.val.length === 0) {
+                    Courier.alert('text should be placeable in at least one location');
+                    return;
+                }
+                return new Tools.TextTool(new Data.TextSpec(color.val, preset.val), location.val.reduce((a,b) => a+b, 0));
+            }
         }, 'full').element);
 
         group = makeGroup(menuCont, 'movement');

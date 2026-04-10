@@ -9,7 +9,7 @@ export default class TextTool extends Tool.DragTool {
 
     public readonly repeat = false;
 
-    constructor(private spec: Data.TextSpec) {
+    constructor(private spec: Data.TextSpec, private locs: number) {
         super();
         this.tile = new Data.TextTile(this.spec);
     }
@@ -20,14 +20,14 @@ export default class TextTool extends Tool.DragTool {
     protected readonly tile: Data.TextTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
+        [x, y] = Measure.atlocs(x, y, this.locs);
         if (this.spec.val !== '') {
-            this.drag(true, Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1), g);
+            this.drag(true, Data.encode(x, y), g);
         } else if (Event.keyeater.ref === undefined) {
-            const cx = Measure.cell(x)*2, cy = Measure.cell(y)*2;
-            this.n = Data.encode(cx+1, cy+1);
+            this.n = Data.encode(x, y);
             // TODO some of this goes somewhere else
             this.elt = Draw.draw(g.image.textInd, 'rect', {
-                x: cx*Measure.HALFCELL, y: cy*Measure.HALFCELL, width: Measure.CELL, height: Measure.CELL,
+                x: (x-1)*Measure.HALFCELL, y: (y-1)*Measure.HALFCELL, width: Measure.CELL, height: Measure.CELL,
                 fill: '#ccc',
                 stroke: '#f88',
                 strokeWidth: Measure.HALFCELL/5
@@ -60,7 +60,8 @@ export default class TextTool extends Tool.DragTool {
 
     public onmove(x: number, y: number, g: Gratility.Backend) {
         if (this.spec.val === '') return;
-        this.drag(false, Data.encode(Measure.cell(x)*2+1, Measure.cell(y)*2+1), g);
+        [x, y] = Measure.atlocs(x, y, this.locs);
+        this.drag(false, Data.encode(x, y), g);
     }
 
 }

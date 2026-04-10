@@ -4,28 +4,6 @@ import * as Draw from '../draw.js';
 import * as Data from '../data.js';
 import * as Measure from '../measure.js';
 
-// lmao surely there is a better way
-function atlocs(x: number, y: number, locs: number): [number, number] {
-    const dx = x / Measure.HALFCELL, dy = y / Measure.HALFCELL;
-    const fx = Math.floor(dx), fy = Math.floor(dy);
-    let best = Measure.HALFCELL*Measure.HALFCELL*999, bx = fx, by = fy;
-
-    for (let xp = 0; xp <= 1; ++xp) {
-        for (let yp = 0; yp <= 1; ++yp) {
-            if ((locs & (1 << (xp+yp))) === 0) continue;
-            const tryx = fx + (fx % 2 === 0 ? xp : 1-xp), tryy = fy + (fy % 2 === 0 ? yp : 1-yp);
-            const dist = (dx-tryx)*(dx-tryx) + (dy-tryy)*(dy-tryy);
-            if (dist < best) {
-                best = dist;
-                bx = tryx;
-                by = tryy;
-            }
-        }
-    }
-
-    return [bx, by];
-}
-
 export default class ShapeTool extends Tool.DragTool {
 
     public readonly repeat = false;
@@ -40,19 +18,19 @@ export default class ShapeTool extends Tool.DragTool {
 
     constructor(
         private spec: Data.ShapeSpec,
-        private locs: number // bitmask: 0b center edge corner
+        private locs: number
     ) { super(); this.tile = new Data.ShapeTile([this.spec]); }
 
     protected readonly layer: Data.Layer = Data.Layer.SHAPE;
     protected readonly tile: Data.ShapeTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
-        [x, y] = atlocs(x, y, this.locs);
+        [x, y] = Measure.atlocs(x, y, this.locs);
         this.drag(true, Data.encode(x, y), g);
     }
 
     public onmove(x: number, y: number, g: Gratility.Backend) {
-        [x, y] = atlocs(x, y, this.locs);
+        [x, y] = Measure.atlocs(x, y, this.locs);
         this.drag(false, Data.encode(x, y), g);
     }
 
