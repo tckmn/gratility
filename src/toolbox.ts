@@ -5,13 +5,13 @@ import * as Color from './color.js';
 import * as Gratility from './gratility.js';
 import * as Courier from './courier.js';
 
-const DEFAULT_TOOLS = `main
+const DEFAULT_TOOLS = `*main
 m1::pan:
 k ::pan:
 ks::surface:0:
 kr::line:P8:2N
 ke::line:E0:2N
-kt::text:0:
+kt::text:0:C:
 kz::undo:
 kx::redo:
 kc::copy:
@@ -352,7 +352,7 @@ export class Toolboxbox {
                 ['F', 'flag', Data.Shape.FLAG],
                 ['R', 'star', Data.Shape.STAR]
             ]);
-            const size = param.num('size', 1, 5);
+            const position = param.position('size');
             const location = param.multiAny('location', [
                 ['C', 'center', 4],
                 ['E', 'edge', 2],
@@ -365,11 +365,11 @@ export class Toolboxbox {
                     Courier.alert('shape should be placeable in at least one location');
                     return;
                 }
-                if (outline.val === -1 && size.val === -1) {
+                if (fill.val === -1 && outline.val === -1) {
                     Courier.alert('shape should should have at least one of fill or outline');
                     return;
                 }
-                return new Tools.ShapeTool(new Data.ShapeSpec(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, size.val),
+                return new Tools.ShapeTool(new Data.ShapeSpec(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, position.val),
                                            location.val.reduce((a,b) => a+b, 0));
             };
         }, 'full').element);
@@ -521,6 +521,64 @@ class ParamSource {
             const i = parseInt(s.split(':')[0], 10);
             children[optional ? i+1 : i].click();
             return s.slice(s.indexOf(':')+1);
+        });
+        this.params.push(param);
+        return param;
+    }
+
+    public position(name: string): Param<number> {
+        const picker = document.createElement('div');
+        picker.classList.add('positionpicker', 's2');
+        let sz = 2;
+
+        const preview = document.createElement('div');
+        for (let i = 0; i < 3; ++i) {
+            const row = document.createElement('div');
+            for (let j = 0; j < 3; ++j) {
+                const cell = document.createElement('div');
+                cell.classList.toggle('ctr', i==1&&j==1);
+                cell.classList.toggle('on', i==1&&j==1);
+                cell.addEventListener('click', () => {
+                    cell.classList.toggle('on');
+                });
+                row.append(cell);
+            }
+            preview.append(row);
+        }
+        picker.append(preview);
+
+        const size = document.createElement('div');
+        for (let i = 0; i < 5; ++i) {
+            const bar = document.createElement('div');
+            bar.classList.add('b'+i);
+            bar.addEventListener('click', (i => () => {
+                picker.classList.remove('s'+sz);
+                sz = i;
+                picker.classList.add('s'+sz);
+            })(i));
+            size.append(bar);
+        }
+        picker.append(size);
+
+        const controls = document.createElement('div');
+        for (let i = 0; i < 2; ++i) {
+            const btn = document.createElement('div');
+            btn.textContent = '+−'[i];
+            btn.addEventListener('click', (i => e => {
+                e.preventDefault();
+                picker.classList.remove('s'+sz);
+                sz = [Math.max(0, sz-1), Math.min(4, sz+1)][i];
+                picker.classList.add('s'+sz);
+            })(i));
+            btn.addEventListener('pointerdown', e => e.preventDefault());
+            controls.append(btn);
+        }
+        picker.append(controls);
+
+        this.element.append(makeArg('label', name, picker));
+
+        const param = new Param<number>(this, s => [parseInt(s[0], 16), s.slice(1)], () => sz.toString(16), () => sz, s => {
+            return s.slice(1);
         });
         this.params.push(param);
         return param;

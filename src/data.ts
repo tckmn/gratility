@@ -20,12 +20,16 @@ export const enum Obj {
     TEXT,
 }
 
+const Layer_SHAPE_BASE = 0x10;
+const Layer_TEXT_BASE = 0x20;
+
+// must be kept in sync with Position
 export const enum Layer {
     SURFACE = 0x0,
     PATH,
     EDGE,
 
-    SHAPE_XL = 0x10,
+    SHAPE_XL = Layer_SHAPE_BASE,
     SHAPE_L,
     SHAPE_M,
     SHAPE_S,
@@ -39,7 +43,7 @@ export const enum Layer {
     SHAPE_XSS,
     SHAPE_XSSE,
 
-    TEXT_XL = 0x20,
+    TEXT_XL = Layer_TEXT_BASE,
     TEXT_L,
     TEXT_M,
     TEXT_S,
@@ -90,12 +94,29 @@ export const enum Shape {
     CIRCLE = 0,
     SQUARE,
     FLAG,
-    STAR
+    STAR,
 }
 
 export const enum Head {
     NONE = 0,
-    ARROW
+    ARROW,
+}
+
+// must be kept in sync with Layer
+export const enum Position {
+    XL = 0,
+    L,
+    M,
+    S,
+    XS,
+    XSNW,
+    XSN,
+    XSNE,
+    XSW,
+    XSE,
+    XSSW,
+    XSS,
+    XSSE,
 }
 
 const CURRENT_VERSION = 2;
@@ -106,6 +127,7 @@ const LAYER_BITS = 6;
 const SHAPE_BITS = 6;
 const COLOR_BITS = 6;
 const SIZE_BITS = 3;
+const POSITION_BITS = 4;
 const VLQ_CHUNK = 4;
 const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
@@ -217,69 +239,66 @@ export class ShapeSpec extends Spec {
         public shape: Shape,
         public fill: number | undefined,
         public outline: number | undefined,
-        public size: number
+        public position: Position
     ) { super(); }
-    public eq(other: ShapeSpec): boolean { return this.shape === other.shape && this.size === other.size; }
+    // not needed to check position here because different position is always different layer
+    public eq(other: ShapeSpec): boolean { return this.shape === other.shape && this.fill === other.fill && this.outline === other.outline; }
 }
 export class ShapeTile extends Tile {
     public readonly obj = Obj.SHAPE;
-    public readonly layer = Layer.SHAPE_M;
+    public readonly layer: Layer_SHAPE;
     constructor(
-        public shapes: ShapeSpec[]
-    ) { super(); }
-    public eq(other: ShapeTile) { return other.shapes.some(sh => sh.eq(this.shapes[0])); }
+        public spec: ShapeSpec
+    ) { super(); this.layer = Layer_SHAPE_BASE + spec.position; }
+    public eq(other: ShapeTile) { return other.spec.eq(this.spec); }
     public serialize(bs: BitStream) {
-        bs.writeVLQ(VLQ_CHUNK, this.shapes.length);
-        for (const spec of this.shapes) {
-            bs.write(SHAPE_BITS, spec.shape);
-            if (spec.fill === undefined) bs.write(1, 0);
-            else { bs.write(1, 1); bs.write(COLOR_BITS, spec.fill); }
-            if (spec.outline === undefined) bs.write(1, 0);
-            else { bs.write(1, 1); bs.write(COLOR_BITS, spec.outline); }
-            bs.write(SIZE_BITS, spec.size);
-        }
+        bs.write(SHAPE_BITS, this.spec.shape);
+        if (this.spec.fill === undefined) bs.write(1, 0);
+        else { bs.write(1, 1); bs.write(COLOR_BITS, this.spec.fill); }
+        if (this.spec.outline === undefined) bs.write(1, 0);
+        else { bs.write(1, 1); bs.write(COLOR_BITS, this.spec.outline); }
+        bs.write(POSITION_BITS, this.spec.position);
     }
     public draw(x: number, y: number): SVGElement {
         const g = Draw.draw(undefined, 'g', {
             transform: `translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})`
         });
 
-        for (const spec of this.shapes) {
-            const r = Measure.HALFCELL * (spec.size/6);
-            const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(spec.size/12));
-            const fill = spec.fill === undefined ? 'none' : Color.colors[spec.fill];
-            const stroke = spec.outline === undefined ? 'none' : Color.colors[spec.outline];
+        const size = 5 - Math.min(this.spec.position, 4);
+        const r = Measure.HALFCELL * (size/6);
+        const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(size/12));
+        const fill = this.spec.fill === undefined ? 'none' : Color.colors[this.spec.fill];
+        const stroke = this.spec.outline === undefined ? 'none' : Color.colors[this.spec.outline];
 
-            switch (spec.shape) {
-            case Shape.CIRCLE:
-                Draw.draw(g, 'circle', {
-                    cx: 0, cy: 0, r: r,
-                    strokeWidth, fill, stroke
-                });
-                break;
-            case Shape.SQUARE:
-                Draw.draw(g, 'rect', {
-                    width: r*2, height: r*2, x: -r, y: -r,
-                    strokeWidth, fill, stroke
-                });
-                break;
-            case Shape.FLAG:
-                Draw.draw(g, 'path', {
-                    d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
-                    transform: `scale(${r*0.9})`,
-                    strokeWidth: strokeWidth/(r*0.9), fill, stroke
-                });
-                break;
-            case Shape.STAR:
-                Draw.draw(g, 'path', {
-                    d: 'M' + [0,1,2,3,4,5,6,7,8,9].map(n => (
-                        r*(n%2===0?1:0.5)*Math.cos((n/5+0.5)*Math.PI) + ' ' +
-                            -r*(n%2===0?1:0.5)*Math.sin((n/5+0.5)*Math.PI)
-                    )).join('L') + 'Z',
-                    strokeWidth, fill, stroke
-                });
-                break;
-            }
+        switch (this.spec.shape) {
+        case Shape.CIRCLE:
+            Draw.draw(g, 'circle', {
+                cx: 0, cy: 0, r: r,
+                strokeWidth, fill, stroke
+            });
+            break;
+        case Shape.SQUARE:
+            Draw.draw(g, 'rect', {
+                width: r*2, height: r*2, x: -r, y: -r,
+                strokeWidth, fill, stroke
+            });
+            break;
+        case Shape.FLAG:
+            Draw.draw(g, 'path', {
+                d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
+                transform: `scale(${r*0.9})`,
+                strokeWidth: strokeWidth/(r*0.9), fill, stroke
+            });
+            break;
+        case Shape.STAR:
+            Draw.draw(g, 'path', {
+                d: 'M' + [0,1,2,3,4,5,6,7,8,9].map(n => (
+                    r*(n%2===0?1:0.5)*Math.cos((n/5+0.5)*Math.PI) + ' ' +
+                        -r*(n%2===0?1:0.5)*Math.sin((n/5+0.5)*Math.PI)
+                )).join('L') + 'Z',
+                strokeWidth, fill, stroke
+            });
+            break;
         }
 
         return g;
@@ -364,6 +383,23 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
     }
 
 }, 1: {
+
+    [Obj.SHAPE]: (bs: BitStream): Tile => {
+        // check to make sure this isn't unreasonably large
+        // (maybe should do something if it is?)
+        const len = Math.min(bs.readVLQ(VLQ_CHUNK), 16);
+        const arr = [];
+        for (let i = 0; i < len; ++i) {
+            const shape = bs.read(SHAPE_BITS) as Shape;
+            const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+            const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+            const size = bs.read(SIZE_BITS);
+            arr.push(new ShapeSpec(shape, fill, outline, 5-size));
+        }
+        // TODO something
+        return new ShapeTile(arr[0]);
+    },
+
 }, 2: {
 
     [Obj.SURFACE]: (bs: BitStream): Tile => {
@@ -380,18 +416,11 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
     },
 
     [Obj.SHAPE]: (bs: BitStream): Tile => {
-        // check to make sure this isn't unreasonably large
-        // (maybe should do something if it is?)
-        const len = Math.min(bs.readVLQ(VLQ_CHUNK), 16);
-        const arr = [];
-        for (let i = 0; i < len; ++i) {
-            const shape = bs.read(SHAPE_BITS) as Shape;
-            const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
-            const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
-            const size = bs.read(SIZE_BITS);
-            arr.push(new ShapeSpec(shape, fill, outline, size));
-        }
-        return new ShapeTile(arr);
+        const shape = bs.read(SHAPE_BITS) as Shape;
+        const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+        const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+        const position = bs.read(POSITION_BITS);
+        return new ShapeTile(new ShapeSpec(shape, fill, outline, position));
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {

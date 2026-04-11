@@ -10,16 +10,14 @@ export default class ShapeTool extends Tool.DragTool {
     public icon() {
         return Draw.draw(undefined, 'svg', {
             viewBox: `0 0 ${Measure.CELL} ${Measure.CELL}`,
-            children: [
-                new Data.ShapeTile([this.spec]).draw(1, 1)
-            ]
+            children: [this.tile.draw(1, 1)]
         });
     }
 
     constructor(
         private spec: Data.ShapeSpec,
         private locs: number
-    ) { super(); this.tile = new Data.ShapeTile([this.spec]); }
+    ) { super(); this.tile = new Data.ShapeTile(this.spec); }
 
     protected readonly tile: Data.ShapeTile;
 
@@ -31,15 +29,6 @@ export default class ShapeTool extends Tool.DragTool {
     public onmove(x: number, y: number, g: Gratility.Backend) {
         [x, y] = Measure.atlocs(x, y, this.locs);
         this.drag(false, Data.encode(x, y), g);
-    }
-
-    protected draw(cell: Data.ShapeTile | undefined): Data.ShapeTile {
-        return cell === undefined ? this.tile : new Data.ShapeTile(cell.shapes.concat(this.spec));
-    }
-
-    protected erase(cell: Data.ShapeTile): Data.ShapeTile | undefined {
-        const remaining = cell.shapes.filter(sh => !sh.eq(this.spec));
-        return remaining.length === 0 ? undefined : new Data.ShapeTile(remaining);
     }
 
 }

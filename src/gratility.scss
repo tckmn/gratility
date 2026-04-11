@@ -252,6 +252,60 @@ div.overlay {
     }
 }
 
+// this is all a mess
+.positionpicker {
+    display: inline-flex;
+    height: 50px;
+    align-items: stretch;
+    vertical-align: middle;
+    gap: 2px;
+
+    > div {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: stretch;
+    }
+
+    > div:first-child {
+        width: 50px;
+        border: 1px dotted black;
+        > div {
+            display: flex;
+            justify-content: space-around;
+            > div { width: 12px; height: 12px; display: none; background-color: #ccc; &.on { background-color: #8fd37c; } }
+        }
+    }
+    &.s0 > div:first-child > div > div { width: 40px; height: 40px; background-color: #8fd37c; }
+    &.s1 > div:first-child > div > div { width: 33px; height: 33px; background-color: #8fd37c; }
+    &.s2 > div:first-child > div > div { width: 26px; height: 26px; background-color: #8fd37c; }
+    &.s3 > div:first-child > div > div { width: 19px; height: 19px; background-color: #8fd37c; }
+    > div:first-child > div > div.ctr, &.s4 > div:first-child > div > div { display: block; }
+
+    > div:nth-child(2) {
+        width: 15px;
+        > div {
+            height: 8px;
+            background-color: #8fd37c;
+        }
+    }
+    &.s1 > div:nth-child(2) { > div.b0 { background-color: #ccc; } }
+    &.s2 > div:nth-child(2) { > div.b0, > div.b1 { background-color: #ccc; } }
+    &.s3 > div:nth-child(2) { > div.b0, > div.b1, > div.b2 { background-color: #ccc; } }
+    &.s4 > div:nth-child(2) { > div.b0, > div.b1, > div.b2, > div.b3 { background-color: #ccc; } }
+
+    > div:last-child {
+        font-family: monospace;
+        > div {
+            background-color: #cce;
+            &:hover { background-color: #bbd; }
+            padding: 3px;
+            cursor: pointer;
+            user-select: none;
+        }
+    }
+}
+
 
 input.conflict { box-shadow: 0 0 5px 2px #f00; }
 
