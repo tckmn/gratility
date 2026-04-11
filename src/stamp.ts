@@ -76,7 +76,13 @@ export class Stamp {
         const vw = Measure.HALFCELL*(xmax-xmin+2*imgpad);
         const vh = Measure.HALFCELL*(ymax-ymin+2*imgpad);
 
-        image.text.setAttribute('transform', 'translate(0 2.5)');
+        // TODO erm
+        image.text_xl.setAttribute('transform', 'translate(0 2.5)');
+        image.text_l.setAttribute('transform', 'translate(0 2.5)');
+        image.text_m.setAttribute('transform', 'translate(0 2.5)');
+        image.text_s.setAttribute('transform', 'translate(0 2.5)');
+        image.text_xs.setAttribute('transform', 'translate(0 2.5)');
+
         svg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
         svg.setAttribute('version', '1.1');
         svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');

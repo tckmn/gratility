@@ -21,12 +21,70 @@ export const enum Obj {
 }
 
 export const enum Layer {
-    SURFACE = 0,
+    SURFACE = 0x0,
     PATH,
     EDGE,
-    SHAPE,
-    TEXT,
+
+    SHAPE_XL = 0x10,
+    SHAPE_L,
+    SHAPE_M,
+    SHAPE_S,
+    SHAPE_XS,
+    SHAPE_XSNW,
+    SHAPE_XSN,
+    SHAPE_XSNE,
+    SHAPE_XSW,
+    SHAPE_XSE,
+    SHAPE_XSSW,
+    SHAPE_XSS,
+    SHAPE_XSSE,
+
+    TEXT_XL = 0x20,
+    TEXT_L,
+    TEXT_M,
+    TEXT_S,
+    TEXT_XS,
+    TEXT_XSNW,
+    TEXT_XSN,
+    TEXT_XSNE,
+    TEXT_XSW,
+    TEXT_XSE,
+    TEXT_XSSW,
+    TEXT_XSS,
+    TEXT_XSSE,
 }
+
+type Layer_LINE = Layer.PATH | Layer.EDGE;
+
+type Layer_SHAPE =
+    Layer.SHAPE_XL |
+    Layer.SHAPE_L |
+    Layer.SHAPE_M |
+    Layer.SHAPE_S |
+    Layer.SHAPE_XS |
+    Layer.SHAPE_XSNW |
+    Layer.SHAPE_XSN |
+    Layer.SHAPE_XSNE |
+    Layer.SHAPE_XSW |
+    Layer.SHAPE_XSE |
+    Layer.SHAPE_XSSW |
+    Layer.SHAPE_XSS |
+    Layer.SHAPE_XSSE;
+
+type Layer_TEXT =
+    Layer.TEXT_XL |
+    Layer.TEXT_L |
+    Layer.TEXT_M |
+    Layer.TEXT_S |
+    Layer.TEXT_XS |
+    Layer.TEXT_XSNW |
+    Layer.TEXT_XSN |
+    Layer.TEXT_XSNE |
+    Layer.TEXT_XSW |
+    Layer.TEXT_XSE |
+    Layer.TEXT_XSSW |
+    Layer.TEXT_XSS |
+    Layer.TEXT_XSSE;
 
 export const enum Shape {
     CIRCLE = 0,
@@ -110,7 +168,7 @@ export class LineSpec extends Spec {
 }
 export class LineTile extends Tile {
     public readonly obj = Obj.LINE;
-    public readonly layer;
+    public readonly layer: Layer_LINE;
     constructor(
         public spec: LineSpec,
         public dir: boolean
@@ -165,7 +223,7 @@ export class ShapeSpec extends Spec {
 }
 export class ShapeTile extends Tile {
     public readonly obj = Obj.SHAPE;
-    public readonly layer = Layer.SHAPE;
+    public readonly layer = Layer.SHAPE_M;
     constructor(
         public shapes: ShapeSpec[]
     ) { super(); }
@@ -237,7 +295,7 @@ export class TextSpec extends Spec {
 }
 export class TextTile extends Tile {
     public readonly obj = Obj.TEXT;
-    public readonly layer = Layer.TEXT;
+    public readonly layer = Layer.TEXT_M;
     constructor(
         public spec: TextSpec
     ) { super(); }
@@ -438,10 +496,9 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
 // this is some insane type hackery nonsense
 type Halfcell = Omit<Map<Layer, Tile>, 'get'> & { get: <T extends Layer>(layer: T) => (
     T extends Layer.SURFACE ? SurfaceTile | undefined :
-    T extends Layer.PATH    ? LineTile    | undefined :
-    T extends Layer.EDGE    ? LineTile    | undefined :
-    T extends Layer.SHAPE   ? ShapeTile   | undefined :
-    T extends Layer.TEXT    ? TextTile    | undefined :
+    T extends Layer_LINE    ? LineTile    | undefined :
+    T extends Layer_SHAPE   ? ShapeTile   | undefined :
+    T extends Layer_TEXT    ? TextTile    | undefined :
     Tile | undefined
 ) };
 
@@ -492,7 +549,7 @@ export class DataManager {
             if (this.image !== undefined) {
                 // delete the drawing
                 const elt = this.drawn.get(change.n)?.get(change.pre.layer);
-                if (elt !== undefined) this.image.obj(change.pre.layer).removeChild(elt);
+                if (elt !== undefined) this.image.layer(change.pre.layer).removeChild(elt);
             }
 
             // delete item
@@ -512,7 +569,7 @@ export class DataManager {
                 // draw it
                 const [x, y] = decode(change.n);
                 const elt = change.post.draw(x, y);
-                this.image.obj(change.post.layer).appendChild(elt);
+                this.image.layer(change.post.layer).appendChild(elt);
 
                 // save the element
                 if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());
