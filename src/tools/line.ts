@@ -72,7 +72,7 @@ export default class LineTool extends Tool.Tool {
 
         // TODO this will change
         const newline = new Data.LineTile(this.spec, dir === -1);
-        const oldline = g.data.halfcells.get(n)?.[newline.layer] as Data.LineTile;
+        const oldline = g.data.halfcells.get(n)?.get(newline.layer) as Data.LineTile;
 
         if (this.isDrawing === undefined) {
             this.isDrawing = oldline === undefined || !oldline.eq(newline);

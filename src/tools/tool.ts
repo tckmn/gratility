@@ -19,7 +19,7 @@ export abstract class DragTool extends Tool {
     protected erase(cell: Data.Tile): Data.Tile | undefined { return undefined; }
 
     protected drag(isDown: boolean, n: number, g: Gratility.Backend) {
-        const cell = g.data.halfcells.get(n)?.[this.tile.layer];
+        const cell = g.data.halfcells.get(n)?.get(this.tile.layer);
         // TODO think this is just impossible to get correct due to
         // lack of dependent types, but should think about it more
         // TODO wtf, this logic is really weird and i feel like something

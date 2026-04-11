@@ -27,12 +27,12 @@ export default class CopyTool extends Tool.SelectTool {
                 const n = Data.encode(x, y);
                 const hc = g.data.halfcells.get(n);
                 if (hc !== undefined) {
-                    stamp.push(...hc.map((_,v) => {
+                    stamp.push(...hc.values().map((t) => {
                         if (this.isCut) {
                             shouldBreak = true;
-                            g.data.add(new Data.Change(n, v, undefined, true));
+                            g.data.add(new Data.Change(n, t, undefined, true));
                         }
-                        return new Data.Item(n, v);
+                        return new Data.Item(n, t);
                     }));
                 }
             }

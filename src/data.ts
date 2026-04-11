@@ -40,7 +40,7 @@ export const enum Head {
     ARROW
 }
 
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 const VERSION_BITS = 7;
 const N_BITS = 32;
 const OBJ_BITS = 6;
@@ -306,6 +306,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
     }
 
 }, 1: {
+}, 2: {
 
     [Obj.SURFACE]: (bs: BitStream): Tile => {
         return new SurfaceTile(new SurfaceSpec(bs.read(COLOR_BITS)));
@@ -364,7 +365,6 @@ export function serializeStamp(stamp: Array<Item>): Uint8Array<ArrayBuffer> {
     for (const item of stamp) {
         bs.write(N_BITS, item.n);
         bs.write(OBJ_BITS, item.tile.obj);
-        bs.write(LAYER_BITS, item.tile.layer);
         item.tile.serialize(bs);
     }
 
@@ -382,7 +382,7 @@ export function deserializeStamp(arr: Uint8Array<ArrayBuffer>): Array<Item> {
         const n = bs.read(N_BITS);
         if (!bs.inbounds()) break;
         const obj = bs.read(OBJ_BITS) as Obj;
-        const layer = bs.read(LAYER_BITS) as Layer;
+        if (version <= 1) bs.read(LAYER_BITS);
         stamp.push(new Item(n, deserializefns[version][obj](bs)));
     }
 
@@ -396,7 +396,6 @@ export function serializeChanges(changes: Array<Change>): Uint8Array<ArrayBuffer
 
     for (const ch of changes) {
         bs.write(N_BITS, ch.n);
-        bs.write(LAYER_BITS, (ch.pre ?? ch.post)!.layer);
         if (ch.pre === undefined) {
             bs.write(OBJ_BITS, (1<<OBJ_BITS)-1);
         } else {
@@ -424,7 +423,7 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
     while (1) {
         const n = bs.read(N_BITS);
         if (!bs.inbounds()) break;
-        const layer = bs.read(LAYER_BITS) as Layer;
+        if (version <= 1) bs.read(LAYER_BITS);
         const preobj = bs.read(OBJ_BITS);
         const pre = preobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[version][preobj as Obj](bs);
         const postobj = bs.read(OBJ_BITS);
@@ -436,35 +435,15 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
 }
 
 
-// TODO a lot of this class is very hacky
-class Halfcell {
-    public [Layer.SURFACE]: SurfaceTile | undefined;
-    public [Layer.PATH]: LineTile | undefined;
-    public [Layer.EDGE]: LineTile | undefined;
-    public [Layer.SHAPE]: ShapeTile | undefined;
-    public [Layer.TEXT]: TextTile | undefined;
-
-    public empty(): boolean {
-        return this[Layer.SURFACE] === undefined &&
-            this[Layer.PATH] === undefined &&
-            this[Layer.EDGE] === undefined &&
-            this[Layer.SHAPE] === undefined &&
-            this[Layer.TEXT] === undefined;
-    }
-
-    public delete(l: Layer) { this[l] = undefined; }
-    public set(l: Layer, t: Tile) { this[l] = t as any; }
-
-    public map<T>(f: (l: Layer, t :Tile) => T): T[] {
-        const arr = [];
-        if (this[Layer.SURFACE] !== undefined) arr.push(f(Layer.SURFACE, this[Layer.SURFACE]));
-        if (this[Layer.PATH] !== undefined) arr.push(f(Layer.PATH, this[Layer.PATH]));
-        if (this[Layer.EDGE] !== undefined) arr.push(f(Layer.EDGE, this[Layer.EDGE]));
-        if (this[Layer.SHAPE] !== undefined) arr.push(f(Layer.SHAPE, this[Layer.SHAPE]));
-        if (this[Layer.TEXT] !== undefined) arr.push(f(Layer.TEXT, this[Layer.TEXT]));
-        return arr;
-    }
-}
+// this is some insane type hackery nonsense
+type Halfcell = Omit<Map<Layer, Tile>, 'get'> & { get: <T extends Layer>(layer: T) => (
+    T extends Layer.SURFACE ? SurfaceTile | undefined :
+    T extends Layer.PATH    ? LineTile    | undefined :
+    T extends Layer.EDGE    ? LineTile    | undefined :
+    T extends Layer.SHAPE   ? ShapeTile   | undefined :
+    T extends Layer.TEXT    ? TextTile    | undefined :
+    Tile | undefined
+) };
 
 export class DataManager {
 
@@ -519,14 +498,14 @@ export class DataManager {
             // delete item
             const hc = this.halfcells.get(change.n);
             hc?.delete(change.pre.layer);
-            if (hc?.empty()) this.halfcells.delete(change.n);
+            if (hc?.size === 0) this.halfcells.delete(change.n);
 
         }
 
         if (change.post !== undefined) {
 
             // create item
-            if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Halfcell());
+            if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Map() as Halfcell);
             this.halfcells.get(change.n)!.set(change.post.layer, change.post);
 
             if (this.image !== undefined) {
@@ -544,13 +523,7 @@ export class DataManager {
     }
 
     public listcells(): Array<Item> {
-        const cells = new Array<Item>();
-        for (const [n, hc] of this.halfcells) {
-            cells.push(...hc.map((_,v) => {
-                return new Item(n, v);
-            }));
-        }
-        return cells;
+        return this.halfcells.entries().flatMap(([n, hc]) => hc.values().map(t => new Item(n, t))).toArray();
     }
 
     public clear() {

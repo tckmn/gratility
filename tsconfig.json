@@ -2,7 +2,7 @@
     "compilerOptions": {
         "strict": true,
         "target": "es2019",
-        "lib": ["dom", "es2019"],
+        "lib": ["dom", "esnext"],
         "module": "amd",
         "outFile": "dist/gratility.js",
         "skipLibCheck": true

@@ -37,7 +37,7 @@ export default class TextTool extends Tool.DragTool {
 
     private onkey(g: Gratility.Backend) {
         return (e: KeyboardEvent) => {
-            const pre = g.data.halfcells.get(this.n)?.[Data.Layer.TEXT];
+            const pre = g.data.halfcells.get(this.n)?.get(Data.Layer.TEXT);
             const color = pre === undefined ? this.spec.color : pre.spec.color;
             const text = pre === undefined ? '' : pre.spec.val;
             if (e.key === 'Enter' || e.key === 'Escape') {

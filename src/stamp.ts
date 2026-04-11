@@ -22,7 +22,7 @@ export class Stamp {
             const [x, y] = Data.decode(cell.n);
             const newn = Data.encode(x - this.xoff + xoff, y - this.yoff + yoff);
 
-            const pre = data.halfcells.get(newn)?.[cell.tile.layer];
+            const pre = data.halfcells.get(newn)?.get(cell.tile.layer);
             if (pre !== cell.tile) { // TODO don't think ref equality is correct here, but neither is eq()
                 const ch = new Data.Change(newn, pre, cell.tile, i !== this.cells.length-1);
                 if (noUndo) data.perform(ch);
