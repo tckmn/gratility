@@ -27,12 +27,12 @@ export default class FuncTool extends Tool.SelectTool {
                 const n = Data.encode(x, y);
                 const hc = g.data.halfcells.get(n);
                 if (hc !== undefined) {
-                    stamp.push(...hc.map((k,v) => {
+                    stamp.push(...hc.map((_,v) => {
                         // TODO can make this more efficient, obviously
                         // intentionally not calling breakLink() so that the
                         // whole thing is one operation
-                        g.data.add(new Data.Change(n, k, v, undefined, true));
-                        return new Data.Item(n, k, v);
+                        g.data.add(new Data.Change(n, v, undefined, true));
+                        return new Data.Item(n, v);
                     }));
                 }
             }
@@ -40,10 +40,10 @@ export default class FuncTool extends Tool.SelectTool {
 
         const newcells = stamp.map(item => {
             if (item.tile.obj === Data.Obj.SURFACE) return new Data.Item(
-                item.n, item.layer, new Data.SurfaceTile(new Data.SurfaceSpec(0))
+                item.n, new Data.SurfaceTile(new Data.SurfaceSpec(0))
             );
             if (item.tile.obj === Data.Obj.TEXT) return new Data.Item(
-                item.n, item.layer, new Data.TextTile(new Data.TextSpec(4, (item.tile as Data.TextTile).spec.val))
+                item.n, new Data.TextTile(new Data.TextSpec(4, (item.tile as Data.TextTile).spec.val))
             );
             return item;
         });

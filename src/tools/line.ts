@@ -70,8 +70,9 @@ export default class LineTool extends Tool.Tool {
 
         const n = Data.encode(cx, cy)
 
-        const oldline = g.data.halfcells.get(n)?.[this.spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH];
+        // TODO this will change
         const newline = new Data.LineTile(this.spec, dir === -1);
+        const oldline = g.data.halfcells.get(n)?.[newline.layer] as Data.LineTile;
 
         if (this.isDrawing === undefined) {
             this.isDrawing = oldline === undefined || !oldline.eq(newline);
@@ -79,11 +80,11 @@ export default class LineTool extends Tool.Tool {
 
         if (this.isDrawing) {
             if (oldline === undefined || !oldline.eq(newline)) {
-                g.data.add(new Data.Change(n, this.spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH, oldline, newline));
+                g.data.add(new Data.Change(n, oldline, newline));
             }
         } else {
             if (oldline !== undefined) {
-                g.data.add(new Data.Change(n, this.spec.isEdge ? Data.Layer.EDGE : Data.Layer.PATH, oldline, undefined));
+                g.data.add(new Data.Change(n, oldline, undefined));
             }
         }
     }

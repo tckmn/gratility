@@ -16,7 +16,6 @@ export default class TextTool extends Tool.DragTool {
 
     private n = 0;
     private elt: SVGElement | undefined = undefined;
-    protected readonly layer: Data.Layer = Data.Layer.TEXT;
     protected readonly tile: Data.TextTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
@@ -44,10 +43,10 @@ export default class TextTool extends Tool.DragTool {
             if (e.key === 'Enter' || e.key === 'Escape') {
                 this.deselect();
             } else if (e.key === 'Backspace') {
-                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, pre,
+                g.data.add(new Data.Change(this.n, pre,
                                            text.length === 1 ? undefined : new Data.TextTile(new Data.TextSpec(color, text.slice(0, text.length-1)))));
             } else if (e.key.length === 1) {
-                g.data.add(new Data.Change(this.n, Data.Layer.TEXT, pre,
+                g.data.add(new Data.Change(this.n, pre,
                                            new Data.TextTile(new Data.TextSpec(color, text + e.key))));
             }
         };

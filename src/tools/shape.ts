@@ -21,7 +21,6 @@ export default class ShapeTool extends Tool.DragTool {
         private locs: number
     ) { super(); this.tile = new Data.ShapeTile([this.spec]); }
 
-    protected readonly layer: Data.Layer = Data.Layer.SHAPE;
     protected readonly tile: Data.ShapeTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {

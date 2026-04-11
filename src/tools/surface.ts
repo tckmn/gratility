@@ -21,7 +21,6 @@ export default class SurfaceTool extends Tool.DragTool {
         this.tile = new Data.SurfaceTile(this.spec);
     }
 
-    protected readonly layer: Data.Layer = Data.Layer.SURFACE;
     protected readonly tile: Data.SurfaceTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {

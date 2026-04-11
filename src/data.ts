@@ -61,6 +61,7 @@ export abstract class Spec {
 
 export abstract class Tile {
     abstract readonly obj: Obj;
+    abstract readonly layer: Layer;
     // this is only ever used in DragTool to determine whether to draw or erase
     // (instance versions may be used ad hoc)
     abstract eq(other: Tile): boolean;
@@ -76,6 +77,7 @@ export class SurfaceSpec extends Spec {
 }
 export class SurfaceTile extends Tile {
     public readonly obj = Obj.SURFACE;
+    public readonly layer = Layer.SURFACE;
     constructor(
         public spec: SurfaceSpec
     ) { super(); }
@@ -108,10 +110,11 @@ export class LineSpec extends Spec {
 }
 export class LineTile extends Tile {
     public readonly obj = Obj.LINE;
+    public readonly layer;
     constructor(
         public spec: LineSpec,
         public dir: boolean
-    ) { super(); }
+    ) { super(); this.layer = spec.isEdge ? Layer.EDGE : Layer.PATH; }
     public eq(other: LineTile): boolean {
         return this.spec.eq(other.spec) &&
             (this.spec.head === Head.NONE ? true : this.dir === other.dir);
@@ -162,6 +165,7 @@ export class ShapeSpec extends Spec {
 }
 export class ShapeTile extends Tile {
     public readonly obj = Obj.SHAPE;
+    public readonly layer = Layer.SHAPE;
     constructor(
         public shapes: ShapeSpec[]
     ) { super(); }
@@ -233,6 +237,7 @@ export class TextSpec extends Spec {
 }
 export class TextTile extends Tile {
     public readonly obj = Obj.TEXT;
+    public readonly layer = Layer.TEXT;
     constructor(
         public spec: TextSpec
     ) { super(); }
@@ -263,7 +268,6 @@ export class TextTile extends Tile {
 export class Item {
     public constructor(
         public readonly n: number,
-        public readonly layer: Layer,
         public readonly tile: Tile
     ) {}
 }
@@ -271,12 +275,11 @@ export class Item {
 export class Change {
     public constructor(
         public readonly n: number,
-        public readonly layer: Layer,
         public readonly pre: Tile | undefined,
         public readonly post: Tile | undefined,
         public linked: boolean = false,
     ) {}
-    public rev() { return new Change(this.n, this.layer, this.post, this.pre, this.linked); }
+    public rev() { return new Change(this.n, this.post, this.pre, this.linked); }
 }
 
 const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}} = ((x: {[key in number]: {[key in Obj]?: (bs: BitStream) => Tile}}) => {
@@ -361,7 +364,7 @@ export function serializeStamp(stamp: Array<Item>): Uint8Array<ArrayBuffer> {
     for (const item of stamp) {
         bs.write(N_BITS, item.n);
         bs.write(OBJ_BITS, item.tile.obj);
-        bs.write(LAYER_BITS, item.layer);
+        bs.write(LAYER_BITS, item.tile.layer);
         item.tile.serialize(bs);
     }
 
@@ -380,7 +383,7 @@ export function deserializeStamp(arr: Uint8Array<ArrayBuffer>): Array<Item> {
         if (!bs.inbounds()) break;
         const obj = bs.read(OBJ_BITS) as Obj;
         const layer = bs.read(LAYER_BITS) as Layer;
-        stamp.push(new Item(n, layer, deserializefns[version][obj](bs)));
+        stamp.push(new Item(n, deserializefns[version][obj](bs)));
     }
 
     return stamp;
@@ -393,7 +396,7 @@ export function serializeChanges(changes: Array<Change>): Uint8Array<ArrayBuffer
 
     for (const ch of changes) {
         bs.write(N_BITS, ch.n);
-        bs.write(LAYER_BITS, ch.layer);
+        bs.write(LAYER_BITS, (ch.pre ?? ch.post)!.layer);
         if (ch.pre === undefined) {
             bs.write(OBJ_BITS, (1<<OBJ_BITS)-1);
         } else {
@@ -426,7 +429,7 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
         const pre = preobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[version][preobj as Obj](bs);
         const postobj = bs.read(OBJ_BITS);
         const post = postobj === (1<<OBJ_BITS)-1 ? undefined : deserializefns[version][postobj as Obj](bs);
-        changes.push(new Change(n, layer, pre, post));
+        changes.push(new Change(n, pre, post));
     }
 
     return changes;
@@ -509,13 +512,13 @@ export class DataManager {
             // TODO undefined cases here should never happen
             if (this.image !== undefined) {
                 // delete the drawing
-                const elt = this.drawn.get(change.n)?.get(change.layer);
-                if (elt !== undefined) this.image.obj(change.layer).removeChild(elt);
+                const elt = this.drawn.get(change.n)?.get(change.pre.layer);
+                if (elt !== undefined) this.image.obj(change.pre.layer).removeChild(elt);
             }
 
             // delete item
             const hc = this.halfcells.get(change.n);
-            hc?.delete(change.layer);
+            hc?.delete(change.pre.layer);
             if (hc?.empty()) this.halfcells.delete(change.n);
 
         }
@@ -524,17 +527,17 @@ export class DataManager {
 
             // create item
             if (!this.halfcells.has(change.n)) this.halfcells.set(change.n, new Halfcell());
-            this.halfcells.get(change.n)!.set(change.layer, change.post);
+            this.halfcells.get(change.n)!.set(change.post.layer, change.post);
 
             if (this.image !== undefined) {
                 // draw it
                 const [x, y] = decode(change.n);
                 const elt = change.post.draw(x, y);
-                this.image.obj(change.layer).appendChild(elt);
+                this.image.obj(change.post.layer).appendChild(elt);
 
                 // save the element
                 if (!this.drawn.has(change.n)) this.drawn.set(change.n, new Map());
-                this.drawn.get(change.n)?.set(change.layer, elt);
+                this.drawn.get(change.n)?.set(change.post.layer, elt);
             }
 
         }
@@ -543,8 +546,8 @@ export class DataManager {
     public listcells(): Array<Item> {
         const cells = new Array<Item>();
         for (const [n, hc] of this.halfcells) {
-            cells.push(...hc.map((k,v) => {
-                return new Item(n, k, v);
+            cells.push(...hc.map((_,v) => {
+                return new Item(n, v);
             }));
         }
         return cells;
