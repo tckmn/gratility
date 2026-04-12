@@ -19,8 +19,9 @@ export default class ShapeTool extends Tool.DragTool {
         private fill: number | undefined,
         private outline: number | undefined,
         private position: Data.Position,
+        private transform: number,
         private locs: number
-    ) { super(); this.tile = new Data.ShapeTile(shape, fill, outline, position); }
+    ) { super(); this.tile = new Data.ShapeTile(shape, fill, outline, position, transform); }
 
     protected readonly tile: Data.ShapeTile;
 

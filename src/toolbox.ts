@@ -4,6 +4,7 @@ import * as Data from './data.js';
 import * as Color from './color.js';
 import * as Gratility from './gratility.js';
 import * as Courier from './courier.js';
+import * as Draw from './draw.js';
 
 const DEFAULT_TOOLS = `*main
 m1::pan:
@@ -353,6 +354,7 @@ export class Toolboxbox {
                 ['R', 'star', Data.Shape.STAR]
             ]);
             const position = param.position('size');
+            const transform = param.transform('rotation');
             const location = param.multiAny('location', [
                 ['C', 'center', 4],
                 ['E', 'edge', 2],
@@ -369,7 +371,7 @@ export class Toolboxbox {
                     Courier.alert('shape should should have at least one of fill or outline');
                     return;
                 }
-                return new Tools.ShapeTool(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, position.val,
+                return new Tools.ShapeTool(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, position.val, transform.val,
                                            location.val.reduce((a,b) => a+b, 0));
             };
         }, 'full').element);
@@ -583,6 +585,40 @@ class ParamSource {
         return param;
     }
 
+    public transform(name: string): Param<number> {
+        const picker = document.createElement('div');
+        picker.classList.add('transformpicker');
+        let val = 0;
+
+        const svg = Draw.draw(picker as never, 'svg', {
+            viewBox: '-1 -1 2 2',
+            children: [Draw.draw(undefined, 'path', {
+                d: 'M' + [0,1,2,3,4].map(n => (
+                    Math.cos((n/5+0.25)*2*Math.PI) + ' ' + -Math.sin((n/5+0.25)*2*Math.PI)
+                )).join('L') + 'Z',
+                strokeWidth: 0.03
+            })]
+        });
+
+        svg.addEventListener('click', () => {
+            svg.animate([
+                { transform: `rotate(${90*val}deg)`, easing: 'ease-out' },
+                { transform: `rotate(${90*(val+1)}deg)`, easing: 'ease-in', offset: 1 },
+                { transform: `rotate(${90*(val = (val+1)%4)}deg)` }
+            ], { duration: 200, fill: 'forwards' });
+        });
+
+        this.element.append(makeArg('label', name, picker));
+
+        const param = new Param<number>(this, s => [parseInt(s[0], 10), s.slice(1)], () => val.toString(), () => val, s => {
+            val = parseInt(s[0], 10);
+            svg.style.setProperty('transform', `rotate(${90*val}deg)`);
+            return s.slice(1);
+        });
+        this.params.push(param);
+        return param;
+    }
+
     // TODO repetition here and multiAny kinda sucks
     public multi<T>(name: string, options: Array<[string, string, T]>): Param<T> {
         const multisel = document.createElement('span');
@@ -640,6 +676,7 @@ class ParamSource {
                                          for (let i = 0; i < options.length; ++i) {
                                              children[i].classList.toggle('active', s.split(':')[0].includes(options[i][0]));
                                          }
+                                         // TODO set val correctly
                                          return s.slice(s.indexOf(':')+1);
                                      });
         this.params.push(param);

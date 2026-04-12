@@ -131,6 +131,12 @@ const POSITION_BITS = 4;
 const VLQ_CHUNK = 4;
 const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
+const TRANSFORM_BITS: {[key in Shape]: number} = {
+    [Shape.CIRCLE]: 0,
+    [Shape.SQUARE]: 1,
+    [Shape.FLAG]: 2,
+    [Shape.STAR]: 2
+};
 
 
 export abstract class Tile {
@@ -221,10 +227,11 @@ export class ShapeTile extends Tile {
         public shape: Shape,
         public fill: number | undefined,
         public outline: number | undefined,
-        public position: Position
+        public position: Position,
+        public transform: number
     ) { super(); this.layer = Layer_SHAPE_BASE + position; }
     // not needed to check position here because different position is always different layer
-    public eq(other: ShapeTile) { return this.shape === other.shape && this.fill === other.fill && this.outline === other.outline; }
+    public eq(other: ShapeTile) { return this.shape === other.shape && this.fill === other.fill && this.outline === other.outline && this.transform === other.transform; }
     public serialize(bs: BitStream) {
         bs.write(SHAPE_BITS, this.shape);
         if (this.fill === undefined) bs.write(1, 0);
@@ -232,6 +239,7 @@ export class ShapeTile extends Tile {
         if (this.outline === undefined) bs.write(1, 0);
         else { bs.write(1, 1); bs.write(COLOR_BITS, this.outline); }
         bs.write(POSITION_BITS, this.position);
+        bs.write(TRANSFORM_BITS[this.shape], this.transform);
     }
     public draw(x: number, y: number): SVGElement {
         const g = Draw.draw(undefined, 'g', {
@@ -362,7 +370,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
             const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const size = bs.read(SIZE_BITS);
-            arr.push(new ShapeTile(shape, fill, outline, size===1 ? Position.XS : 5-size));
+            arr.push(new ShapeTile(shape, fill, outline, size===1 ? Position.XS : 5-size, 0));
         }
         // TODO should find some way to return multiple i guess. maybe just take stamp and push to it
         return arr[0];
@@ -388,7 +396,8 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
         const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
         const position = bs.read(POSITION_BITS);
-        return new ShapeTile(shape, fill, outline, position);
+        const transform = bs.read(TRANSFORM_BITS[shape]);
+        return new ShapeTile(shape, fill, outline, position, transform);
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
