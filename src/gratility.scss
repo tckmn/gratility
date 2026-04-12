@@ -273,26 +273,36 @@ div.overlay {
         > div {
             display: flex;
             justify-content: space-around;
-            > div { width: 12px; height: 12px; display: none; background-color: #ccc; &.on { background-color: #8fd37c; } }
+            > div {
+                width: 12px;
+                height: 12px;
+                box-shadow: 0 0 1px rgba(0,0,0,0.1);
+                cursor: pointer;
+                background-color: #ccc;
+                &:hover { background-color: #bbb; }
+                &.on { background-color: #8fd37c; }
+                &.on:hover { background-color: #7fc36c; }
+            }
         }
     }
-    &.s0 > div:first-child > div > div { width: 40px; height: 40px; background-color: #8fd37c; }
-    &.s1 > div:first-child > div > div { width: 33px; height: 33px; background-color: #8fd37c; }
-    &.s2 > div:first-child > div > div { width: 26px; height: 26px; background-color: #8fd37c; }
-    &.s3 > div:first-child > div > div { width: 19px; height: 19px; background-color: #8fd37c; }
-    > div:first-child > div > div.ctr, &.s4 > div:first-child > div > div { display: block; }
+    &.s0 > div:first-child > div > div.ctr { transform: scale(260%); }
+    &.s1 > div:first-child > div > div.ctr { transform: scale(220%); }
+    &.s2 > div:first-child > div > div.ctr { transform: scale(180%); }
+    &.s3 > div:first-child > div > div.ctr { transform: scale(140%); }
 
     > div:nth-child(2) {
         width: 15px;
         > div {
             height: 8px;
+            cursor: pointer;
             background-color: #8fd37c;
+            &:hover { background-color: #7fc36c; }
         }
     }
-    &.s1 > div:nth-child(2) { > div.b0 { background-color: #ccc; } }
-    &.s2 > div:nth-child(2) { > div.b0, > div.b1 { background-color: #ccc; } }
-    &.s3 > div:nth-child(2) { > div.b0, > div.b1, > div.b2 { background-color: #ccc; } }
-    &.s4 > div:nth-child(2) { > div.b0, > div.b1, > div.b2, > div.b3 { background-color: #ccc; } }
+    &.s1 > div:nth-child(2) { > div.b0 { background-color: #ccc; &:hover { background-color: #bbb; } } }
+    &.s2 > div:nth-child(2) { > div.b0, > div.b1 { background-color: #ccc; &:hover { background-color: #bbb; } } }
+    &.s3 > div:nth-child(2) { > div.b0, > div.b1, > div.b2 { background-color: #ccc; &:hover { background-color: #bbb; } } }
+    &.s4 > div:nth-child(2) { > div.b0, > div.b1, > div.b2, > div.b3 { background-color: #ccc; &:hover { background-color: #bbb; } } }
 
     > div:last-child {
         font-family: monospace;

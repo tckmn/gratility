@@ -40,10 +40,10 @@ export default class FuncTool extends Tool.SelectTool {
 
         const newcells = stamp.map(item => {
             if (item.tile.obj === Data.Obj.SURFACE) return new Data.Item(
-                item.n, new Data.SurfaceTile(new Data.SurfaceSpec(0))
+                item.n, new Data.SurfaceTile(0)
             );
             if (item.tile.obj === Data.Obj.TEXT) return new Data.Item(
-                item.n, new Data.TextTile(new Data.TextSpec(4, (item.tile as Data.TextTile).spec.val))
+                item.n, new Data.TextTile(4, (item.tile as Data.TextTile).val)
             );
             return item;
         });

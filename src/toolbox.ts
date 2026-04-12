@@ -334,7 +334,7 @@ export class Toolboxbox {
 
         group.append(new MenuItem('surface', 'Surface', (param) => {
             const color = param.color('color');
-            return () => new Tools.SurfaceTool(new Data.SurfaceSpec(color.val));
+            return () => new Tools.SurfaceTool(color.val);
         }, 'full').element);
 
         group.append(new MenuItem('line', 'Line', (param) => {
@@ -342,7 +342,7 @@ export class Toolboxbox {
             const color = param.color('color');
             const thickness = param.multi('thickness', [['1', 'thin', 1], ['2', 'normal', 2], ['3', 'thick', 3]]);
             const head = param.multi('head', [['N', 'none', Data.Head.NONE], ['A', 'arrow', Data.Head.ARROW]]);
-            return () => new Tools.LineTool(new Data.LineSpec(type.val, color.val, thickness.val, head.val));
+            return () => new Tools.LineTool(type.val, color.val, thickness.val, head.val);
         }, 'full').element);
 
         group.append(new MenuItem('shape', 'Shape', (param) => {
@@ -369,7 +369,7 @@ export class Toolboxbox {
                     Courier.alert('shape should should have at least one of fill or outline');
                     return;
                 }
-                return new Tools.ShapeTool(new Data.ShapeSpec(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, position.val),
+                return new Tools.ShapeTool(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, position.val,
                                            location.val.reduce((a,b) => a+b, 0));
             };
         }, 'full').element);
@@ -387,7 +387,7 @@ export class Toolboxbox {
                     Courier.alert('text should be placeable in at least one location');
                     return;
                 }
-                return new Tools.TextTool(new Data.TextSpec(color.val, preset.val), location.val.reduce((a,b) => a+b, 0));
+                return new Tools.TextTool(color.val, preset.val, location.val.reduce((a,b) => a+b, 0));
             }
         }, 'full').element);
 
@@ -564,8 +564,7 @@ class ParamSource {
         for (let i = 0; i < 2; ++i) {
             const btn = document.createElement('div');
             btn.textContent = '+−'[i];
-            btn.addEventListener('click', (i => e => {
-                e.preventDefault();
+            btn.addEventListener('click', (i => () => {
                 picker.classList.remove('s'+sz);
                 sz = [Math.max(0, sz-1), Math.min(4, sz+1)][i];
                 picker.classList.add('s'+sz);

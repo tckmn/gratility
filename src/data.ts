@@ -33,11 +33,11 @@ export const enum Layer {
     SHAPE_L,
     SHAPE_M,
     SHAPE_S,
-    SHAPE_XS,
     SHAPE_XSNW,
     SHAPE_XSN,
     SHAPE_XSNE,
     SHAPE_XSW,
+    SHAPE_XS,
     SHAPE_XSE,
     SHAPE_XSSW,
     SHAPE_XSS,
@@ -47,11 +47,11 @@ export const enum Layer {
     TEXT_L,
     TEXT_M,
     TEXT_S,
-    TEXT_XS,
     TEXT_XSNW,
     TEXT_XSN,
     TEXT_XSNE,
     TEXT_XSW,
+    TEXT_XS,
     TEXT_XSE,
     TEXT_XSSW,
     TEXT_XSS,
@@ -108,11 +108,11 @@ export const enum Position {
     L,
     M,
     S,
-    XS,
     XSNW,
     XSN,
     XSNE,
     XSW,
+    XS,
     XSE,
     XSSW,
     XSS,
@@ -133,12 +133,6 @@ const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
 
 
-export abstract class Spec {
-    // this isn't currently used anywhere but i guess i have implementations
-    // for all instances
-    // abstract eq(other: Spec): boolean;
-}
-
 export abstract class Tile {
     abstract readonly obj: Obj;
     abstract readonly layer: Layer;
@@ -149,21 +143,15 @@ export abstract class Tile {
     abstract draw(x: number, y: number): SVGElement;
 }
 
-export class SurfaceSpec extends Spec {
-    constructor(
-        public color: number
-    ) { super(); }
-    public eq(other: SurfaceSpec): boolean { return this.color === other.color; }
-}
 export class SurfaceTile extends Tile {
     public readonly obj = Obj.SURFACE;
     public readonly layer = Layer.SURFACE;
     constructor(
-        public spec: SurfaceSpec
+        public color: number
     ) { super(); }
-    public eq(other: SurfaceTile) { return this.spec.eq(other.spec); }
+    public eq(other: SurfaceTile) { return this.color === other.color; }
     public serialize(bs: BitStream) {
-        bs.write(COLOR_BITS, this.spec.color);
+        bs.write(COLOR_BITS, this.color);
     }
     public draw(x: number, y: number): SVGElement {
         return Draw.draw(undefined, 'rect', {
@@ -171,51 +159,43 @@ export class SurfaceTile extends Tile {
             height: Measure.CELL,
             x: Measure.HALFCELL*(x-1),
             y: Measure.HALFCELL*(y-1),
-            fill: Color.colors[this.spec.color]
+            fill: Color.colors[this.color]
         });
     }
 }
 
-export class LineSpec extends Spec {
-    constructor(
-        public isEdge: boolean,
-        public color: number,
-        public thickness: number,
-        public head: Head
-    ) { super(); }
-    public eq(other: LineSpec): boolean {
-        return this.isEdge === other.isEdge && this.head === other.head
-            && this.color === other.color && this.thickness === other.thickness;
-    }
-}
 export class LineTile extends Tile {
     public readonly obj = Obj.LINE;
     public readonly layer: Layer_LINE;
     constructor(
-        public spec: LineSpec,
+        public isEdge: boolean,
+        public color: number,
+        public thickness: number,
+        public head: Head,
         public dir: boolean
-    ) { super(); this.layer = spec.isEdge ? Layer.EDGE : Layer.PATH; }
+    ) { super(); this.layer = isEdge ? Layer.EDGE : Layer.PATH; }
     public eq(other: LineTile): boolean {
-        return this.spec.eq(other.spec) &&
-            (this.spec.head === Head.NONE ? true : this.dir === other.dir);
+        return this.isEdge === other.isEdge && this.head === other.head
+            && this.color === other.color && this.thickness === other.thickness &&
+            (this.head === Head.NONE ? true : this.dir === other.dir);
     }
     public serialize(bs: BitStream) {
-        bs.write(1, this.spec.isEdge ? 1 : 0);
-        bs.write(COLOR_BITS, this.spec.color);
-        bs.write(THICKNESS_BITS, this.spec.thickness);
-        bs.write(HEAD_BITS, this.spec.head);
+        bs.write(1, this.isEdge ? 1 : 0);
+        bs.write(COLOR_BITS, this.color);
+        bs.write(THICKNESS_BITS, this.thickness);
+        bs.write(HEAD_BITS, this.head);
         bs.write(1, this.dir ? 1 : 0);
     }
     public draw(x: number, y: number): SVGElement {
         const g = Draw.draw(undefined, 'g', {
             transform: `
-                rotate(${((y%2===0) == this.spec.isEdge ? 0 : 90) + (this.dir ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
+                rotate(${((y%2===0) == this.isEdge ? 0 : 90) + (this.dir ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
                 `
         });
-        const stroke = Color.colors[this.spec.color];
+        const stroke = Color.colors[this.color];
         const strokeLinecap = 'round'
-        const strokeWidth = Measure.LINE * this.spec.thickness;
-        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(this.spec.thickness));
+        const strokeWidth = Measure.LINE * this.thickness;
+        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(this.thickness));
         Draw.draw(g, 'line', {
             x1: adjust(x+1,0),
             x2: adjust(x-1,0),
@@ -223,7 +203,7 @@ export class LineTile extends Tile {
             y2: adjust(y,0),
             stroke, strokeLinecap, strokeWidth
         });
-        if (this.spec.head === Head.ARROW) {
+        if (this.head === Head.ARROW) {
             Draw.draw(g, 'path', {
                 d: `M ${adjust(x,3)} ${adjust(y,5)} L ${adjust(x,-2)} ${adjust(y,0)} L ${adjust(x,3)} ${adjust(y,-5)}`,
                 fill: 'none',
@@ -234,43 +214,37 @@ export class LineTile extends Tile {
     }
 }
 
-export class ShapeSpec extends Spec {
+export class ShapeTile extends Tile {
+    public readonly obj = Obj.SHAPE;
+    public readonly layer: Layer_SHAPE;
     constructor(
         public shape: Shape,
         public fill: number | undefined,
         public outline: number | undefined,
         public position: Position
-    ) { super(); }
+    ) { super(); this.layer = Layer_SHAPE_BASE + position; }
     // not needed to check position here because different position is always different layer
-    public eq(other: ShapeSpec): boolean { return this.shape === other.shape && this.fill === other.fill && this.outline === other.outline; }
-}
-export class ShapeTile extends Tile {
-    public readonly obj = Obj.SHAPE;
-    public readonly layer: Layer_SHAPE;
-    constructor(
-        public spec: ShapeSpec
-    ) { super(); this.layer = Layer_SHAPE_BASE + spec.position; }
-    public eq(other: ShapeTile) { return other.spec.eq(this.spec); }
+    public eq(other: ShapeTile) { return this.shape === other.shape && this.fill === other.fill && this.outline === other.outline; }
     public serialize(bs: BitStream) {
-        bs.write(SHAPE_BITS, this.spec.shape);
-        if (this.spec.fill === undefined) bs.write(1, 0);
-        else { bs.write(1, 1); bs.write(COLOR_BITS, this.spec.fill); }
-        if (this.spec.outline === undefined) bs.write(1, 0);
-        else { bs.write(1, 1); bs.write(COLOR_BITS, this.spec.outline); }
-        bs.write(POSITION_BITS, this.spec.position);
+        bs.write(SHAPE_BITS, this.shape);
+        if (this.fill === undefined) bs.write(1, 0);
+        else { bs.write(1, 1); bs.write(COLOR_BITS, this.fill); }
+        if (this.outline === undefined) bs.write(1, 0);
+        else { bs.write(1, 1); bs.write(COLOR_BITS, this.outline); }
+        bs.write(POSITION_BITS, this.position);
     }
     public draw(x: number, y: number): SVGElement {
         const g = Draw.draw(undefined, 'g', {
             transform: `translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})`
         });
 
-        const size = 5 - Math.min(this.spec.position, 4);
+        const size = 5 - Math.min(this.position, 4);
         const r = Measure.HALFCELL * (size/6);
         const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(size/12));
-        const fill = this.spec.fill === undefined ? 'none' : Color.colors[this.spec.fill];
-        const stroke = this.spec.outline === undefined ? 'none' : Color.colors[this.spec.outline];
+        const fill = this.fill === undefined ? 'none' : Color.colors[this.fill];
+        const stroke = this.outline === undefined ? 'none' : Color.colors[this.outline];
 
-        switch (this.spec.shape) {
+        switch (this.shape) {
         case Shape.CIRCLE:
             Draw.draw(g, 'circle', {
                 cx: 0, cy: 0, r: r,
@@ -305,23 +279,17 @@ export class ShapeTile extends Tile {
     }
 }
 
-export class TextSpec extends Spec {
-    constructor(
-        public color: number,
-        public val: string
-    ) { super(); }
-    public eq(other: TextSpec): boolean { return this.color === other.color && this.val === other.val; }
-}
 export class TextTile extends Tile {
     public readonly obj = Obj.TEXT;
     public readonly layer = Layer.TEXT_M;
     constructor(
-        public spec: TextSpec
+        public color: number,
+        public val: string
     ) { super(); }
-    public eq(other: TextTile): boolean { return this.spec.eq(other.spec); }
+    public eq(other: TextTile): boolean { return this.color === other.color && this.val === other.val; }
     public serialize(bs: BitStream) {
-        bs.write(COLOR_BITS, this.spec.color);
-        bs.writeString(this.spec.val);
+        bs.write(COLOR_BITS, this.color);
+        bs.writeString(this.val);
     }
     public draw(x: number, y: number): SVGElement {
         return Draw.draw(undefined, 'text', {
@@ -330,13 +298,13 @@ export class TextTile extends Tile {
             textAnchor: 'middle',
             dominantBaseline: 'central',
             fontSize: Measure.CELL*(
-                this.spec.val.length === 1 ? 0.75 :
-                this.spec.val.length === 2 ? 0.55 :
-                this.spec.val.length === 3 ? 0.4 :
+                this.val.length === 1 ? 0.75 :
+                this.val.length === 2 ? 0.55 :
+                this.val.length === 3 ? 0.4 :
                 0.3
             ),
-            textContent: this.spec.val,
-            fill: Color.colors[this.spec.color]
+            textContent: this.val,
+            fill: Color.colors[this.color]
         });
     }
 }
@@ -375,11 +343,11 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return new LineTile(new LineSpec(isEdge, color, thickness, head), dir);
+        return new LineTile(isEdge, color, thickness, head, dir);
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
-        return new TextTile(new TextSpec(0, bs.readString()));
+        return new TextTile(0, bs.readString());
     }
 
 }, 1: {
@@ -394,16 +362,16 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
             const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const size = bs.read(SIZE_BITS);
-            arr.push(new ShapeSpec(shape, fill, outline, 5-size));
+            arr.push(new ShapeTile(shape, fill, outline, size===1 ? Position.XS : 5-size));
         }
-        // TODO something
-        return new ShapeTile(arr[0]);
+        // TODO should find some way to return multiple i guess. maybe just take stamp and push to it
+        return arr[0];
     },
 
 }, 2: {
 
     [Obj.SURFACE]: (bs: BitStream): Tile => {
-        return new SurfaceTile(new SurfaceSpec(bs.read(COLOR_BITS)));
+        return new SurfaceTile(bs.read(COLOR_BITS));
     },
 
     [Obj.LINE]: (bs: BitStream): Tile => {
@@ -412,7 +380,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return new LineTile(new LineSpec(isEdge, color, thickness, head), dir);
+        return new LineTile(isEdge, color, thickness, head, dir);
     },
 
     [Obj.SHAPE]: (bs: BitStream): Tile => {
@@ -420,11 +388,11 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
         const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
         const position = bs.read(POSITION_BITS);
-        return new ShapeTile(new ShapeSpec(shape, fill, outline, position));
+        return new ShapeTile(shape, fill, outline, position);
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
-        return new TextTile(new TextSpec(bs.read(COLOR_BITS), bs.readString()));
+        return new TextTile(bs.read(COLOR_BITS), bs.readString());
     }
 
 }});

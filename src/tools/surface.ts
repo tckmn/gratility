@@ -16,9 +16,9 @@ export default class SurfaceTool extends Tool.DragTool {
         });
     }
 
-    constructor(private spec: Data.SurfaceSpec) {
+    constructor(private color: number) {
         super();
-        this.tile = new Data.SurfaceTile(this.spec);
+        this.tile = new Data.SurfaceTile(color);
     }
 
     protected readonly tile: Data.SurfaceTile;

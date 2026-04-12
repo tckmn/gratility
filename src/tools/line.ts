@@ -11,14 +11,19 @@ export default class LineTool extends Tool.Tool {
         return Draw.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                new Data.LineTile(this.spec, false).draw(0, 1)
+                new Data.LineTile(this.isEdge, this.color, this.thickness, this.head, false).draw(0, 1)
             ]
         });
     }
 
-    constructor(private spec: Data.LineSpec) {
+    constructor(
+        private isEdge: boolean,
+        private color: number,
+        private thickness: number,
+        private head: Data.Head
+    ) {
         super();
-        this.HC_WEIGHT = spec.isEdge ? 0.35 : 0;
+        this.HC_WEIGHT = isEdge ? 0.35 : 0;
     }
 
     private isDrawing: boolean | undefined = undefined;
@@ -44,7 +49,7 @@ export default class LineTool extends Tool.Tool {
         this.y = y;
         let cx, cy, dir;
 
-        if (!this.spec.isEdge) {
+        if (!this.isEdge) {
             dx = dx/2;
             dy = dy/2;
         }
@@ -53,7 +58,7 @@ export default class LineTool extends Tool.Tool {
 
         if (dx**2 + dy**2 !== 1) return;
 
-        if (this.spec.isEdge) {
+        if (this.isEdge) {
             if (dx === 0) {
                 if (x%2 !== 0) return;
                 cx = x;
@@ -71,7 +76,8 @@ export default class LineTool extends Tool.Tool {
         const n = Data.encode(cx, cy)
 
         // TODO need to make sure this is good
-        const newline = new Data.LineTile(this.spec, dir === -1);
+        // oh, only two lines should ever be created at least
+        const newline = new Data.LineTile(this.isEdge, this.color, this.thickness, this.head, dir === -1);
         const oldline = g.data.halfcells.get(n)?.get(newline.layer);
 
         if (this.isDrawing === undefined) {

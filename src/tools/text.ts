@@ -9,9 +9,9 @@ export default class TextTool extends Tool.DragTool {
 
     public readonly repeat = false;
 
-    constructor(private spec: Data.TextSpec, private locs: number) {
+    constructor(private color: number, private preset: string, private locs: number) {
         super();
-        this.tile = new Data.TextTile(this.spec);
+        this.tile = new Data.TextTile(color, preset);
     }
 
     private n = 0;
@@ -20,7 +20,7 @@ export default class TextTool extends Tool.DragTool {
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
         [x, y] = Measure.atlocs(x, y, this.locs);
-        if (this.spec.val !== '') {
+        if (this.preset !== '') {
             this.drag(true, Data.encode(x, y), g);
         } else if (Event.keyeater.ref === undefined) {
             this.n = Data.encode(x, y);
@@ -38,16 +38,16 @@ export default class TextTool extends Tool.DragTool {
     private onkey(g: Gratility.Backend) {
         return (e: KeyboardEvent) => {
             const pre = g.data.halfcells.get(this.n)?.get(Data.Layer.TEXT_M);
-            const color = pre === undefined ? this.spec.color : pre.spec.color;
-            const text = pre === undefined ? '' : pre.spec.val;
+            const color = pre === undefined ? this.color : pre.color;
+            const text = pre === undefined ? '' : pre.val;
             if (e.key === 'Enter' || e.key === 'Escape') {
                 this.deselect();
             } else if (e.key === 'Backspace') {
                 g.data.add(new Data.Change(this.n, pre,
-                                           text.length === 1 ? undefined : new Data.TextTile(new Data.TextSpec(color, text.slice(0, text.length-1)))));
+                                           text.length === 1 ? undefined : new Data.TextTile(color, text.slice(0, text.length-1))));
             } else if (e.key.length === 1) {
                 g.data.add(new Data.Change(this.n, pre,
-                                           new Data.TextTile(new Data.TextSpec(color, text + e.key))));
+                                           new Data.TextTile(color, text + e.key)));
             }
         };
     }
@@ -58,7 +58,7 @@ export default class TextTool extends Tool.DragTool {
     }
 
     public onmove(x: number, y: number, g: Gratility.Backend) {
-        if (this.spec.val === '') return;
+        if (this.preset === '') return;
         [x, y] = Measure.atlocs(x, y, this.locs);
         this.drag(false, Data.encode(x, y), g);
     }

@@ -15,9 +15,12 @@ export default class ShapeTool extends Tool.DragTool {
     }
 
     constructor(
-        private spec: Data.ShapeSpec,
+        private shape: Data.Shape,
+        private fill: number | undefined,
+        private outline: number | undefined,
+        private position: Data.Position,
         private locs: number
-    ) { super(); this.tile = new Data.ShapeTile(this.spec); }
+    ) { super(); this.tile = new Data.ShapeTile(shape, fill, outline, position); }
 
     protected readonly tile: Data.ShapeTile;
 
