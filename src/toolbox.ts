@@ -1,18 +1,17 @@
 import * as Tool from './tools/tool.js';
 import * as Tools from './tools/alltools.js';
 import * as Data from './data.js';
-import * as Color from './color.js';
 import * as Gratility from './gratility.js';
 import * as Courier from './courier.js';
-import * as Draw from './draw.js';
+import * as Input from './input.js';
 
 const DEFAULT_TOOLS = `*main
 m1::pan:
 k ::pan:
-ks::surface:0:
-kr::line:P8:2N
-ke::line:E0:2N
-kt::text:0:C:
+ks::surface:0
+kr::line:false,8,2,0
+ke::line:true,0,2,0
+kt::text:0,[4],""
 kz::undo:
 kx::redo:
 kc::copy:
@@ -78,7 +77,7 @@ export class ToolboxEntry {
         if (menuItem === undefined) { Courier.alert('malformed toolbox entry: bad menu id'); throw new Error(); }
         const bindtype = bind[0];
         const bindval = bind.slice(1);
-        const tool = menuItem.fromStr(spec);
+        const tool = menuItem.fromJSON(spec);
         if (tool === undefined) { Courier.alert('malformed toolbox entry: tool gen failed'); throw new Error(); }
         switch (bindtype) {
         case 'm': return new ToolboxEntry(parseInt(bindval, 10), rest, tool);
@@ -331,7 +330,7 @@ export class Toolboxbox {
     private generateMenu(menuCont: HTMLElement) {
         let group;
 
-        group = makeGroup(menuCont, 'drawing');
+        group = Input.makeGroup(menuCont, 'drawing');
 
         group.append(new MenuItem('surface', 'Surface', (param) => {
             const color = param.color('color');
@@ -339,26 +338,26 @@ export class Toolboxbox {
         }, 'full').element);
 
         group.append(new MenuItem('line', 'Line', (param) => {
-            const type = param.multi('type', [['P', 'path', false], ['E', 'edge', true]]);
+            const type = param.multi('type', [['path', false], ['edge', true]]);
             const color = param.color('color');
-            const thickness = param.multi('thickness', [['1', 'thin', 1], ['2', 'normal', 2], ['3', 'thick', 3]]);
-            const head = param.multi('head', [['N', 'none', Data.Head.NONE], ['A', 'arrow', Data.Head.ARROW]]);
+            const thickness = param.multi('thickness', [['thin', 1], ['normal', 2], ['thick', 3]]);
+            const head = param.multi('head', [['none', Data.Head.NONE], ['arrow', Data.Head.ARROW]]);
             return () => new Tools.LineTool(type.val, color.val, thickness.val, head.val);
         }, 'full').element);
 
         group.append(new MenuItem('shape', 'Shape', (param) => {
             const type = param.multi('type', [
-                ['C', 'circle', Data.Shape.CIRCLE],
-                ['S', 'square', Data.Shape.SQUARE],
-                ['F', 'flag', Data.Shape.FLAG],
-                ['R', 'star', Data.Shape.STAR]
+                ['circle', Data.Shape.CIRCLE],
+                ['square', Data.Shape.SQUARE],
+                ['flag', Data.Shape.FLAG],
+                ['star', Data.Shape.STAR]
             ]);
             const position = param.position('size');
             const transform = param.transform('rotation');
             const location = param.multiAny('location', [
-                ['C', 'center', 4],
-                ['E', 'edge', 2],
-                ['R', 'corner', 1]
+                ['center', 4],
+                ['edge', 2],
+                ['corner', 1]
             ]);
             const fill = param.color('fill', true);
             const outline = param.color('outline', true);
@@ -379,9 +378,9 @@ export class Toolboxbox {
         group.append(new MenuItem('text', 'Text', (param) => {
             const color = param.color('color');
             const location = param.multiAny('location', [
-                ['C', 'center', 4],
-                ['E', 'edge', 2],
-                ['R', 'corner', 1]
+                ['center', 4],
+                ['edge', 2],
+                ['corner', 1]
             ]);
             const preset = param.text('preset');
             return () => {
@@ -393,29 +392,29 @@ export class Toolboxbox {
             }
         }, 'full').element);
 
-        group = makeGroup(menuCont, 'movement');
+        group = Input.makeGroup(menuCont, 'movement');
         group.append(new MenuItem('pan', 'Pan', () => () => new Tools.PanTool()).element);
         group.append(new MenuItem('zoomin', 'Zoom in', () => () => new Tools.ZoomTool(1)).element);
         group.append(new MenuItem('zoomout', 'Zoom out', () => () => new Tools.ZoomTool(-1)).element);
 
-        group = makeGroup(menuCont, 'stamps');
+        group = Input.makeGroup(menuCont, 'stamps');
         group.append(new MenuItem('copy', 'Copy', () => () => new Tools.CopyTool(false)).element);
         group.append(new MenuItem('cut', 'Cut', () => () => new Tools.CopyTool(true)).element);
         group.append(new MenuItem('paste', 'Paste', () => () => new Tools.PasteTool()).element);
         group.append(new MenuItem('flip', 'Flip', (param) => {
             const direction = param.multi('direction', [
-                ['|', '\u00a0↔\u00a0', 0],
-                ['-', '\u00a0↕\u00a0', 1],
-                ['/', '\u00a0⤡\u00a0', 2],
-                ['\\', '\u00a0⤢\u00a0', 3]
+                ['\u00a0↔\u00a0', 0],
+                ['\u00a0↕\u00a0', 1],
+                ['\u00a0⤡\u00a0', 2],
+                ['\u00a0⤢\u00a0', 3]
             ]);
             return () => new Tools.TransformTool(direction.val);
         }, 'natwidth').element);
         group.append(new MenuItem('rotate', 'Rotate', (param) => {
             const direction = param.multi('direction', [
-                ['L', '\u00a0↶\u00a0', 10],
-                ['R', '\u00a0↷\u00a0', 11],
-                ['F', '180°', 12]
+                ['\u00a0↶\u00a0', 10],
+                ['\u00a0↷\u00a0', 11],
+                ['180°', 12]
             ]);
             return () => new Tools.TransformTool(direction.val);
         }, 'natwidth').element);
@@ -424,7 +423,7 @@ export class Toolboxbox {
             return () => new Tools.FuncTool(name.val);
         }, 'natwidth').element);
 
-        group = makeGroup(menuCont, 'misc');
+        group = Input.makeGroup(menuCont, 'misc');
         group.append(new MenuItem('undo', 'Undo', () => () => new Tools.UndoTool(true)).element);
         group.append(new MenuItem('redo', 'Redo', () => () => new Tools.UndoTool(false)).element);
 
@@ -432,284 +431,28 @@ export class Toolboxbox {
 
 }
 
-class Param<T> {
-    public val: T;
-    constructor(private source: ParamSource,
-                private consumeFunc: (s: string) => [T, string],
-                public produce: () => string,
-                private readFunc: () => T,
-                private writeFunc: (s: string) => string)
-                { this.val = readFunc(); }
-    public fromHTML() { this.val = this.readFunc(); }
-    public toHTML(s: string): string { return this.writeFunc(s); }
-    public consume(s: string): string { const ret = this.consumeFunc(s); this.val = ret[0]; return ret[1]; }
-}
-
-function consumeNum(s: string): [number, string] { const idx = s.indexOf(':'); return [parseInt(s.slice(0, idx), 10), s.slice(idx+1)]; }
-
-function makeGroup(cont: HTMLElement, name: string) {
-    const group = document.createElement('section');
-    group.classList.add('group');
-    const lbl = document.createElement('span');
-    lbl.textContent = name;
-    group.append(lbl);
-    cont.append(group);
-    return group;
-}
-function makeArg(tag: string, name: string, el: HTMLElement) {
-    const arg = document.createElement(tag);
-    arg.append(document.createTextNode(`${name}: `));
-    arg.append(el);
-    return arg;
-}
-
-class ParamSource {
-    private params: Array<Param<any>> = [];
-    constructor(private element: HTMLElement) {}
-
-    public num(name: string, min: number, max: number): Param<number> {
-        const el = document.createElement('input');
-        el.setAttribute('type', 'number');
-        el.setAttribute('size', '3');
-        el.setAttribute('min', min.toString());
-        el.setAttribute('max', max.toString());
-        this.element.append(makeArg('label', name, el));
-
-        // TODO lol this is bad
-        const param = new Param<number>(this, consumeNum,
-                                        () => Math.min(max, Math.max(min, parseInt(el.value, 10))).toString() + ':',
-                                        () => Math.min(max, Math.max(min, parseInt(el.value, 10))),
-                                        s => { el.value = s.split(':')[0]; return s.slice(s.indexOf(':')+1); });
-        this.params.push(param);
-        return param;
-    }
-
-    public text(name: string): Param<string> {
-        const el = document.createElement('input');
-        this.element.append(makeArg('label', name, el));
-
-        const param = new Param<string>(this, s => [s, ''], () => el.value, () => el.value, s => { el.value = s; return ''; });
-        this.params.push(param);
-        return param;
-    }
-
-    public color(name: string, optional: boolean = false): Param<number> {
-        const colorpicker = document.createElement('span');
-        colorpicker.classList.add('colorpicker');
-        const children: Array<HTMLSpanElement> = [];
-        let val = optional ? -1 : 0;
-
-        const sqr = (color: string, i: number) => {
-            const el = document.createElement('span');
-            if (color === 'transparent') el.classList.add('transparent');
-            else el.style.backgroundColor = color;
-            el.addEventListener('click', () => {
-                for (const ch of children) ch.classList.remove('active');
-                el.classList.add('active');
-                val = i;
-            });
-
-            colorpicker.appendChild(el);
-            children.push(el);
-        };
-
-        if (optional) sqr('transparent', -1);
-        Color.colors.forEach((color, i) => { sqr(color, i); });
-
-        children[0].classList.add('active');
-        this.element.append(makeArg('label', name, colorpicker));
-
-        const param = new Param<number>(this, consumeNum, () => `${val}:`, () => val, s => {
-            const i = parseInt(s.split(':')[0], 10);
-            children[optional ? i+1 : i].click();
-            return s.slice(s.indexOf(':')+1);
-        });
-        this.params.push(param);
-        return param;
-    }
-
-    public position(name: string): Param<number> {
-        const picker = document.createElement('div');
-        picker.classList.add('positionpicker', 's2');
-        let sz = 2;
-
-        const preview = document.createElement('div');
-        for (let i = 0; i < 3; ++i) {
-            const row = document.createElement('div');
-            for (let j = 0; j < 3; ++j) {
-                const cell = document.createElement('div');
-                cell.classList.toggle('ctr', i==1&&j==1);
-                cell.classList.toggle('on', i==1&&j==1);
-                cell.addEventListener('click', () => {
-                    cell.classList.toggle('on');
-                });
-                row.append(cell);
-            }
-            preview.append(row);
-        }
-        picker.append(preview);
-
-        const size = document.createElement('div');
-        for (let i = 0; i < 5; ++i) {
-            const bar = document.createElement('div');
-            bar.classList.add('b'+i);
-            bar.addEventListener('click', (i => () => {
-                picker.classList.remove('s'+sz);
-                sz = i;
-                picker.classList.add('s'+sz);
-            })(i));
-            size.append(bar);
-        }
-        picker.append(size);
-
-        const controls = document.createElement('div');
-        for (let i = 0; i < 2; ++i) {
-            const btn = document.createElement('div');
-            btn.textContent = '+−'[i];
-            btn.addEventListener('click', (i => () => {
-                picker.classList.remove('s'+sz);
-                sz = [Math.max(0, sz-1), Math.min(4, sz+1)][i];
-                picker.classList.add('s'+sz);
-            })(i));
-            btn.addEventListener('pointerdown', e => e.preventDefault());
-            controls.append(btn);
-        }
-        picker.append(controls);
-
-        this.element.append(makeArg('label', name, picker));
-
-        const param = new Param<number>(this, s => [parseInt(s[0], 16), s.slice(1)], () => sz.toString(16), () => sz, s => {
-            return s.slice(1);
-        });
-        this.params.push(param);
-        return param;
-    }
-
-    public transform(name: string): Param<number> {
-        const picker = document.createElement('div');
-        picker.classList.add('transformpicker');
-        let val = 0;
-
-        const svg = Draw.draw(picker as never, 'svg', {
-            viewBox: '-1 -1 2 2',
-            children: [Draw.draw(undefined, 'path', {
-                d: 'M' + [0,1,2,3,4].map(n => (
-                    Math.cos((n/5+0.25)*2*Math.PI) + ' ' + -Math.sin((n/5+0.25)*2*Math.PI)
-                )).join('L') + 'Z',
-                strokeWidth: 0.03
-            })]
-        });
-
-        svg.addEventListener('click', () => {
-            svg.animate([
-                { transform: `rotate(${90*val}deg)`, easing: 'ease-out' },
-                { transform: `rotate(${90*(val+1)}deg)`, easing: 'ease-in', offset: 1 },
-                { transform: `rotate(${90*(val = (val+1)%4)}deg)` }
-            ], { duration: 200, fill: 'forwards' });
-        });
-
-        this.element.append(makeArg('label', name, picker));
-
-        const param = new Param<number>(this, s => [parseInt(s[0], 10), s.slice(1)], () => val.toString(), () => val, s => {
-            val = parseInt(s[0], 10);
-            svg.style.setProperty('transform', `rotate(${90*val}deg)`);
-            return s.slice(1);
-        });
-        this.params.push(param);
-        return param;
-    }
-
-    // TODO repetition here and multiAny kinda sucks
-    public multi<T>(name: string, options: Array<[string, string, T]>): Param<T> {
-        const multisel = document.createElement('span');
-        multisel.classList.add('multisel');
-        const children: Array<HTMLButtonElement> = [];
-        let val = options[0];
-
-        for (const opt of options) {
-            const el = document.createElement('button');
-            el.textContent = opt[1];
-            el.addEventListener('click', () => {
-                for (const ch of children) ch.classList.remove('active');
-                el.classList.toggle('active');
-                val = opt;
-            });
-            multisel.append(el);
-            children.push(el);
-        }
-
-        children[0].classList.add('active');
-        this.element.append(makeArg('span', name, multisel));
-
-        // TODO should this default to [0] or should there be error handling somehow
-        const param = new Param<T>(this, s => [(options.find(o => o[0] === s[0]) ?? options[0])[2], s.slice(1)], () => val[0], () => val[2], s => {
-            children[options.findIndex(o => o[0] === s[0])].click(); return s.slice(1);
-        });
-        this.params.push(param);
-        return param;
-    }
-
-    public multiAny<T>(name: string, options: Array<[string, string, T]>): Param<T[]> {
-        const multisel = document.createElement('span');
-        multisel.classList.add('multisel');
-        const children: Array<HTMLButtonElement> = [];
-        let val: Array<[string, string, T]> = [options[0]];
-
-        for (const opt of options) {
-            const el = document.createElement('button');
-            el.textContent = opt[1];
-            el.addEventListener('click', () => {
-                el.classList.toggle('active');
-                val = children
-                    .map((ch, i) => ch.classList.contains('active') ? options[i] : undefined)
-                    .filter(x => x !== undefined);
-            });
-            multisel.append(el);
-            children.push(el);
-        }
-
-        children[0].classList.add('active');
-        this.element.append(makeArg('span', name, multisel));
-
-        const param = new Param<T[]>(this, s => [options.filter(o => s.split(':')[0].includes(o[0])).map(o => o[2]), s.slice(s.indexOf(':')+1)],
-                                     () => val.map(o => o[0]).join('') + ':', () => val.map(o => o[2]), s => {
-                                         for (let i = 0; i < options.length; ++i) {
-                                             children[i].classList.toggle('active', s.split(':')[0].includes(options[i][0]));
-                                         }
-                                         // TODO set val correctly
-                                         return s.slice(s.indexOf(':')+1);
-                                     });
-        this.params.push(param);
-        return param;
-    }
-
-    public fromHTML() { for (const p of this.params) p.fromHTML(); }
-    public toHTML(s: string) { for (const p of this.params) s = p.toHTML(s); }
-    public inject(s: string) { for (const p of this.params) s = p.consume(s); }
-    public extract(): string { return this.params.map(p => p.produce()).join(''); }
-}
-
 export class MenuItem {
     public static lookup: Map<string, MenuItem> = new Map();
 
-    private readonly psource: ParamSource;
+    private readonly psource: Input.ParamSource;
     public readonly element: HTMLElement;
     private readonly generate: () => Tool.Tool | undefined;
 
     // if f returns undefined, it should always show a Courier alert explaining why
-    constructor(private mid: string, public name: string, f: (p: ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
+    constructor(private mid: string, public name: string, f: (p: Input.ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
         MenuItem.lookup.set(mid, this);
         this.element = document.createElement('div');
         this.element.dataset.tool = mid;
         this.element.classList.add('settool');
         if (extraClass !== undefined) this.element.classList.add(extraClass);
         this.element.append(document.createTextNode(name));
-        this.psource = new ParamSource(this.element);
+        this.psource = new Input.ParamSource(this.element);
         this.generate = f(this.psource);
     }
 
-    public fromHTML(): Tool.Tool | undefined { this.psource.fromHTML(); return this.generate(); }
-    public toHTML(s: string) { this.psource.toHTML(s); }
-    public fromStr(s: string): Tool.Tool | undefined { this.psource.inject(s); return this.generate(); }
-    public toStr(): string { return this.mid + ':' + this.psource.extract(); }
+    public fromHTML(): Tool.Tool | undefined { this.psource.setFromHTML(); return this.generate(); }
+    public fromJSON(s: string): Tool.Tool | undefined { this.psource.setFromJSON(s); return this.generate(); }
+
+    public save(): string { return this.mid + ':' + this.psource.save(); }
+    public load(s: string) { this.psource.load(s); }
 }

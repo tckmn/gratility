@@ -106,7 +106,7 @@ menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
         const menuItem = manager.addToolEntry.menuItem();
         menuItem.element.classList.add('addtool-active');
         menuItem.element.scrollIntoView();
-        menuItem.toHTML(manager.addToolEntry.spec());
+        menuItem.load(manager.addToolEntry.spec());
     }
 });
 
@@ -157,7 +157,7 @@ menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
     }
 
     const menuItem = Toolbox.MenuItem.lookup.get(el.dataset.tool!)!;
-    const tparam = menuItem.toStr();
+    const tparam = menuItem.save();
     const tool = menuItem.fromHTML();
     if (tool === undefined) return;
 
