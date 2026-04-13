@@ -118,6 +118,35 @@ export const enum Position {
     XSS,
     XSSE,
 }
+export const POS_SIZE = [Position.XL, Position.L, Position.M, Position.S, Position.XS];
+export const POS_LOC = [Position.XSNW, Position.XSN, Position.XSNE, Position.XSW, Position.XS, Position.XSE, Position.XSSW, Position.XSS, Position.XSSE];
+
+// oh god this sucks
+export function unpackPos<T>(posmask: number, mapfn: (p: Position) => T): [number, Map<number, T>] {
+    const ctr = (posmask & 0xf) | ((posmask >> Position.XS) & 1) << 4;
+    posmask = (posmask | (ctr ? 1<<Position.XS : 0)) >> Position.XSNW;
+    const m = new Map();
+    for (let i = 0; i < 9; ++i) {
+        if ((posmask>>i) & 1) m.set(i, mapfn(i === 4 ? POS_SIZE[Math.log2(ctr)] : POS_LOC[i]));
+    }
+    return [posmask, m];
+}
+
+export const POS_OFFSET = {
+    [Position.XL]: [0, 0],
+    [Position.L]: [0, 0],
+    [Position.M]: [0, 0],
+    [Position.S]: [0, 0],
+    [Position.XSNW]: [-Measure.HALFCELL/2, -Measure.HALFCELL/2],
+    [Position.XSN]: [0, -Measure.HALFCELL/2],
+    [Position.XSNE]: [Measure.HALFCELL/2, -Measure.HALFCELL/2],
+    [Position.XSW]: [-Measure.HALFCELL/2, 0],
+    [Position.XS]: [0, 0],
+    [Position.XSE]: [Measure.HALFCELL/2, 0],
+    [Position.XSSW]: [-Measure.HALFCELL/2, Measure.HALFCELL/2],
+    [Position.XSS]: [0, Measure.HALFCELL/2],
+    [Position.XSSE]: [Measure.HALFCELL/2, Measure.HALFCELL/2],
+};
 
 const CURRENT_VERSION = 2;
 const VERSION_BITS = 7;
@@ -242,8 +271,9 @@ export class ShapeTile extends Tile {
         bs.write(TRANSFORM_BITS[this.shape], this.transform);
     }
     public draw(x: number, y: number): SVGElement {
+        const [ox, oy] = POS_OFFSET[this.position];
         const g = Draw.draw(undefined, 'g', {
-            transform: `translate(${x * Measure.HALFCELL} ${y * Measure.HALFCELL})`
+            transform: `translate(${x * Measure.HALFCELL + ox} ${y * Measure.HALFCELL + oy})`
         });
 
         const size = 5 - Math.min(this.position, 4);

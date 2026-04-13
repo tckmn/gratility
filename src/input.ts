@@ -1,5 +1,6 @@
 import * as Color from './color.js';
 import * as Draw from './draw.js';
+import * as Data from './data.js'; // TODO only needed for enums, maybe factor those out
 
 export class Param<T> {
     public val: T;
@@ -90,7 +91,14 @@ export class ParamSource {
         picker.classList.add('positionpicker', 's2');
         let sz = 2;
 
+        const setsz = (i: number) => {
+            picker.classList.remove('s'+sz);
+            sz = i;
+            picker.classList.add('s'+sz);
+        };
+
         const preview = document.createElement('div');
+        const cells: Array<HTMLElement> = [];
         for (let i = 0; i < 3; ++i) {
             const row = document.createElement('div');
             for (let j = 0; j < 3; ++j) {
@@ -100,6 +108,7 @@ export class ParamSource {
                 cell.addEventListener('click', () => {
                     cell.classList.toggle('on');
                 });
+                cells.push(cell);
                 row.append(cell);
             }
             preview.append(row);
@@ -110,11 +119,7 @@ export class ParamSource {
         for (let i = 0; i < 5; ++i) {
             const bar = document.createElement('div');
             bar.classList.add('b'+i);
-            bar.addEventListener('click', (i => () => {
-                picker.classList.remove('s'+sz);
-                sz = i;
-                picker.classList.add('s'+sz);
-            })(i));
+            bar.addEventListener('click', (i => () => setsz(i))(i));
             size.append(bar);
         }
         picker.append(size);
@@ -123,18 +128,20 @@ export class ParamSource {
         for (let i = 0; i < 2; ++i) {
             const btn = document.createElement('div');
             btn.textContent = '+−'[i];
-            btn.addEventListener('click', (i => () => {
-                picker.classList.remove('s'+sz);
-                sz = [Math.max(0, sz-1), Math.min(4, sz+1)][i];
-                picker.classList.add('s'+sz);
-            })(i));
+            btn.addEventListener('click', (i => () => setsz([Math.max(0, sz-1), Math.min(4, sz+1)][i]))(i));
             btn.addEventListener('pointerdown', e => e.preventDefault());
             controls.append(btn);
         }
         picker.append(controls);
 
-        return this.param(() => sz, sz => {
-            // TODO
+        return this.param(() => cells.reduce(
+            (r,c,i) => r | (c.classList.contains('on') ? 1 << (i === 4 ? Data.POS_SIZE[sz] : Data.POS_LOC[i]) : 0),
+        0), mask => {
+            cells.forEach((c,i) => c.classList.toggle('on', !!((mask >> Data.POS_LOC[i]) & 1)));
+            // TODO this logic maybe pull from other function
+            const ctr = (mask & 0xf) | ((mask >> Data.Position.XS) & 1) << 4;
+            cells[4].classList.toggle('on', !!ctr);
+            setsz(ctr ? Math.log2(ctr) : 4);
         });
     }
 

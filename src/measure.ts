@@ -47,13 +47,26 @@ export function atlocs(x: number, y: number, locs: number): [number, number] {
             if ((locs & (1 << (xp+yp))) === 0) continue;
             const tryx = fx + (fx % 2 === 0 ? xp : 1-xp), tryy = fy + (fy % 2 === 0 ? yp : 1-yp);
             const dist = (dx-tryx)*(dx-tryx) + (dy-tryy)*(dy-tryy);
-            if (dist < best) {
-                best = dist;
-                bx = tryx;
-                by = tryy;
-            }
+            if (dist < best) { best = dist; bx = tryx; by = tryy; }
         }
     }
 
     return [bx, by];
+}
+
+export function atpos(x: number, y: number, cx: number, cy: number, mask: number): number {
+    cx *= HALFCELL; cy *= HALFCELL;
+    let best = HALFCELL*HALFCELL*999, bpos = 0;
+
+    for (let xp = -1; xp <= 1; ++xp) {
+        for (let yp = -1; yp <= 1; ++yp) {
+            const pos = xp+1 + (yp+1)*3;
+            if (((mask >> pos) & 1) === 0) continue;
+            const tryx = cx + xp*HALFCELL/2, tryy = cy + yp*HALFCELL/2;
+            const dist = (x-tryx)*(x-tryx) + (y-tryy)*(y-tryy);
+            if (dist < best) { best = dist; bpos = pos; }
+        }
+    }
+
+    return bpos;
 }

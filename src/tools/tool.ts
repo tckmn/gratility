@@ -13,7 +13,7 @@ export abstract class Tool {
 
 export abstract class DragTool extends Tool {
     private isDrawing: boolean = false;
-    protected abstract readonly tile: Data.Tile;
+    protected abstract tile: Data.Tile;
 
     protected draw(cell: Data.Tile | undefined): Data.Tile { return this.tile; }
     protected erase(cell: Data.Tile): Data.Tile | undefined { return undefined; }
