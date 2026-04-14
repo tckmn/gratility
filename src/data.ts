@@ -148,6 +148,22 @@ export const POS_OFFSET = {
     [Position.XSSE]: [Measure.HALFCELL/2, Measure.HALFCELL/2],
 };
 
+export const POS_SCALE = {
+    [Position.XL]: 5,
+    [Position.L]: 4,
+    [Position.M]: 3,
+    [Position.S]: 2,
+    [Position.XSNW]: 1,
+    [Position.XSN]: 1,
+    [Position.XSNE]: 1,
+    [Position.XSW]: 1,
+    [Position.XS]: 1,
+    [Position.XSE]: 1,
+    [Position.XSSW]: 1,
+    [Position.XSS]: 1,
+    [Position.XSSE]: 1,
+};
+
 const CURRENT_VERSION = 2;
 const VERSION_BITS = 7;
 const N_BITS = 32;
@@ -276,7 +292,7 @@ export class ShapeTile extends Tile {
             transform: `translate(${x * Measure.HALFCELL + ox} ${y * Measure.HALFCELL + oy})`
         });
 
-        const size = 5 - Math.min(this.position, 4);
+        const size = POS_SCALE[this.position];
         const r = Measure.HALFCELL * (size/6);
         const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(size/12));
         const fill = this.fill === undefined ? 'none' : Color.colors[this.fill];
@@ -391,8 +407,6 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
 }, 1: {
 
     [Obj.SHAPE]: (bs: BitStream): Tile => {
-        // check to make sure this isn't unreasonably large
-        // (maybe should do something if it is?)
         const len = Math.min(bs.readVLQ(VLQ_CHUNK), 16);
         const arr = [];
         for (let i = 0; i < len; ++i) {
@@ -402,8 +416,8 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
             const size = bs.read(SIZE_BITS);
             arr.push(new ShapeTile(shape, fill, outline, size===1 ? Position.XS : 5-size, 0));
         }
-        // TODO should find some way to return multiple i guess. maybe just take stamp and push to it
-        return arr[0];
+        // if (arr.length !== 1) console.error(`WARNING: ${arr.length} shapes`);
+        return arr as unknown as Tile; // uh oh
     },
 
 }, 2: {
@@ -472,12 +486,26 @@ export function deserializeStamp(arr: Uint8Array<ArrayBuffer>): Array<Item> {
     const version = readVersion(bs);
     if (version === undefined) return [];
 
-    while (1) {
-        const n = bs.read(N_BITS);
-        if (!bs.inbounds()) break;
-        const obj = bs.read(OBJ_BITS) as Obj;
-        if (version <= 1) bs.read(LAYER_BITS);
-        stamp.push(new Item(n, deserializefns[version][obj](bs)));
+    // TODO this is pretty awful
+    // i don't think deserializeChanges should have anything similar
+    if (version >= 2) {
+        while (1) {
+            const n = bs.read(N_BITS);
+            if (!bs.inbounds()) break;
+            const obj = bs.read(OBJ_BITS) as Obj;
+            if (version <= 1) bs.read(LAYER_BITS);
+            stamp.push(new Item(n, deserializefns[version][obj](bs)));
+        }
+    } else {
+        while (1) {
+            const n = bs.read(N_BITS);
+            if (!bs.inbounds()) break;
+            const obj = bs.read(OBJ_BITS) as Obj;
+            if (version <= 1) bs.read(LAYER_BITS);
+            const ret = deserializefns[version][obj](bs);
+            if (ret.constructor === Array) { for (const x of (ret as Array<Tile>)) stamp.push(new Item(n, x)); }
+            else stamp.push(new Item(n, ret));
+        }
     }
 
     return stamp;
