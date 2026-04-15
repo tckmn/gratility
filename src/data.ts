@@ -164,6 +164,20 @@ export const POS_SCALE = {
     [Position.XSSE]: 1,
 };
 
+export class Paradigm {
+    public static readonly NONE = new Paradigm(0, 0, 0, () => Draw.draw(undefined, 'circle', { cx: 0, cy: 0, r: 1 }));
+    public static readonly ODD = new Paradigm(90, 0, 2, () => Draw.poly(undefined, 3, false));
+    public static readonly EVEN_EVEN = new Paradigm(45, 0, 1, () => Draw.poly(undefined, 4, false));
+    public static readonly EVEN_ODD = new Paradigm(90, 0, 1, () => Draw.poly(undefined, 6, false));
+    public static readonly ALL = new Paradigm(45, 0x8, 4, () => Draw.poly(undefined, 3, false));
+    public constructor(
+        public readonly rotAmt: number,
+        public readonly flipBit: number,
+        public readonly serBits: number,
+        public readonly exShape: () => SVGElement
+    ) {}
+}
+
 const CURRENT_VERSION = 2;
 const VERSION_BITS = 7;
 const N_BITS = 32;
@@ -176,13 +190,6 @@ const POSITION_BITS = 4;
 const VLQ_CHUNK = 4;
 const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
-const TRANSFORM_BITS: {[key in Shape]: number} = {
-    [Shape.CIRCLE]: 0,
-    [Shape.SQUARE]: 1,
-    [Shape.FLAG]: 2,
-    [Shape.STAR]: 2
-};
-const TRANSFORM_BITS_TEXT = 2;
 
 
 export abstract class Tile {
@@ -280,13 +287,13 @@ export class ObjectSpec {
     // not needed to check position here because different position is always different layer
     public eq(other: ObjectSpec) { return this.color === other.color && this.outline === other.outline && this.transform === other.transform; }
     public layer(base: number) { return base + this.position; }
-    public serialize(bs: BitStream, transformBits: number) {
+    public serialize(bs: BitStream, paradigm: Paradigm) {
         if (this.color === undefined) bs.write(1, 0);
         else { bs.write(1, 1); bs.write(COLOR_BITS, this.color); }
         if (this.outline === undefined) bs.write(1, 0);
         else { bs.write(1, 1); bs.write(COLOR_BITS, this.outline); }
         bs.write(POSITION_BITS, this.position);
-        bs.write(transformBits, this.transform);
+        bs.write(paradigm.serBits, this.transform);
     }
 
     public offset(): [number, number] { return POS_OFFSET[this.position]; }
@@ -297,10 +304,10 @@ export class ObjectSpec {
     public stroke(): string { return this.outline === undefined ? 'none' : Color.colors[this.outline]; }
 
     public gTransform(x: number, y: number): string { const [ox, oy] = this.offset(); return `translate(${x*Measure.HALFCELL + ox} ${y*Measure.HALFCELL + oy})`; }
-    public gRotate(): string { return ` rotate(${90*this.transform})`; }
+    public gRotate(p: Paradigm): string { return ` rotate(${p.rotAmt*(this.transform & ~p.flipBit)})` + (this.transform & p.flipBit ? ' scale(-1,1)' : ''); }
     public gScale(): string { return ` scale(${this.scale()})`; }
-    public g(x: number, y: number): SVGElement { return Draw.draw(undefined, 'g', {
-        transform: this.gTransform(x,y) + this.gRotate() + this.gScale()
+    public g(x: number, y: number, p: Paradigm): SVGElement { return Draw.draw(undefined, 'g', {
+        transform: this.gTransform(x,y) + this.gRotate(p) + this.gScale()
     }); }
 }
 
@@ -320,6 +327,12 @@ export class ObjectParam {
 export class ShapeTile extends Tile {
     public readonly obj = Obj.SHAPE;
     public readonly layer: Layer_SHAPE;
+    public static readonly paradigm: {[key in Shape]: Paradigm} = {
+        [Shape.CIRCLE]: Paradigm.NONE,
+        [Shape.SQUARE]: Paradigm.EVEN_EVEN,
+        [Shape.FLAG]: Paradigm.ALL,
+        [Shape.STAR]: Paradigm.ODD
+    };
     constructor(
         public shape: Shape,
         public spec: ObjectSpec
@@ -327,10 +340,10 @@ export class ShapeTile extends Tile {
     public eq(other: ShapeTile) { return this.shape === other.shape && this.spec.eq(other.spec); }
     public serialize(bs: BitStream) {
         bs.write(SHAPE_BITS, this.shape);
-        this.spec.serialize(bs, TRANSFORM_BITS[this.shape]);
+        this.spec.serialize(bs, ShapeTile.paradigm[this.shape]);
     }
     public draw(x: number, y: number): SVGElement {
-        const g = this.spec.g(x, y);
+        const g = this.spec.g(x, y, ShapeTile.paradigm[this.shape]);
         const strokeWidth = this.spec.strokeWidth();
         const fill = this.spec.fill();
         const stroke = this.spec.stroke();
@@ -356,11 +369,7 @@ export class ShapeTile extends Tile {
             });
             break;
         case Shape.STAR:
-            Draw.draw(g, 'path', {
-                d: 'M' + [0,1,2,3,4,5,6,7,8,9].map(n => (
-                    (n%2===0?1:0.5)*Math.cos((n/5+0.5)*Math.PI) + ' ' +
-                        -(n%2===0?1:0.5)*Math.sin((n/5+0.5)*Math.PI)
-                )).join('L') + 'Z',
+            Draw.poly(g, 5, true, {
                 strokeWidth, fill, stroke
             });
             break;
@@ -373,6 +382,7 @@ export class ShapeTile extends Tile {
 export class TextTile extends Tile {
     public readonly obj = Obj.TEXT;
     public readonly layer: Layer_TEXT;
+    public static readonly paradigm = Paradigm.ALL;
     constructor(
         public val: string,
         public spec: ObjectSpec
@@ -380,7 +390,7 @@ export class TextTile extends Tile {
     public eq(other: TextTile): boolean { return this.val === other.val && this.spec.eq(other.spec); }
     public serialize(bs: BitStream) {
         bs.writeString(this.val);
-        this.spec.serialize(bs, TRANSFORM_BITS_TEXT);
+        this.spec.serialize(bs, TextTile.paradigm);
     }
     public draw(x: number, y: number): SVGElement {
         const [ox, oy] = this.spec.offset();
@@ -423,11 +433,11 @@ export class Change {
     public rev() { return new Change(this.n, this.post, this.pre, this.linked); }
 }
 
-function dos(bs: BitStream, transformBits: number): ObjectSpec {
+function dos(bs: BitStream, paradigm: Paradigm): ObjectSpec {
     const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
     const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
     const position = bs.read(POSITION_BITS);
-    const transform = bs.read(transformBits);
+    const transform = bs.read(paradigm.serBits);
     return new ObjectSpec(fill, outline, position, transform);
 }
 
@@ -487,12 +497,12 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
 
     [Obj.SHAPE]: (bs: BitStream): Tile => {
         const shape = bs.read(SHAPE_BITS) as Shape;
-        const spec = dos(bs, TRANSFORM_BITS[shape]);
+        const spec = dos(bs, ShapeTile.paradigm[shape]);
         return new ShapeTile(shape, spec);
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
-        return new TextTile(bs.readString(), dos(bs, TRANSFORM_BITS_TEXT));
+        return new TextTile(bs.readString(), dos(bs, TextTile.paradigm));
     }
 
 }});

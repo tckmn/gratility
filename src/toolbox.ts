@@ -352,22 +352,15 @@ export class Toolboxbox {
                 ['flag', Data.Shape.FLAG],
                 ['star', Data.Shape.STAR]
             ]);
-            const specFn = Input.objectParam(param);
-            return () => {
-                const spec = specFn();
-                if (spec === undefined) return;
-                return new Tools.ShapeTool(type.val, spec);
-            };
+            const spec = Input.objectParam(param, Data.ShapeTile.paradigm[Data.Shape.CIRCLE]);
+            type.hook = shape => spec.setParadigm(Data.ShapeTile.paradigm[shape]);
+            return () => spec.generate(spec => new Tools.ShapeTool(type.val, spec));
         }, 'full').element);
 
         group.append(new MenuItem('text', 'Text', (param) => {
             const preset = param.text('preset');
-            const specFn = Input.objectParam(param);
-            return () => {
-                const spec = specFn();
-                if (spec === undefined) return;
-                return new Tools.TextTool(preset.val, spec);
-            };
+            const spec = Input.objectParam(param, Data.TextTile.paradigm);
+            return () => spec.generate(spec => new Tools.TextTool(preset.val, spec));
         }, 'full').element);
 
         group = Input.makeGroup(menuCont, 'movement');

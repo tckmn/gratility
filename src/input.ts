@@ -2,6 +2,7 @@ import * as Color from './color.js';
 import * as Draw from './draw.js';
 import * as Data from './data.js'; // TODO only needed for enums, maybe factor those out
 import * as Courier from './courier.js';
+import * as Tool from './tools/tool.js';
 
 export class Param<T> {
     public val: T;
@@ -14,6 +15,8 @@ export class Param<T> {
 
     public save(): string { return JSON.stringify(this.readFunc()); }
     public load(t: T) { this.writeFunc(t); }
+
+    public hook: (t: T) => void = () => {};
 }
 
 export function makeGroup(cont: HTMLElement, name: string) {
@@ -146,30 +149,35 @@ export class ParamSource {
         });
     }
 
-    public transform(name: string): Param<number> {
+    public transform(name: string, p: Data.Paradigm): Param<number> & { setParadigm: (p: Data.Paradigm) => void } {
         const picker = this.el('label', name, 'div');
         picker.classList.add('transformpicker');
         let val = 0;
 
+        const g = Draw.draw(undefined, 'g', {
+            strokeWidth: 0.03,
+            children: [p.exShape()]
+        });
         const svg = Draw.draw(picker as never, 'svg', {
             viewBox: '-1 -1 2 2',
-            children: [Draw.draw(undefined, 'path', {
-                d: 'M' + [0,1,2,3,4].map(n => (
-                    Math.cos((n/5+0.25)*2*Math.PI) + ' ' + -Math.sin((n/5+0.25)*2*Math.PI)
-                )).join('L') + 'Z',
-                strokeWidth: 0.03
-            })]
+            children: [g]
         });
 
         svg.addEventListener('click', () => {
             svg.animate([
-                { transform: `rotate(${90*val}deg)`, easing: 'ease-out' },
-                { transform: `rotate(${90*(val+1)}deg)`, easing: 'ease-in', offset: 1 },
-                { transform: `rotate(${90*(val = (val+1)%4)}deg)` }
+                { transform: `rotate(${p.rotAmt*val}deg)`, easing: 'ease-out' },
+                { transform: `rotate(${p.rotAmt*(val+1)}deg)`, easing: 'ease-in', offset: 1 },
+                { transform: `rotate(${p.rotAmt*(val = (val+1)%Math.pow(2, p.serBits - (p.flipBit?1:0)))}deg)` }
             ], { duration: 200, fill: 'forwards' });
         });
 
-        return this.param(() => val, n => svg.style.setProperty('transform', `rotate(${90*(val=n)}deg)`));
+        const ret: Param<number> & { setParadigm: (p: Data.Paradigm) => void } = this.param(() => val, n => svg.style.setProperty('transform', `rotate(${p.rotAmt*(val=n)}deg)`)) as any;
+        ret.setParadigm = newP => {
+            p = newP;
+            g.removeChild(g.firstChild!);
+            g.append(p.exShape());
+        };
+        return ret;
     }
 
     // TODO repetition here and multiAny kinda sucks
@@ -179,13 +187,16 @@ export class ParamSource {
         const children: Array<HTMLButtonElement> = [];
         let val = options[0][1];
 
+        // TODO error handling?
+        const p = this.param(() => val, t => children[options.findIndex(o => o[1] === t)].click());
+
         for (const opt of options) {
             const el = document.createElement('button');
             el.textContent = opt[0];
             el.addEventListener('click', () => {
                 for (const ch of children) ch.classList.remove('active');
                 el.classList.toggle('active');
-                val = opt[1];
+                p.hook(val = opt[1]);
             });
             multisel.append(el);
             children.push(el);
@@ -193,8 +204,7 @@ export class ParamSource {
 
         children[0].classList.add('active');
 
-        // TODO error handling?
-        return this.param(() => val, t => children[options.findIndex(o => o[1] === t)].click());
+        return p;
     }
 
     public multiAny<T>(name: string, options: Array<[string, T]>): Param<T[]> {
@@ -233,9 +243,9 @@ export class ParamSource {
     public load(s: string) { JSON.parse(`[${s}]`).forEach((x:any,i:any) => this.params[i].load(x)); }
 }
 
-export function objectParam(param: ParamSource) {
+export function objectParam(param: ParamSource, paradigm: Data.Paradigm) {
     const position = param.position('size');
-    const transform = param.transform('rotation');
+    const transform = param.transform('rotation', paradigm);
     const location = param.multiAny('location', [
         ['center', 4],
         ['edge', 2],
@@ -244,22 +254,25 @@ export function objectParam(param: ParamSource) {
     const fill = param.color('fill', true);
     const outline = param.color('outline', true);
 
-    return () => {
-        if (position.val === 0) {
-            Courier.alert('should be placeable in at least one position');
-            return;
-        }
-        if (location.val.length === 0) {
-            Courier.alert('should be placeable in at least one location');
-            return;
-        }
-        if (fill.val === -1 && outline.val === -1) {
-            Courier.alert('should have at least one of fill or outline');
-            return;
-        }
-        return new Data.ObjectParam(
-            fill.val === -1 ? undefined : fill.val,
-            outline.val === -1 ? undefined : outline.val,
-            position.val, transform.val, location.val.reduce((a,b) => a+b, 0));
+    return {
+        generate: (f: (p: Data.ObjectParam) => Tool.Tool | undefined) => {
+            if (position.val === 0) {
+                Courier.alert('should be placeable in at least one position');
+                return;
+            }
+            if (location.val.length === 0) {
+                Courier.alert('should be placeable in at least one location');
+                return;
+            }
+            if (fill.val === -1 && outline.val === -1) {
+                Courier.alert('should have at least one of fill or outline');
+                return;
+            }
+            return f(new Data.ObjectParam(
+                fill.val === -1 ? undefined : fill.val,
+                outline.val === -1 ? undefined : outline.val,
+                position.val, transform.val, location.val.reduce((a,b) => a+b, 0)));
+        },
+        setParadigm: (p: Data.Paradigm) => transform.setParadigm(p)
     };
 }
