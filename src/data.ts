@@ -132,7 +132,7 @@ export function unpackPos<T>(posmask: number, mapfn: (p: Position) => T): [numbe
     return [posmask, m];
 }
 
-export const POS_OFFSET = {
+export const POS_OFFSET: {[key in Position]: [number, number]} = {
     [Position.XL]: [0, 0],
     [Position.L]: [0, 0],
     [Position.M]: [0, 0],
@@ -265,38 +265,67 @@ export class LineTile extends Tile {
     }
 }
 
+export class ObjectSpec {
+    constructor(
+        public readonly color: number | undefined,
+        public readonly outline: number | undefined,
+        public readonly position: Position,
+        public readonly transform: number
+    ) {}
+    // not needed to check position here because different position is always different layer
+    public eq(other: ObjectSpec) { return this.color === other.color && this.outline === other.outline && this.transform === other.transform; }
+    public layer(base: number) { return base + this.position; }
+    public serialize(bs: BitStream, transformBits: number) {
+        if (this.color === undefined) bs.write(1, 0);
+        else { bs.write(1, 1); bs.write(COLOR_BITS, this.color); }
+        if (this.outline === undefined) bs.write(1, 0);
+        else { bs.write(1, 1); bs.write(COLOR_BITS, this.outline); }
+        bs.write(POSITION_BITS, this.position);
+        bs.write(transformBits, this.transform);
+    }
+    public offset(): [number, number] { return POS_OFFSET[this.position]; }
+    public size(): number { return POS_SCALE[this.position]; }
+    public r(): number { return Measure.HALFCELL * this.size()/6; }
+    public strokeWidth(): number { return Measure.HALFCELL * (0.05 + 0.1*(this.size()/12)); }
+    public fill(): string { return this.color === undefined ? 'none' : Color.colors[this.color]; }
+    public stroke(): string { return this.outline === undefined ? 'none' : Color.colors[this.outline]; }
+}
+
+export class ObjectParam {
+    constructor(
+        public readonly fill: number | undefined,
+        public readonly outline: number | undefined,
+        public readonly posmask: number,
+        public readonly transform: number,
+        public readonly locs: number
+    ) {}
+    public unpack<T>(f: (s: ObjectSpec) => T): [number, Map<number, T>] {
+        return unpackPos(this.posmask, p => f(new ObjectSpec(this.fill, this.outline, p, this.transform)));
+    }
+}
+
 export class ShapeTile extends Tile {
     public readonly obj = Obj.SHAPE;
     public readonly layer: Layer_SHAPE;
     constructor(
         public shape: Shape,
-        public fill: number | undefined,
-        public outline: number | undefined,
-        public position: Position,
-        public transform: number
-    ) { super(); this.layer = Layer_SHAPE_BASE + position; }
-    // not needed to check position here because different position is always different layer
-    public eq(other: ShapeTile) { return this.shape === other.shape && this.fill === other.fill && this.outline === other.outline && this.transform === other.transform; }
+        public spec: ObjectSpec
+    ) { super(); this.layer = spec.layer(Layer_SHAPE_BASE); }
+    public eq(other: ShapeTile) { return this.shape === other.shape && this.spec.eq(other.spec); }
     public serialize(bs: BitStream) {
         bs.write(SHAPE_BITS, this.shape);
-        if (this.fill === undefined) bs.write(1, 0);
-        else { bs.write(1, 1); bs.write(COLOR_BITS, this.fill); }
-        if (this.outline === undefined) bs.write(1, 0);
-        else { bs.write(1, 1); bs.write(COLOR_BITS, this.outline); }
-        bs.write(POSITION_BITS, this.position);
-        bs.write(TRANSFORM_BITS[this.shape], this.transform);
+        this.spec.serialize(bs, TRANSFORM_BITS[this.shape]);
     }
     public draw(x: number, y: number): SVGElement {
-        const [ox, oy] = POS_OFFSET[this.position];
+        const [ox, oy] = this.spec.offset();
         const g = Draw.draw(undefined, 'g', {
             transform: `translate(${x * Measure.HALFCELL + ox} ${y * Measure.HALFCELL + oy})`
         });
 
-        const size = POS_SCALE[this.position];
-        const r = Measure.HALFCELL * (size/6);
-        const strokeWidth = Measure.HALFCELL * (0.05 + 0.1*(size/12));
-        const fill = this.fill === undefined ? 'none' : Color.colors[this.fill];
-        const stroke = this.outline === undefined ? 'none' : Color.colors[this.outline];
+        const r = this.spec.r();
+        const strokeWidth = this.spec.strokeWidth();
+        const fill = this.spec.fill();
+        const stroke = this.spec.stroke();
 
         switch (this.shape) {
         case Shape.CIRCLE:
@@ -381,6 +410,14 @@ export class Change {
     public rev() { return new Change(this.n, this.post, this.pre, this.linked); }
 }
 
+function dos(bs: BitStream, transformBits: number): ObjectSpec {
+    const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+    const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
+    const position = bs.read(POSITION_BITS);
+    const transform = bs.read(transformBits);
+    return new ObjectSpec(fill, outline, position, transform);
+}
+
 const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}} = ((x: {[key in number]: {[key in Obj]?: (bs: BitStream) => Tile}}) => {
     for (let i = CURRENT_VERSION-1; i >= 0; --i) {
         if (x[i][Obj.SURFACE] === undefined) x[i][Obj.SURFACE] = x[i+1][Obj.SURFACE];
@@ -414,7 +451,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
             const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const size = bs.read(SIZE_BITS);
-            arr.push(new ShapeTile(shape, fill, outline, size===1 ? Position.XS : 5-size, 0));
+            arr.push(new ShapeTile(shape, new ObjectSpec(fill, outline, size===1 ? Position.XS : 5-size, 0)));
         }
         // if (arr.length !== 1) console.error(`WARNING: ${arr.length} shapes`);
         return arr as unknown as Tile; // uh oh
@@ -437,11 +474,8 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
 
     [Obj.SHAPE]: (bs: BitStream): Tile => {
         const shape = bs.read(SHAPE_BITS) as Shape;
-        const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
-        const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
-        const position = bs.read(POSITION_BITS);
-        const transform = bs.read(TRANSFORM_BITS[shape]);
-        return new ShapeTile(shape, fill, outline, position, transform);
+        const spec = dos(bs, TRANSFORM_BITS[shape]);
+        return new ShapeTile(shape, spec);
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {

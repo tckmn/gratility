@@ -16,14 +16,10 @@ export default class ShapeTool extends Tool.DragTool {
 
     constructor(
         private shape: Data.Shape,
-        private fill: number | undefined,
-        private outline: number | undefined,
-        posmask: number,
-        private transform: number,
-        private locs: number
+        private spec: Data.ObjectParam
     ) {
         super();
-        [this.posmask, this.tiles] = Data.unpackPos(posmask, p => new Data.ShapeTile(shape, fill, outline, p, transform));
+        [this.posmask, this.tiles] = spec.unpack(spec => new Data.ShapeTile(shape, spec));
         this.tile = this.tiles.get(4) ?? this.tiles.values().next().value!; // TODO uh
     }
 
@@ -32,14 +28,14 @@ export default class ShapeTool extends Tool.DragTool {
     protected tile: Data.ShapeTile;
 
     public ondown(x: number, y: number, g: Gratility.Backend) {
-        const [cx, cy] = Measure.atlocs(x, y, this.locs);
+        const [cx, cy] = Measure.atlocs(x, y, this.spec.locs);
         const pos = Measure.atpos(x, y, cx, cy, this.posmask);
         this.tile = this.tiles.get(pos)!;
         this.drag(true, Data.encode(cx, cy), g);
     }
 
     public onmove(x: number, y: number, g: Gratility.Backend) {
-        [x, y] = Measure.atlocs(x, y, this.locs);
+        [x, y] = Measure.atlocs(x, y, this.spec.locs);
         this.drag(false, Data.encode(x, y), g);
     }
 

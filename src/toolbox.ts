@@ -352,26 +352,11 @@ export class Toolboxbox {
                 ['flag', Data.Shape.FLAG],
                 ['star', Data.Shape.STAR]
             ]);
-            const position = param.position('size');
-            const transform = param.transform('rotation');
-            const location = param.multiAny('location', [
-                ['center', 4],
-                ['edge', 2],
-                ['corner', 1]
-            ]);
-            const fill = param.color('fill', true);
-            const outline = param.color('outline', true);
+            const specFn = Input.objectParam(param);
             return () => {
-                if (location.val.length === 0) {
-                    Courier.alert('shape should be placeable in at least one location');
-                    return;
-                }
-                if (fill.val === -1 && outline.val === -1) {
-                    Courier.alert('shape should should have at least one of fill or outline');
-                    return;
-                }
-                return new Tools.ShapeTool(type.val, fill.val === -1 ? undefined : fill.val, outline.val === -1 ? undefined : outline.val, position.val, transform.val,
-                                           location.val.reduce((a,b) => a+b, 0));
+                const spec = specFn();
+                if (spec === undefined) return;
+                return new Tools.ShapeTool(type.val, spec);
             };
         }, 'full').element);
 

@@ -1,6 +1,7 @@
 import * as Color from './color.js';
 import * as Draw from './draw.js';
 import * as Data from './data.js'; // TODO only needed for enums, maybe factor those out
+import * as Courier from './courier.js';
 
 export class Param<T> {
     public val: T;
@@ -230,4 +231,35 @@ export class ParamSource {
 
     public save(): string { return this.params.map(p => p.save()).join(','); }
     public load(s: string) { JSON.parse(`[${s}]`).forEach((x:any,i:any) => this.params[i].load(x)); }
+}
+
+export function objectParam(param: ParamSource) {
+    const position = param.position('size');
+    const transform = param.transform('rotation');
+    const location = param.multiAny('location', [
+        ['center', 4],
+        ['edge', 2],
+        ['corner', 1]
+    ]);
+    const fill = param.color('fill', true);
+    const outline = param.color('outline', true);
+
+    return () => {
+        if (position.val === 0) {
+            Courier.alert('should be placeable in at least one position');
+            return;
+        }
+        if (location.val.length === 0) {
+            Courier.alert('should be placeable in at least one location');
+            return;
+        }
+        if (fill.val === -1 && outline.val === -1) {
+            Courier.alert('should have at least one of fill or outline');
+            return;
+        }
+        return new Data.ObjectParam(
+            fill.val === -1 ? undefined : fill.val,
+            outline.val === -1 ? undefined : outline.val,
+            position.val, transform.val, location.val.reduce((a,b) => a+b, 0));
+    };
 }
