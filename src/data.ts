@@ -385,7 +385,7 @@ export class PolyTile extends Tile {
     public draw(x: number, y: number): SVGElement {
         // TODO this square special case is extremely suspicious
         const g = this.spec.g(x, y, PolyTile.paradigm[this.sides],
-                             this.sides === 4 && this.spec.transform === 0 ? Math.sqrt(2)*this.spec.scale() : undefined);
+                             this.sides === 4 && this.spec.transform === (this.star ? 1 : 0) ? Math.sqrt(2)*this.spec.scale() : undefined);
         const strokeWidth = this.spec.strokeWidth();
         const fill = this.spec.fill();
         const stroke = this.spec.stroke();
