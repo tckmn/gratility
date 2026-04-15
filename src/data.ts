@@ -462,6 +462,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         if (x[i][Obj.LINE] === undefined) x[i][Obj.LINE] = x[i+1][Obj.LINE];
         if (x[i][Obj.SHAPE] === undefined) x[i][Obj.SHAPE] = x[i+1][Obj.SHAPE];
         if (x[i][Obj.TEXT] === undefined) x[i][Obj.TEXT] = x[i+1][Obj.TEXT];
+        if (x[i][Obj.POLY] === undefined) x[i][Obj.POLY] = x[i+1][Obj.POLY];
     }
     return x as never;
 })({ 0: {
@@ -496,6 +497,11 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         // if (arr.length !== 1) console.error(`WARNING: ${arr.length} shapes`);
         return arr as unknown as Tile; // uh oh
     },
+
+    [Obj.TEXT]: (bs: BitStream): Tile => {
+        const color = bs.read(COLOR_BITS);
+        return new TextTile(bs.readString(), new ObjectSpec(color, undefined, Position.M, 0));
+    }
 
 }, 2: {
 
