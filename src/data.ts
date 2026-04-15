@@ -18,6 +18,7 @@ export const enum Obj {
     LINE,
     SHAPE,
     TEXT,
+    POLY,
 }
 
 export const Layer_SHAPE_BASE = 0x10;
@@ -92,9 +93,9 @@ export type Layer_TEXT =
 
 export const enum Shape {
     CIRCLE = 0,
-    SQUARE,
-    FLAG,
-    STAR,
+    // SQUARE,
+    FLAG = 2,
+    // STAR,
 }
 
 export const enum Head {
@@ -166,9 +167,7 @@ export const POS_SCALE = {
 
 export class Paradigm {
     public static readonly NONE = new Paradigm(0, 0, 0, () => Draw.draw(undefined, 'circle', { cx: 0, cy: 0, r: 1 }));
-    public static readonly ODD = new Paradigm(90, 0, 2, () => Draw.poly(undefined, 3, false));
-    public static readonly EVEN_EVEN = new Paradigm(45, 0, 1, () => Draw.poly(undefined, 4, false));
-    public static readonly EVEN_ODD = new Paradigm(90, 0, 1, () => Draw.poly(undefined, 6, false));
+    public static readonly POLY = Array.from({length: 19}, (_,i) => new Paradigm(i%4 ? 90 : 180/i, 0, i%2 ? 2 : 1, () => Draw.poly(undefined, i, false)));
     public static readonly ALL = new Paradigm(45, 0x8, 4, () => Draw.poly(undefined, 3, false));
     public constructor(
         public readonly rotAmt: number,
@@ -190,6 +189,7 @@ const POSITION_BITS = 4;
 const VLQ_CHUNK = 4;
 const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
+const SIDE_BITS = 4;
 
 
 export abstract class Tile {
@@ -305,9 +305,9 @@ export class ObjectSpec {
 
     public gTransform(x: number, y: number): string { const [ox, oy] = this.offset(); return `translate(${x*Measure.HALFCELL + ox} ${y*Measure.HALFCELL + oy})`; }
     public gRotate(p: Paradigm): string { return ` rotate(${p.rotAmt*(this.transform & ~p.flipBit)})` + (this.transform & p.flipBit ? ' scale(-1,1)' : ''); }
-    public gScale(): string { return ` scale(${this.scale()})`; }
-    public g(x: number, y: number, p: Paradigm): SVGElement { return Draw.draw(undefined, 'g', {
-        transform: this.gTransform(x,y) + this.gRotate(p) + this.gScale()
+    public gScale(s: number | undefined): string { return ` scale(${s ?? this.scale()})`; }
+    public g(x: number, y: number, p: Paradigm, s: number | undefined = undefined): SVGElement { return Draw.draw(undefined, 'g', {
+        transform: this.gTransform(x,y) + this.gRotate(p) + this.gScale(s)
     }); }
 }
 
@@ -329,15 +329,14 @@ export class ShapeTile extends Tile {
     public readonly layer: Layer_SHAPE;
     public static readonly paradigm: {[key in Shape]: Paradigm} = {
         [Shape.CIRCLE]: Paradigm.NONE,
-        [Shape.SQUARE]: Paradigm.EVEN_EVEN,
         [Shape.FLAG]: Paradigm.ALL,
-        [Shape.STAR]: Paradigm.ODD
     };
     constructor(
         public shape: Shape,
         public spec: ObjectSpec
     ) { super(); this.layer = spec.layer(Layer_SHAPE_BASE); }
-    public eq(other: ShapeTile) { return this.shape === other.shape && this.spec.eq(other.spec); }
+    // must test obj because shapetile and polytile share layer... feels dubious
+    public eq(other: ShapeTile) { return this.obj === other.obj && this.shape === other.shape && this.spec.eq(other.spec); }
     public serialize(bs: BitStream) {
         bs.write(SHAPE_BITS, this.shape);
         this.spec.serialize(bs, ShapeTile.paradigm[this.shape]);
@@ -355,12 +354,6 @@ export class ShapeTile extends Tile {
                 strokeWidth, fill, stroke
             });
             break;
-        case Shape.SQUARE:
-            Draw.draw(g, 'rect', {
-                width: 2, height: 2, x: -1, y: -1,
-                strokeWidth, fill, stroke
-            });
-            break;
         case Shape.FLAG:
             Draw.draw(g, 'path', {
                 d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
@@ -368,13 +361,35 @@ export class ShapeTile extends Tile {
                 strokeWidth: strokeWidth/0.9, fill, stroke
             });
             break;
-        case Shape.STAR:
-            Draw.poly(g, 5, true, {
-                strokeWidth, fill, stroke
-            });
-            break;
         }
 
+        return g;
+    }
+}
+
+export class PolyTile extends Tile {
+    public readonly obj = Obj.POLY;
+    public readonly layer: Layer_SHAPE;
+    public static readonly paradigm = Paradigm.POLY;
+    constructor(
+        public sides: number,
+        public star: boolean,
+        public spec: ObjectSpec
+    ) { super(); this.layer = spec.layer(Layer_SHAPE_BASE); }
+    public eq(other: PolyTile) { return this.obj === other.obj && this.sides === other.sides && this.star === other.star && this.spec.eq(other.spec); }
+    public serialize(bs: BitStream) {
+        bs.write(SIDE_BITS, this.sides-3);
+        bs.write(1, +this.star);
+        this.spec.serialize(bs, PolyTile.paradigm[this.sides]);
+    }
+    public draw(x: number, y: number): SVGElement {
+        // TODO this square special case is extremely suspicious
+        const g = this.spec.g(x, y, PolyTile.paradigm[this.sides],
+                             this.sides === 4 && this.spec.transform === 0 ? Math.sqrt(2)*this.spec.scale() : undefined);
+        const strokeWidth = this.spec.strokeWidth();
+        const fill = this.spec.fill();
+        const stroke = this.spec.stroke();
+        Draw.poly(g, this.sides, this.star, { strokeWidth, fill, stroke });
         return g;
     }
 }
@@ -470,11 +485,13 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         const len = Math.min(bs.readVLQ(VLQ_CHUNK), 16);
         const arr = [];
         for (let i = 0; i < len; ++i) {
-            const shape = bs.read(SHAPE_BITS) as Shape;
+            const shape = bs.read(SHAPE_BITS);
             const fill = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
             const outline = bs.read(1) === 0 ? undefined : bs.read(COLOR_BITS);
-            const size = bs.read(SIZE_BITS);
-            arr.push(new ShapeTile(shape, new ObjectSpec(fill, outline, size===1 ? Position.XS : 5-size, 0)));
+            const size = POS_SIZE[5-bs.read(SIZE_BITS)];
+            if (shape === 1) arr.push(new PolyTile(4, false, new ObjectSpec(fill, outline, size, 0)));
+            else if (shape === 3) arr.push(new PolyTile(5, true, new ObjectSpec(fill, outline, size, 0)));
+            else arr.push(new ShapeTile(shape as Shape, new ObjectSpec(fill, outline, size, 0)));
         }
         // if (arr.length !== 1) console.error(`WARNING: ${arr.length} shapes`);
         return arr as unknown as Tile; // uh oh
@@ -503,7 +520,12 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
         return new TextTile(bs.readString(), dos(bs, TextTile.paradigm));
-    }
+    },
+
+    [Obj.POLY]: (bs: BitStream): Tile => {
+        const sides = bs.read(SIDE_BITS)+3;
+        return new PolyTile(sides, !!bs.read(1), dos(bs, PolyTile.paradigm[sides]));
+    },
 
 }});
 
@@ -618,7 +640,7 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
 type Halfcell = Omit<Map<Layer, Tile>, 'get'> & { get: <T extends Layer>(layer: T) => (
     T extends Layer.SURFACE ? SurfaceTile | undefined :
     T extends Layer_LINE    ? LineTile    | undefined :
-    T extends Layer_SHAPE   ? ShapeTile   | undefined :
+    T extends Layer_SHAPE   ? ShapeTile | PolyTile | undefined :
     T extends Layer_TEXT    ? TextTile    | undefined :
     Tile | undefined
 ) };

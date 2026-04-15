@@ -14,7 +14,7 @@ export class Param<T> {
     public setFromJSON(t: T) { this.val = t; }
 
     public save(): string { return JSON.stringify(this.readFunc()); }
-    public load(t: T) { this.writeFunc(t); }
+    public load(t: T) { this.writeFunc(t); this.hook(t); }
 
     public hook: (t: T) => void = () => {};
 }
@@ -54,7 +54,17 @@ export class ParamSource {
         el.setAttribute('size', '3');
         el.setAttribute('min', min.toString());
         el.setAttribute('max', max.toString());
-        return this.param(() => Math.min(max, Math.max(min, parseInt(el.value, 10))), n => (el.value = n.toString()));
+        el.value = min.toString();
+        const get = () => Math.min(max, Math.max(min, parseInt(el.value, 10)));
+        const p = this.param(() => get(), n => (el.value = n.toString()));
+        el.addEventListener('change', () => p.hook(get()));
+        return p;
+    }
+
+    public bool(name: string): Param<boolean> {
+        const el = this.el('label', name, 'input');
+        el.setAttribute('type', 'checkbox');
+        return this.param(() => el.checked, b => (el.checked = b));
     }
 
     public text(name: string): Param<string> {

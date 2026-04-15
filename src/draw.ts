@@ -21,11 +21,12 @@ export function draw(parent: SVGElement | undefined, tagname: string, attrs: obj
 
 export function poly(parent: SVGElement | undefined, sides: number, star: boolean, attrs: object = {}): SVGElement {
     if (star) sides *= 2;
-    const offset = sides % 2 ? 0.25 : 1/sides/2;
+    const angleOffset = star || sides % 2 ? 0.25 : 1/sides/2;
+    const yOffset = sides % 2 ? (1+Math.sin((Math.floor(sides/2)/sides+angleOffset)*2*Math.PI))/2 : 0;
     return draw(parent, 'path', {
         d: 'M' + Array.from({length: sides}, (_,n) => (
-            (star&&n%2===1?0.5:1)*Math.cos((n/sides+offset)*2*Math.PI) + ' ' +
-                -(star&&n%2===1?0.5:1)*Math.sin((n/sides+offset)*2*Math.PI)
+            (star&&n%2===1?0.5:1)*Math.cos((n/sides+angleOffset)*2*Math.PI) + ' ' +
+                (yOffset-(star&&n%2===1?0.5:1)*Math.sin((n/sides+angleOffset)*2*Math.PI))
         )).join('L') + 'Z',
         ...attrs
     });

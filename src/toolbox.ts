@@ -345,12 +345,18 @@ export class Toolboxbox {
             return () => new Tools.LineTool(type.val, color.val, thickness.val, head.val);
         }, 'full').element);
 
+        group.append(new MenuItem('poly', 'Polygon', (param) => {
+            const sides = param.num('sides', 3, 18);
+            const star = param.bool('star');
+            const spec = Input.objectParam(param, Data.PolyTile.paradigm[3]);
+            sides.hook = n => spec.setParadigm(Data.PolyTile.paradigm[n]);
+            return () => spec.generate(spec => new Tools.PolyTool(sides.val, star.val, spec));
+        }, 'full').element);
+
         group.append(new MenuItem('shape', 'Shape', (param) => {
             const type = param.multi('type', [
                 ['circle', Data.Shape.CIRCLE],
-                ['square', Data.Shape.SQUARE],
                 ['flag', Data.Shape.FLAG],
-                ['star', Data.Shape.STAR]
             ]);
             const spec = Input.objectParam(param, Data.ShapeTile.paradigm[Data.Shape.CIRCLE]);
             type.hook = shape => spec.setParadigm(Data.ShapeTile.paradigm[shape]);
