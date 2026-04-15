@@ -361,8 +361,8 @@ div#actions {
         margin: 10px 5px;
         border: 1px dotted #666;
 
-        &.natwidth { width: auto; }
-        &.full { display: flex; flex-wrap: wrap; width: auto; }
+        &.natwidth.addtool-active { width: auto; }
+        &.full.addtool-active { display: flex; flex-wrap: wrap; width: auto; }
         &:hover { background-color: #eee; }
         &.addtool-active { background-color: #9f9; }
 
@@ -370,7 +370,9 @@ div#actions {
             background-color: #ddf;
             padding: 5px 10px;
             margin-left: 20px;
+            display: none;
         }
+        &.addtool-active { > label, > span { display: inline; }}
     }
 }
 
