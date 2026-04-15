@@ -11,7 +11,7 @@ k ::pan:
 ks::surface:0
 kr::line:false,8,2,0
 ke::line:true,0,2,0
-kt::text:0,[4],""
+kt::text:"",4,0,[4],0,-1
 kz::undo:
 kx::redo:
 kc::copy:
@@ -361,20 +361,13 @@ export class Toolboxbox {
         }, 'full').element);
 
         group.append(new MenuItem('text', 'Text', (param) => {
-            const color = param.color('color');
-            const location = param.multiAny('location', [
-                ['center', 4],
-                ['edge', 2],
-                ['corner', 1]
-            ]);
             const preset = param.text('preset');
+            const specFn = Input.objectParam(param);
             return () => {
-                if (location.val.length === 0) {
-                    Courier.alert('text should be placeable in at least one location');
-                    return;
-                }
-                return new Tools.TextTool(color.val, preset.val, location.val.reduce((a,b) => a+b, 0));
-            }
+                const spec = specFn();
+                if (spec === undefined) return;
+                return new Tools.TextTool(preset.val, spec);
+            };
         }, 'full').element);
 
         group = Input.makeGroup(menuCont, 'movement');

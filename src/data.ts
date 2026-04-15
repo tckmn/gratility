@@ -20,8 +20,8 @@ export const enum Obj {
     TEXT,
 }
 
-const Layer_SHAPE_BASE = 0x10;
-const Layer_TEXT_BASE = 0x20;
+export const Layer_SHAPE_BASE = 0x10;
+export const Layer_TEXT_BASE = 0x20;
 
 // must be kept in sync with Position
 export const enum Layer {
@@ -58,9 +58,9 @@ export const enum Layer {
     TEXT_XSSE,
 }
 
-type Layer_LINE = Layer.PATH | Layer.EDGE;
+export type Layer_LINE = Layer.PATH | Layer.EDGE;
 
-type Layer_SHAPE =
+export type Layer_SHAPE =
     Layer.SHAPE_XL |
     Layer.SHAPE_L |
     Layer.SHAPE_M |
@@ -75,7 +75,7 @@ type Layer_SHAPE =
     Layer.SHAPE_XSS |
     Layer.SHAPE_XSSE;
 
-type Layer_TEXT =
+export type Layer_TEXT =
     Layer.TEXT_XL |
     Layer.TEXT_L |
     Layer.TEXT_M |
@@ -182,6 +182,7 @@ const TRANSFORM_BITS: {[key in Shape]: number} = {
     [Shape.FLAG]: 2,
     [Shape.STAR]: 2
 };
+const TRANSFORM_BITS_TEXT = 2;
 
 
 export abstract class Tile {
@@ -272,6 +273,10 @@ export class ObjectSpec {
         public readonly position: Position,
         public readonly transform: number
     ) {}
+
+    // TODO temporary hack
+    public setColor(color: number | undefined): ObjectSpec { return new ObjectSpec(color, this.outline, this.position, this.transform); }
+
     // not needed to check position here because different position is always different layer
     public eq(other: ObjectSpec) { return this.color === other.color && this.outline === other.outline && this.transform === other.transform; }
     public layer(base: number) { return base + this.position; }
@@ -283,12 +288,20 @@ export class ObjectSpec {
         bs.write(POSITION_BITS, this.position);
         bs.write(transformBits, this.transform);
     }
+
     public offset(): [number, number] { return POS_OFFSET[this.position]; }
     public size(): number { return POS_SCALE[this.position]; }
-    public r(): number { return Measure.HALFCELL * this.size()/6; }
-    public strokeWidth(): number { return Measure.HALFCELL * (0.05 + 0.1*(this.size()/12)); }
+    public scale(): number { return Measure.HALFCELL * this.size()/6; }
+    public strokeWidth(): number { return (0.05 + 0.1*(this.size()/12)) / (this.size()/6); }
     public fill(): string { return this.color === undefined ? 'none' : Color.colors[this.color]; }
     public stroke(): string { return this.outline === undefined ? 'none' : Color.colors[this.outline]; }
+
+    public gTransform(x: number, y: number): string { const [ox, oy] = this.offset(); return `translate(${x*Measure.HALFCELL + ox} ${y*Measure.HALFCELL + oy})`; }
+    public gRotate(): string { return ` rotate(${90*this.transform})`; }
+    public gScale(): string { return ` scale(${this.scale()})`; }
+    public g(x: number, y: number): SVGElement { return Draw.draw(undefined, 'g', {
+        transform: this.gTransform(x,y) + this.gRotate() + this.gScale()
+    }); }
 }
 
 export class ObjectParam {
@@ -317,12 +330,7 @@ export class ShapeTile extends Tile {
         this.spec.serialize(bs, TRANSFORM_BITS[this.shape]);
     }
     public draw(x: number, y: number): SVGElement {
-        const [ox, oy] = this.spec.offset();
-        const g = Draw.draw(undefined, 'g', {
-            transform: `translate(${x * Measure.HALFCELL + ox} ${y * Measure.HALFCELL + oy})`
-        });
-
-        const r = this.spec.r();
+        const g = this.spec.g(x, y);
         const strokeWidth = this.spec.strokeWidth();
         const fill = this.spec.fill();
         const stroke = this.spec.stroke();
@@ -330,28 +338,28 @@ export class ShapeTile extends Tile {
         switch (this.shape) {
         case Shape.CIRCLE:
             Draw.draw(g, 'circle', {
-                cx: 0, cy: 0, r: r,
+                cx: 0, cy: 0, r: 1,
                 strokeWidth, fill, stroke
             });
             break;
         case Shape.SQUARE:
             Draw.draw(g, 'rect', {
-                width: r*2, height: r*2, x: -r, y: -r,
+                width: 2, height: 2, x: -1, y: -1,
                 strokeWidth, fill, stroke
             });
             break;
         case Shape.FLAG:
             Draw.draw(g, 'path', {
                 d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
-                transform: `scale(${r*0.9})`,
-                strokeWidth: strokeWidth/(r*0.9), fill, stroke
+                transform: `scale(0.9)`,
+                strokeWidth: strokeWidth/0.9, fill, stroke
             });
             break;
         case Shape.STAR:
             Draw.draw(g, 'path', {
                 d: 'M' + [0,1,2,3,4,5,6,7,8,9].map(n => (
-                    r*(n%2===0?1:0.5)*Math.cos((n/5+0.5)*Math.PI) + ' ' +
-                        -r*(n%2===0?1:0.5)*Math.sin((n/5+0.5)*Math.PI)
+                    (n%2===0?1:0.5)*Math.cos((n/5+0.5)*Math.PI) + ' ' +
+                        -(n%2===0?1:0.5)*Math.sin((n/5+0.5)*Math.PI)
                 )).join('L') + 'Z',
                 strokeWidth, fill, stroke
             });
@@ -364,20 +372,25 @@ export class ShapeTile extends Tile {
 
 export class TextTile extends Tile {
     public readonly obj = Obj.TEXT;
-    public readonly layer = Layer.TEXT_M;
+    public readonly layer: Layer_TEXT;
     constructor(
-        public color: number,
-        public val: string
-    ) { super(); }
-    public eq(other: TextTile): boolean { return this.color === other.color && this.val === other.val; }
+        public val: string,
+        public spec: ObjectSpec
+    ) { super(); this.layer = spec.layer(Layer_TEXT_BASE); }
+    public eq(other: TextTile): boolean { return this.val === other.val && this.spec.eq(other.spec); }
     public serialize(bs: BitStream) {
-        bs.write(COLOR_BITS, this.color);
         bs.writeString(this.val);
+        this.spec.serialize(bs, TRANSFORM_BITS_TEXT);
     }
     public draw(x: number, y: number): SVGElement {
+        const [ox, oy] = this.spec.offset();
+        const strokeWidth = this.spec.strokeWidth();
+        const fill = this.spec.fill();
+        const stroke = this.spec.stroke();
+
         return Draw.draw(undefined, 'text', {
-            x: Measure.HALFCELL*x,
-            y: Measure.HALFCELL*y,
+            x: Measure.HALFCELL*x + ox,
+            y: Measure.HALFCELL*y + oy,
             textAnchor: 'middle',
             dominantBaseline: 'central',
             fontSize: Measure.CELL*(
@@ -385,9 +398,9 @@ export class TextTile extends Tile {
                 this.val.length === 2 ? 0.55 :
                 this.val.length === 3 ? 0.4 :
                 0.3
-            ),
+            )*(this.spec.size()/3),
             textContent: this.val,
-            fill: Color.colors[this.color]
+            strokeWidth, fill, stroke
         });
     }
 }
@@ -438,7 +451,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
-        return new TextTile(0, bs.readString());
+        return new TextTile(bs.readString(), new ObjectSpec(0, undefined, Position.M, 0));
     }
 
 }, 1: {
@@ -479,7 +492,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
-        return new TextTile(bs.read(COLOR_BITS), bs.readString());
+        return new TextTile(bs.readString(), dos(bs, TRANSFORM_BITS_TEXT));
     }
 
 }});

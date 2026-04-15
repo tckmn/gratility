@@ -43,7 +43,7 @@ export default class FuncTool extends Tool.SelectTool {
                 item.n, new Data.SurfaceTile(0)
             );
             if (item.tile.obj === Data.Obj.TEXT) return new Data.Item(
-                item.n, new Data.TextTile(4, (item.tile as Data.TextTile).val)
+                item.n, new Data.TextTile((item.tile as Data.TextTile).val, (item.tile as Data.TextTile).spec.setColor(4))
             );
             return item;
         });
