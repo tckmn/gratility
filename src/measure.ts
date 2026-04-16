@@ -8,7 +8,7 @@ export const LINE = 2;
 export const CELL = 2*HALFCELL;
 
 // this doesn't really belong here lol
-export function round(x: number, r: number) { return Math.round(x/r)*r; }
+export function round(x: number, r: number, o: number = 0) { return Math.round((x-o)/r)*r+o; }
 
 // when you only care about which square in the visual grid the point is in, use this one
 export function cell(x: number) { return Math.floor(x / CELL); }

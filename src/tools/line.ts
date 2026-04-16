@@ -11,7 +11,7 @@ export default class LineTool extends Tool.Tool {
         return Draw.draw(undefined, 'svg', {
             viewBox: `-${Measure.HALFCELL} 0 ${Measure.CELL} ${Measure.CELL}`,
             children: [
-                new Data.LineTile(this.isEdge, this.color, this.thickness, this.head, false).draw(0, 1)
+                new Data.LineTile(this.isEdge, new Data.LineSpec(this.color, this.thickness, this.head, false)).draw(0, 1)
             ]
         });
     }
@@ -77,7 +77,7 @@ export default class LineTool extends Tool.Tool {
 
         // TODO need to make sure this is good
         // oh, only two lines should ever be created at least
-        const newline = new Data.LineTile(this.isEdge, this.color, this.thickness, this.head, dir === -1);
+        const newline = new Data.LineTile(this.isEdge, new Data.LineSpec(this.color, this.thickness, this.head, dir === -1));
         const oldline = g.data.halfcells.get(n)?.get(newline.layer);
 
         if (this.isDrawing === undefined) {

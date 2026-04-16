@@ -9,6 +9,7 @@ export default class Image {
     public readonly surface:   SVGElement;
     public readonly path:      SVGElement;
     public readonly edge:      SVGElement;
+    public readonly wall:      SVGElement;
     public readonly shape_xl:  SVGElement;
     public readonly shape_l:   SVGElement;
     public readonly shape_m:   SVGElement;
@@ -29,6 +30,7 @@ export default class Image {
         this.surface   = Draw.draw(this.root, 'g');
         this.path      = Draw.draw(this.root, 'g');
         this.edge      = Draw.draw(this.root, 'g');
+        this.wall      = Draw.draw(this.root, 'g');
         this.shape_xl  = Draw.draw(this.root, 'g');
         this.shape_l   = Draw.draw(this.root, 'g');
         this.shape_m   = Draw.draw(this.root, 'g');
@@ -49,6 +51,7 @@ export default class Image {
         case Data.Layer.SURFACE:    return this.surface;
         case Data.Layer.PATH:       return this.path;
         case Data.Layer.EDGE:       return this.edge;
+        case Data.Layer.WALL:       return this.wall;
         case Data.Layer.SHAPE_XL:   return this.shape_xl;
         case Data.Layer.SHAPE_L:    return this.shape_l;
         case Data.Layer.SHAPE_M:    return this.shape_m;

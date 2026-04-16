@@ -345,6 +345,21 @@ export class Toolboxbox {
             return () => new Tools.LineTool(type.val, color.val, thickness.val, head.val);
         }, 'full').element);
 
+        group.append(new MenuItem('wall', 'Wall', (param) => {
+            const color = param.color('color');
+            const thickness = param.multi('thickness', [['thin', 1], ['normal', 2], ['thick', 3]]);
+            const head = param.multi('head', [['none', Data.Head.NONE], ['arrow', Data.Head.ARROW]]);
+
+            // TODO
+            const location = param.multiAny('location', [
+                ['center', 4],
+                ['edge', 2],
+                ['corner', 1]
+            ]);
+
+            return () => new Tools.WallTool(color.val, thickness.val, head.val, location.val.reduce((a,b) => a+b, 0));
+        }, 'full').element);
+
         group.append(new MenuItem('poly', 'Polygon', (param) => {
             const sides = param.num('sides', 3, 18);
             const star = param.bool('star');

@@ -11,6 +11,7 @@ import SurfaceTool   from './surface.js';
 import TextTool      from './text.js';
 import TransformTool from './transform.js';
 import UndoTool      from './undo.js';
+import WallTool      from './wall.js';
 import ZoomTool      from './zoom.js';
 
 export { default as CopyTool      } from './copy.js';
@@ -24,4 +25,5 @@ export { default as SurfaceTool   } from './surface.js';
 export { default as TextTool      } from './text.js';
 export { default as TransformTool } from './transform.js';
 export { default as UndoTool      } from './undo.js';
+export { default as WallTool      } from './wall.js';
 export { default as ZoomTool      } from './zoom.js';

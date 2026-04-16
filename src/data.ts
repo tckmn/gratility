@@ -19,6 +19,7 @@ export const enum Obj {
     SHAPE,
     TEXT,
     POLY,
+    WALL,
 }
 
 export const Layer_SHAPE_BASE = 0x10;
@@ -29,6 +30,7 @@ export const enum Layer {
     SURFACE = 0x0,
     PATH,
     EDGE,
+    WALL,
 
     SHAPE_XL = Layer_SHAPE_BASE,
     SHAPE_L,
@@ -190,6 +192,7 @@ const VLQ_CHUNK = 4;
 const HEAD_BITS = 3;
 const THICKNESS_BITS = 3;
 const SIDE_BITS = 4;
+const ANGLE_BITS = 4;
 
 
 export abstract class Tile {
@@ -223,52 +226,80 @@ export class SurfaceTile extends Tile {
     }
 }
 
-export class LineTile extends Tile {
-    public readonly obj = Obj.LINE;
-    public readonly layer: Layer_LINE;
+export class LineSpec {
     constructor(
-        public isEdge: boolean,
-        public color: number,
-        public thickness: number,
-        public head: Head,
-        public dir: boolean
-    ) { super(); this.layer = isEdge ? Layer.EDGE : Layer.PATH; }
-    public eq(other: LineTile): boolean {
-        return this.isEdge === other.isEdge && this.head === other.head
-            && this.color === other.color && this.thickness === other.thickness &&
-            (this.head === Head.NONE ? true : this.dir === other.dir);
-    }
+        public readonly color: number,
+        public readonly thickness: number,
+        public readonly head: Head,
+        public readonly dir: boolean
+    ) {}
+
+    public eq(other: LineSpec) { return this.color === other.color && this.thickness === other.thickness &&
+        this.head === other.head && (this.head === Head.NONE ? true : this.dir === other.dir); }
     public serialize(bs: BitStream) {
-        bs.write(1, this.isEdge ? 1 : 0);
         bs.write(COLOR_BITS, this.color);
         bs.write(THICKNESS_BITS, this.thickness);
         bs.write(HEAD_BITS, this.head);
         bs.write(1, this.dir ? 1 : 0);
     }
-    public draw(x: number, y: number): SVGElement {
+
+    public draw(x: number, y: number, rot: number, len: number = 1) {
         const g = Draw.draw(undefined, 'g', {
-            transform: `
-                rotate(${((y%2===0) == this.isEdge ? 0 : 90) + (this.dir ? 180 : 0)} ${x*Measure.HALFCELL} ${y*Measure.HALFCELL})
-                `
+            transform: `translate(${x*Measure.HALFCELL} ${y*Measure.HALFCELL}) rotate(${rot + (this.dir ? 180 : 0)})`
         });
         const stroke = Color.colors[this.color];
         const strokeLinecap = 'round'
         const strokeWidth = Measure.LINE * this.thickness;
-        const adjust = (z : number, n : number) => (z*Measure.HALFCELL+n*Math.sqrt(this.thickness));
         Draw.draw(g, 'line', {
-            x1: adjust(x+1,0),
-            x2: adjust(x-1,0),
-            y1: adjust(y,0),
-            y2: adjust(y,0),
+            x1: Measure.HALFCELL*len, x2: -Measure.HALFCELL*len, y1: 0, y2: 0,
             stroke, strokeLinecap, strokeWidth
         });
         if (this.head === Head.ARROW) {
+            const mul = Math.sqrt(this.thickness);
             Draw.draw(g, 'path', {
-                d: `M ${adjust(x,3)} ${adjust(y,5)} L ${adjust(x,-2)} ${adjust(y,0)} L ${adjust(x,3)} ${adjust(y,-5)}`,
-                fill: 'none',
-                stroke, strokeLinecap, strokeWidth
+                d: `M ${3*mul} ${5*mul} L ${-2*mul} 0 L ${3*mul} ${-5*mul}`,
+                fill: 'none', stroke, strokeLinecap, strokeWidth
             });
         }
+        return g;
+    }
+}
+
+export class LineTile extends Tile {
+    public readonly obj = Obj.LINE;
+    public readonly layer: Layer_LINE;
+    constructor(
+        public readonly isEdge: boolean,
+        public readonly spec: LineSpec
+    ) { super(); this.layer = isEdge ? Layer.EDGE : Layer.PATH; }
+    public eq(other: LineTile): boolean { return this.isEdge === other.isEdge && this.spec.eq(other.spec); }
+    public serialize(bs: BitStream) {
+        bs.write(1, this.isEdge ? 1 : 0);
+        this.spec.serialize(bs);
+    }
+    public draw(x: number, y: number): SVGElement {
+        return this.spec.draw(x, y, (y%2===0) === this.isEdge ? 0 : 90);
+    }
+}
+
+export class WallTile extends Tile {
+    public readonly obj = Obj.WALL;
+    public readonly layer = Layer.WALL;
+    constructor(
+        public angles: number,
+        public spec: LineSpec
+    ) { super(); }
+    public eq(other: WallTile): boolean { return this.spec.eq(other.spec); }
+    public serialize(bs: BitStream) {
+        bs.write(ANGLE_BITS, this.angles);
+        this.spec.serialize(bs);
+    }
+    public draw(x: number, y: number): SVGElement {
+        const g = Draw.draw(undefined, 'g');
+        if (this.angles & 0x1) g.appendChild(this.spec.draw(x, y, 0));
+        if (this.angles & 0x2) g.appendChild(this.spec.draw(x, y, 45, Math.sqrt(2)));
+        if (this.angles & 0x4) g.appendChild(this.spec.draw(x, y, 90));
+        if (this.angles & 0x8) g.appendChild(this.spec.draw(x, y, 135, Math.sqrt(2)));
         return g;
     }
 }
@@ -463,6 +494,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         if (x[i][Obj.SHAPE] === undefined) x[i][Obj.SHAPE] = x[i+1][Obj.SHAPE];
         if (x[i][Obj.TEXT] === undefined) x[i][Obj.TEXT] = x[i+1][Obj.TEXT];
         if (x[i][Obj.POLY] === undefined) x[i][Obj.POLY] = x[i+1][Obj.POLY];
+        if (x[i][Obj.WALL] === undefined) x[i][Obj.WALL] = x[i+1][Obj.WALL];
     }
     return x as never;
 })({ 0: {
@@ -473,7 +505,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return new LineTile(isEdge, color, thickness, head, dir);
+        return new LineTile(isEdge, new LineSpec(color, thickness, head, dir));
     },
 
     [Obj.TEXT]: (bs: BitStream): Tile => {
@@ -515,7 +547,7 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
         const thickness = bs.read(THICKNESS_BITS);
         const head = bs.read(HEAD_BITS);
         const dir = bs.read(1) === 1;
-        return new LineTile(isEdge, color, thickness, head, dir);
+        return new LineTile(isEdge, new LineSpec(color, thickness, head, dir));
     },
 
     [Obj.SHAPE]: (bs: BitStream): Tile => {
@@ -531,6 +563,15 @@ const deserializefns: {[key in number]: {[key in Obj]: (bs: BitStream) => Tile}}
     [Obj.POLY]: (bs: BitStream): Tile => {
         const sides = bs.read(SIDE_BITS)+3;
         return new PolyTile(sides, !!bs.read(1), dos(bs, PolyTile.paradigm[sides]));
+    },
+
+    [Obj.WALL]: (bs: BitStream): Tile => {
+        const angles = bs.read(ANGLE_BITS);
+        const color = bs.read(COLOR_BITS);
+        const thickness = bs.read(THICKNESS_BITS);
+        const head = bs.read(HEAD_BITS);
+        const dir = bs.read(1) === 1;
+        return new WallTile(angles, new LineSpec(color, thickness, head, dir));
     },
 
 }});
@@ -645,6 +686,7 @@ export function deserializeChanges(arr: Uint8Array<ArrayBuffer>): Array<Change> 
 // this is some insane type hackery nonsense
 type Halfcell = Omit<Map<Layer, Tile>, 'get'> & { get: <T extends Layer>(layer: T) => (
     T extends Layer.SURFACE ? SurfaceTile | undefined :
+    T extends Layer.WALL    ? WallTile    | undefined :
     T extends Layer_LINE    ? LineTile    | undefined :
     T extends Layer_SHAPE   ? ShapeTile | PolyTile | undefined :
     T extends Layer_TEXT    ? TextTile    | undefined :
