@@ -255,24 +255,6 @@ menuevents.set('filesetting-open', (manager: MenuManager, menu: Menu) => {
     cont.append(link);
 });
 
-// ###### IMPORT/EXPORT TOOLS MENU ###### //
-
-menuevents.set('ietool-open', (manager: MenuManager, menu: Menu) => {
-    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    // using this again here is even hackier
-    elt.value = manager.addToolBox === undefined ? manager.gf.toolbox.saveStr() : manager.addToolBox.saveStr();
-    elt.focus();
-    elt.select();
-});
-
-menuevents.set('ietool-go', (manager: MenuManager, menu: Menu) => {
-    const elt = menu.inputs.get('value') as HTMLTextAreaElement;
-    if (manager.addToolBox === undefined) manager.gf.toolbox.load(elt.value);
-    else manager.addToolBox.replace(elt.value);
-    manager.gf.toolbox.save();
-    manager.close();
-});
-
 
 class Menu {
     constructor(
@@ -393,6 +375,21 @@ export default class MenuManager {
             });
             menu.popup.querySelector('#confbtn')!.appendChild(btn);
         }
+    }
+
+    public ietool(initVal: string, cb: (s: string) => void) {
+        const menu = this.open('ietool');
+        if (menu === undefined) return;
+        const elt = menu.inputs.get('value') as HTMLTextAreaElement;
+        elt.value = initVal;
+        elt.focus();
+        elt.select();
+
+        menuevents.set('ietool-go', (manager: MenuManager, menu: Menu) => {
+            cb(elt.value);
+            manager.gf.toolbox.save();
+            manager.close();
+        });
     }
 
     private readonly menus: Map<string, Menu> = new Map();

@@ -241,8 +241,7 @@ export class Toolbox {
         });
 
         c.btn('⇅ import/export', () => {
-            this.gf.menu.addToolBox = this;
-            this.gf.menu.open('ietool');
+            this.gf.menu.ietool(this.saveStr(), s => this.replace(s));
             return true;
         });
 
@@ -273,8 +272,7 @@ export class Toolbox {
         });
 
         c.btn('⇅ import/export', () => {
-            this.gf.menu.addToolBox = undefined;
-            this.gf.menu.open('ietool');
+            this.gf.menu.ietool(this.gf.toolbox.saveStr(), s => this.gf.toolbox.load(s));
             return true;
         });
     }
@@ -419,6 +417,10 @@ export class Toolboxbox {
         group.append(new MenuItem('undo', 'Undo', () => () => new Tools.UndoTool(true)).element);
         group.append(new MenuItem('redo', 'Redo', () => () => new Tools.UndoTool(false)).element);
 
+        group = Input.makeGroup(menuCont, 'meta');
+        // group.append(new MenuItem('multi', 'Multi', (param) => {
+        // }).element);
+
     }
 
 }
@@ -433,11 +435,16 @@ export class MenuItem {
     // if f returns undefined, it should always show a Courier alert explaining why
     constructor(private mid: string, public name: string, f: (p: Input.ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
         MenuItem.lookup.set(mid, this);
+
         this.element = document.createElement('div');
         this.element.dataset.tool = mid;
         this.element.classList.add('settool');
         if (extraClass !== undefined) this.element.classList.add(extraClass);
         this.element.append(document.createTextNode(name));
+        this.element.addEventListener('click', () => {
+            this.element.classList.add('addtool-active');
+        });
+
         this.psource = new Input.ParamSource(this.element);
         this.generate = f(this.psource);
     }
