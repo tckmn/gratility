@@ -53,14 +53,16 @@
         <div id='menupopups'>
 
             <div data-menu='addtool'>
-                <p><strong>binding</strong></p>
-                <div>
-                    click, type, or scroll here:
-                    <input class='menuinput' data-menu='binding' data-event='pointerdown=bindmouse;keydown=bindkey;wheel=bindwheel;paste=nop;contextmenu=nop'>
+                <div class='page'>
+                    <p><strong>binding</strong></p>
+                    <div>
+                        click, type, or scroll here:
+                        <input class='menuinput' data-menu='binding' data-event='pointerdown=bindmouse;keydown=bindkey;wheel=bindwheel;paste=nop;contextmenu=nop'>
+                    </div>
+                    <p><strong>action</strong></p>
+                    <div id='actions' class='menuinput big' data-menu='actions'></div>
+                    <button class='menuinput' data-menu='go' data-event='click=go'>add</button>
                 </div>
-                <p><strong>action</strong></p>
-                <div id='actions' class='menuinput big' data-menu='actions' data-events='div.settool@click=settool'></div>
-                <button class='menuinput' data-menu='go' data-event='click=go'>add</button>
             </div>
 
             <div data-menu='ietool'>

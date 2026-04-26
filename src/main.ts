@@ -21,7 +21,6 @@ const backend = new Gratility.Backend(image, data, stamp, view);
 data.connect(document.getElementById('filecont')!, document.getElementById('server')!);
 
 const frontend = new Gratility.Frontend(backend,
-    document.getElementById('actions')!,
     document.getElementById('toolbox')!,
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,

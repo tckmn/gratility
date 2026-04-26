@@ -85,95 +85,8 @@ const menuevents: Map<string, (manager: MenuManager, menu: Menu, e: never, targe
 // ###### ADD TOOL MENU ###### //
 
 let resolve: number | string | boolean | undefined = undefined;
-
-menuevents.set('addtool-open', (manager: MenuManager, menu: Menu) => {
-    const elt = menu.inputs.get('binding') as HTMLTextAreaElement;
-    const btn = menu.inputs.get('go') as HTMLInputElement;
-    elt.classList.remove('conflict');
-    for (const el of Array.from(document.getElementsByClassName('addtool-active'))) {
-        el.classList.remove('addtool-active');
-    }
-
-    if (manager.addToolEntry === undefined) {
-        elt.value = '';
-        resolve = undefined;
-        btn.textContent = 'add';
-    } else {
-        elt.value = manager.addToolEntry.describeBind();
-        resolve = manager.addToolEntry.tbind;
-        btn.textContent = 'save edits';
-
-        const menuItem = manager.addToolEntry.menuItem();
-        menuItem.element.classList.add('addtool-active');
-        menuItem.element.scrollIntoView();
-        menuItem.load(manager.addToolEntry.spec());
-    }
-});
-
-menuevents.set('addtool-bindmouse', (manager: MenuManager, menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
-    if (e.button !== 0) e.preventDefault();
-    target.value = 'click ' + e.button;
-    const conflict = e.button != manager.addToolEntry?.tbind && manager.addToolBox!.hasBind(e.button);
-    target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : e.button;
-});
-
-menuevents.set('addtool-bindkey', (manager: MenuManager, menu: Menu, e: KeyboardEvent, target: HTMLInputElement) => {
-    e.preventDefault();
-    target.value = 'key [' + e.key + ']';
-    const conflict = e.key != manager.addToolEntry?.tbind && manager.addToolBox!.hasBind(e.key);
-    target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : e.key;
-});
-
-menuevents.set('addtool-bindwheel', (manager: MenuManager, menu: Menu, e: WheelEvent, target: HTMLInputElement) => {
-    target.value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
-    const conflict = (e.deltaY < 0) != manager.addToolEntry?.tbind && manager.addToolBox!.hasBind(e.deltaY < 0);
-    target.classList.toggle('conflict', conflict);
-    resolve = conflict ? undefined : e.deltaY < 0;
-});
-
 menuevents.set('addtool-nop', (manager: MenuManager, menu: Menu, e: Event) => {
     e.preventDefault();
-});
-
-menuevents.set('addtool-settool', (manager: MenuManager, menu: Menu, e: Event, target: Element) => {
-    for (const el of Array.from(document.getElementsByClassName('addtool-active'))) {
-        el.classList.remove('addtool-active');
-    }
-    target.classList.add('addtool-active');
-});
-
-menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
-    if (resolve === undefined) {
-        Courier.alert('please pick an available binding for this tool');
-        return;
-    }
-
-    const el = document.getElementsByClassName('addtool-active')[0] as HTMLElement | undefined;
-    if (el === undefined) {
-        Courier.alert('please pick an action for this tool');
-        return;
-    }
-
-    const menuItem = Toolbox.MenuItem.lookup.get(el.dataset.tool!)!;
-    const tparam = menuItem.save();
-    const tool = menuItem.fromHTML();
-    if (tool === undefined) return;
-
-    if (manager.addToolEntry === undefined) {
-        manager.addToolBox?.addBind(resolve, tparam, tool);
-    } else {
-        manager.addToolEntry.replace(resolve, tparam, tool);
-    }
-
-    manager.gf.toolbox.saveRefresh();
-    manager.close();
-});
-
-menuevents.set('addtool-close', (manager: MenuManager, menu: Menu) => {
-    manager.addToolBox = undefined;
-    manager.addToolEntry = undefined;
 });
 
 // TODO: something if file does not exist below? it should never not exist
@@ -323,10 +236,6 @@ export default class MenuManager {
     private activeMenu: Menu | undefined = undefined;
     private contextMenu: ContextMenu | undefined = undefined;
 
-    // these are very hacky
-    public addToolBox: Toolbox.Toolbox | undefined = undefined;
-    public addToolEntry: Toolbox.ToolboxEntry | undefined = undefined;
-
     public isOpen(): boolean { return this.activeMenu !== undefined || this.contextMenu !== undefined; }
 
     public open(mname: string): Menu | undefined {
@@ -390,6 +299,86 @@ export default class MenuManager {
             manager.gf.toolbox.save();
             manager.close();
         });
+    }
+
+    public init_addtool<T>(fn: (_: HTMLElement) => T): T {
+        return fn(this.menus.get('addtool')!.popup.querySelector('#actions')!);
+    }
+
+    public addtool(box: Toolbox.Toolbox, entry: Toolbox.ToolboxEntry | undefined) {
+
+        const menu = this.open('addtool');
+        if (menu === undefined) return;
+        const elt = menu.inputs.get('binding') as HTMLTextAreaElement;
+        const btn = menu.inputs.get('go') as HTMLInputElement;
+        elt.classList.remove('conflict');
+        this.gf.toolbox.toolMenu.clearActive();
+
+        if (entry === undefined) {
+            elt.value = '';
+            resolve = undefined;
+            btn.textContent = 'add';
+        } else {
+            elt.value = entry.describeBind();
+            resolve = entry.tbind;
+            btn.textContent = 'save edits';
+
+            const menuItem = entry.menuItem();
+            menuItem.element.classList.add('addtool-active');
+            menuItem.element.scrollIntoView();
+            menuItem.load(entry.spec());
+        }
+
+        menuevents.set('addtool-bindmouse', (manager: MenuManager, menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
+            if (e.button !== 0) e.preventDefault();
+            target.value = 'click ' + e.button;
+            const conflict = e.button != entry?.tbind && box.hasBind(e.button);
+            target.classList.toggle('conflict', conflict);
+            resolve = conflict ? undefined : e.button;
+        });
+
+        menuevents.set('addtool-bindkey', (manager: MenuManager, menu: Menu, e: KeyboardEvent, target: HTMLInputElement) => {
+            e.preventDefault();
+            target.value = 'key [' + e.key + ']';
+            const conflict = e.key != entry?.tbind && box.hasBind(e.key);
+            target.classList.toggle('conflict', conflict);
+            resolve = conflict ? undefined : e.key;
+        });
+
+        menuevents.set('addtool-bindwheel', (manager: MenuManager, menu: Menu, e: WheelEvent, target: HTMLInputElement) => {
+            target.value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
+            const conflict = (e.deltaY < 0) != entry?.tbind && box.hasBind(e.deltaY < 0);
+            target.classList.toggle('conflict', conflict);
+            resolve = conflict ? undefined : e.deltaY < 0;
+        });
+
+        menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
+            if (resolve === undefined) {
+                Courier.alert('please pick an available binding for this tool');
+                return;
+            }
+
+            const el = document.getElementsByClassName('addtool-active')[0] as HTMLElement | undefined;
+            if (el === undefined) {
+                Courier.alert('please pick an action for this tool');
+                return;
+            }
+
+            const menuItem = manager.gf.toolbox.toolMenu.lookup.get(el.dataset.tool!)!;
+            const tparam = menuItem.save();
+            const tool = menuItem.fromHTML();
+            if (tool === undefined) return;
+
+            if (entry === undefined) {
+                box.addBind(resolve, tparam, tool);
+            } else {
+                entry.replace(resolve, tparam, tool);
+            }
+
+            manager.gf.toolbox.saveRefresh();
+            manager.close();
+        });
+
     }
 
     private readonly menus: Map<string, Menu> = new Map();

@@ -28,10 +28,10 @@ function onesplit(s: string, delim: string): [string, string | undefined] {
 
 export class ToolboxEntry {
 
-    constructor(public tbind: number | string | boolean, public tparam: string, public tool: Tool.Tool) {}
+    constructor(private gf: Gratility.Frontend, public tbind: number | string | boolean, public tparam: string, public tool: Tool.Tool) {}
     public mid(): string { return this.tparam.split(':')[0]; }
     public spec(): string { return this.tparam.slice(this.tparam.indexOf(':')+1); }
-    public menuItem(): MenuItem { return MenuItem.lookup.get(this.mid())!; }
+    public menuItem(): MenuItem { return this.gf.toolbox.toolMenu.lookup.get(this.mid())!; }
     public replace(tbind: number | string | boolean, tparam: string, tool: Tool.Tool) { this.tbind = tbind; this.tparam = tparam; this.tool = tool; }
 
     public describeBind(): string {
@@ -68,21 +68,21 @@ export class ToolboxEntry {
         return `${this.saveBind()}::${this.tparam}`;
     }
 
-    static load(s: string): ToolboxEntry {
+    static load(gf: Gratility.Frontend, s: string): ToolboxEntry {
         const [bind, rest] = onesplit(s, '::');
         if (rest === undefined) { Courier.alert('malformed toolbox entry: no bind'); throw new Error(); }
         const [mid, spec] = onesplit(rest, ':');
         if (spec === undefined) { Courier.alert('malformed toolbox entry: no menu id'); throw new Error(); }
-        const menuItem = MenuItem.lookup.get(mid);
+        const menuItem = gf.toolbox.toolMenu.lookup.get(mid);
         if (menuItem === undefined) { Courier.alert('malformed toolbox entry: bad menu id'); throw new Error(); }
         const bindtype = bind[0];
         const bindval = bind.slice(1);
         const tool = menuItem.fromJSON(spec);
         if (tool === undefined) { Courier.alert('malformed toolbox entry: tool gen failed'); throw new Error(); }
         switch (bindtype) {
-        case 'm': return new ToolboxEntry(parseInt(bindval, 10), rest, tool);
-        case 'k': return new ToolboxEntry(bindval, rest, tool);
-        case 'w': return new ToolboxEntry(bindval === '1', rest, tool);
+        case 'm': return new ToolboxEntry(gf, parseInt(bindval, 10), rest, tool);
+        case 'k': return new ToolboxEntry(gf, bindval, rest, tool);
+        case 'w': return new ToolboxEntry(gf, bindval === '1', rest, tool);
         default: Courier.alert('malformed toolbox entry: bad bind'); throw new Error();
         }
     }
@@ -121,7 +121,7 @@ export class Toolbox {
 
     public addBind(tbind: number | string | boolean, tparam: string, tool: Tool.Tool): boolean {
         if (this.hasBind(tbind)) return false;
-        this.tools.push(new ToolboxEntry(tbind, tparam, tool));
+        this.tools.push(new ToolboxEntry(this.gf, tbind, tparam, tool));
         return true;
     }
 
@@ -133,8 +133,8 @@ export class Toolbox {
     // oops naming lol
     public save() { this.gf.toolbox.save(); }
     public saveStr(): string { return (this.enabled ? '*' : '-') + this.name + this.tools.map(t => '\n' + t.save()).join(''); }
-    static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s[0] === '*', s.split('\n')[0].slice(1), s.split('\n').slice(1).map(ToolboxEntry.load)); }
-    public replace(s: string) { this.enabled = s[0] === '*'; this.name = s.split('\n')[0].slice(1); this.tools.splice(0, Infinity, ...s.split('\n').slice(1).map(ToolboxEntry.load)); this.gf.toolbox.refresh(); } // TODO remove duplication
+    static load(gf: Gratility.Frontend, s: string) { return new Toolbox(gf, s[0] === '*', s.split('\n')[0].slice(1), s.split('\n').slice(1).map(x => ToolboxEntry.load(gf, x))); }
+    public replace(s: string) { this.enabled = s[0] === '*'; this.name = s.split('\n')[0].slice(1); this.tools.splice(0, Infinity, ...s.split('\n').slice(1).map(x => ToolboxEntry.load(this.gf, x))); this.gf.toolbox.refresh(); } // TODO remove duplication
 
     public display(container: HTMLElement) {
         const cont = document.createElement('div');
@@ -178,9 +178,7 @@ export class Toolbox {
             c.lbl(`tool ${te.menuItem().name}`);
 
             c.btn('✎ edit tool', () => {
-                this.gf.menu.addToolBox = this;
-                this.gf.menu.addToolEntry = te;
-                this.gf.menu.open('addtool');
+                this.gf.menu.addtool(this, te);
                 return true;
             });
 
@@ -201,8 +199,7 @@ export class Toolbox {
         c.lbl(`toolbox ${this.name}`);
 
         c.btn('+ add new tool', () => {
-            this.gf.menu.addToolBox = this;
-            this.gf.menu.open('addtool');
+            this.gf.menu.addtool(this, undefined);
             return true;
         });
 
@@ -282,19 +279,20 @@ export class Toolbox {
 export class Toolboxbox {
 
     public toolboxes: Array<Toolbox> = [];
+    public toolMenu: ToolMenu;
 
     public readonly mouseTools = new Map<number, Tool.Tool>();
     public readonly keyTools = new Map<string, Tool.Tool>();
     public readonly wheelTools = new Map<boolean, Tool.Tool>();
 
-    constructor(private gf: Gratility.Frontend, menuCont: HTMLElement, private container: HTMLElement) {
-        this.generateMenu(menuCont);
-        this.load(localStorage.toolbox ?? DEFAULT_TOOLS);
+    constructor(private gf: Gratility.Frontend, private container: HTMLElement) {
+        this.toolMenu = gf.menu.init_addtool(el => this.generateMenu(el));
     }
 
     public save() { localStorage.toolbox = this.saveStr(); }
     public saveStr() { return this.toolboxes.map(b => b.saveStr()).join('\n:\n'); }
     public load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.refresh(); }
+    public loadSaved() { this.load(localStorage.toolbox ?? DEFAULT_TOOLS); }
 
     public refresh() { this.recompute(); this.rerender(); }
     public saveRefresh() { this.refresh(); this.save(); }
@@ -325,25 +323,26 @@ export class Toolboxbox {
         for (const t of this.toolboxes) t.display(this.container);
     }
 
-    private generateMenu(menuCont: HTMLElement) {
+    private generateMenu(menuCont: HTMLElement): ToolMenu {
+        const tm = new ToolMenu();
         let group;
 
         group = Input.makeGroup(menuCont, 'drawing');
 
-        group.append(new MenuItem('surface', 'Surface', (param) => {
+        group.append(tm.item('surface', 'Surface', (param) => {
             const color = param.color('color');
             return () => new Tools.SurfaceTool(color.val);
-        }, 'full').element);
+        }, 'full'));
 
-        group.append(new MenuItem('line', 'Line', (param) => {
+        group.append(tm.item('line', 'Line', (param) => {
             const type = param.multi('type', [['path', false], ['edge', true]]);
             const color = param.color('color');
             const thickness = param.multi('thickness', [['thin', 1], ['normal', 2], ['thick', 3]]);
             const head = param.multi('head', [['none', Data.Head.NONE], ['arrow', Data.Head.ARROW]]);
             return () => new Tools.LineTool(type.val, color.val, thickness.val, head.val);
-        }, 'full').element);
+        }, 'full'));
 
-        group.append(new MenuItem('wall', 'Wall', (param) => {
+        group.append(tm.item('wall', 'Wall', (param) => {
             const color = param.color('color');
             const thickness = param.multi('thickness', [['thin', 1], ['normal', 2], ['thick', 3]]);
             const head = param.multi('head', [['none', Data.Head.NONE], ['arrow', Data.Head.ARROW]]);
@@ -356,17 +355,17 @@ export class Toolboxbox {
             ]);
 
             return () => new Tools.WallTool(color.val, thickness.val, head.val, location.val.reduce((a,b) => a+b, 0));
-        }, 'full').element);
+        }, 'full'));
 
-        group.append(new MenuItem('poly', 'Polygon', (param) => {
+        group.append(tm.item('poly', 'Polygon', (param) => {
             const sides = param.num('sides', 3, 18);
             const star = param.bool('star');
             const spec = Input.objectParam(param, Data.PolyTile.paradigm[3]);
             sides.hook = n => spec.setParadigm(Data.PolyTile.paradigm[n]);
             return () => spec.generate(spec => new Tools.PolyTool(sides.val, star.val, spec));
-        }, 'full').element);
+        }, 'full'));
 
-        group.append(new MenuItem('shape', 'Shape', (param) => {
+        group.append(tm.item('shape', 'Shape', (param) => {
             const type = param.multi('type', [
                 ['circle', Data.Shape.CIRCLE],
                 ['flag', Data.Shape.FLAG],
@@ -374,24 +373,24 @@ export class Toolboxbox {
             const spec = Input.objectParam(param, Data.ShapeTile.paradigm[Data.Shape.CIRCLE]);
             type.hook = shape => spec.setParadigm(Data.ShapeTile.paradigm[shape]);
             return () => spec.generate(spec => new Tools.ShapeTool(type.val, spec));
-        }, 'full').element);
+        }, 'full'));
 
-        group.append(new MenuItem('text', 'Text', (param) => {
+        group.append(tm.item('text', 'Text', (param) => {
             const preset = param.text('preset');
             const spec = Input.objectParam(param, Data.TextTile.paradigm);
             return () => spec.generate(spec => new Tools.TextTool(preset.val, spec));
-        }, 'full').element);
+        }, 'full'));
 
         group = Input.makeGroup(menuCont, 'movement');
-        group.append(new MenuItem('pan', 'Pan', () => () => new Tools.PanTool()).element);
-        group.append(new MenuItem('zoomin', 'Zoom in', () => () => new Tools.ZoomTool(1)).element);
-        group.append(new MenuItem('zoomout', 'Zoom out', () => () => new Tools.ZoomTool(-1)).element);
+        group.append(tm.item('pan', 'Pan', () => () => new Tools.PanTool()));
+        group.append(tm.item('zoomin', 'Zoom in', () => () => new Tools.ZoomTool(1)));
+        group.append(tm.item('zoomout', 'Zoom out', () => () => new Tools.ZoomTool(-1)));
 
         group = Input.makeGroup(menuCont, 'stamps');
-        group.append(new MenuItem('copy', 'Copy', () => () => new Tools.CopyTool(false)).element);
-        group.append(new MenuItem('cut', 'Cut', () => () => new Tools.CopyTool(true)).element);
-        group.append(new MenuItem('paste', 'Paste', () => () => new Tools.PasteTool()).element);
-        group.append(new MenuItem('flip', 'Flip', (param) => {
+        group.append(tm.item('copy', 'Copy', () => () => new Tools.CopyTool(false)));
+        group.append(tm.item('cut', 'Cut', () => () => new Tools.CopyTool(true)));
+        group.append(tm.item('paste', 'Paste', () => () => new Tools.PasteTool()));
+        group.append(tm.item('flip', 'Flip', (param) => {
             const direction = param.multi('direction', [
                 ['\u00a0↔\u00a0', 0],
                 ['\u00a0↕\u00a0', 1],
@@ -399,49 +398,64 @@ export class Toolboxbox {
                 ['\u00a0⤢\u00a0', 3]
             ]);
             return () => new Tools.TransformTool(direction.val);
-        }, 'natwidth').element);
-        group.append(new MenuItem('rotate', 'Rotate', (param) => {
+        }, 'natwidth'));
+        group.append(tm.item('rotate', 'Rotate', (param) => {
             const direction = param.multi('direction', [
                 ['\u00a0↶\u00a0', 10],
                 ['\u00a0↷\u00a0', 11],
                 ['180°', 12]
             ]);
             return () => new Tools.TransformTool(direction.val);
-        }, 'natwidth').element);
-        group.append(new MenuItem('func', 'Func', (param) => {
+        }, 'natwidth'));
+        group.append(tm.item('func', 'Func', (param) => {
             const name = param.text('name');
             return () => new Tools.FuncTool(name.val);
-        }, 'natwidth').element);
+        }, 'natwidth'));
 
         group = Input.makeGroup(menuCont, 'misc');
-        group.append(new MenuItem('undo', 'Undo', () => () => new Tools.UndoTool(true)).element);
-        group.append(new MenuItem('redo', 'Redo', () => () => new Tools.UndoTool(false)).element);
+        group.append(tm.item('undo', 'Undo', () => () => new Tools.UndoTool(true)));
+        group.append(tm.item('redo', 'Redo', () => () => new Tools.UndoTool(false)));
 
         group = Input.makeGroup(menuCont, 'meta');
-        // group.append(new MenuItem('multi', 'Multi', (param) => {
-        // }).element);
+        // group.append(tm.item('multi', 'Multi', (param) => {
+        // }));
 
+        return tm;
     }
 
 }
 
-export class MenuItem {
-    public static lookup: Map<string, MenuItem> = new Map();
+export class ToolMenu {
+    public lookup: Map<string, MenuItem> = new Map();
+    constructor() {}
 
+    public item(mid: string, name: string, f: (p: Input.ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined): HTMLElement {
+        const menuItem = new MenuItem(this, mid, name, f, extraClass);
+        this.lookup.set(mid, menuItem);
+        return menuItem.element;
+    }
+
+    public clearActive() { for (const v of this.lookup.values()) v.element.classList.remove('addtool-active'); }
+}
+
+export class MenuItem {
     private readonly psource: Input.ParamSource;
     public readonly element: HTMLElement;
     private readonly generate: () => Tool.Tool | undefined;
 
     // if f returns undefined, it should always show a Courier alert explaining why
-    constructor(private mid: string, public name: string, f: (p: Input.ParamSource) => (() => Tool.Tool | undefined), extraClass: string | undefined = undefined) {
-        MenuItem.lookup.set(mid, this);
-
+    constructor(private toolMenu: ToolMenu,
+                private mid: string,
+                public name: string,
+                f: (p: Input.ParamSource) => (() => Tool.Tool | undefined),
+                extraClass: string | undefined = undefined) {
         this.element = document.createElement('div');
         this.element.dataset.tool = mid;
         this.element.classList.add('settool');
         if (extraClass !== undefined) this.element.classList.add(extraClass);
         this.element.append(document.createTextNode(name));
         this.element.addEventListener('click', () => {
+            this.toolMenu.clearActive();
             this.element.classList.add('addtool-active');
         });
 
