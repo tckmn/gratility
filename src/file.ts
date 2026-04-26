@@ -79,11 +79,7 @@ export class FileManager {
         const req = window.indexedDB.open('gratility', 1);
         req.onsuccess = (ev) => {
             this.db = (ev.target as IDBRequest).result;
-            this.db!.transaction(['docs'], 'readonly').objectStore('docs').get('files').onsuccess = (ev: Event) => {
-                const res = (ev.target as IDBRequest).result;
-                if (res) this.localFiles = res;
-            };
-            this.onopen(Schema.LOCAL);
+            this.readLocalFiles(() => this.onopen(Schema.LOCAL));
         };
         req.onerror = () => {
             Courier.alert('local database connection failed');
@@ -93,6 +89,14 @@ export class FileManager {
         req.onupgradeneeded = (ev: IDBVersionChangeEvent) => {
             this.db = (ev.target as IDBRequest).result;
             this.db!.createObjectStore('docs');
+        };
+    }
+
+    private readLocalFiles(cb: () => void) {
+        this.db!.transaction(['docs'], 'readonly').objectStore('docs').get('files').onsuccess = (ev: Event) => {
+            const res = (ev.target as IDBRequest).result;
+            if (res) this.localFiles = res;
+            cb();
         };
     }
 
@@ -144,19 +148,20 @@ export class FileManager {
 
     private newLocal(f: File, cb: (_: boolean) => void) {
         this.data.frozen = true;
-        const tr = this.db!.transaction(['docs'], 'readwrite');
-        tr.oncomplete = () => {
-            this.data.clear();
-            this.data.frozen = false;
-            this.currentDocument = Schema.LOCAL;
-            this.localName = f.filename;
-            cb(true);
-
+        this.readLocalFiles(() => {
             this.localFiles.push([f.filename, f.title]);
+            const tr = this.db!.transaction(['docs'], 'readwrite');
+            tr.oncomplete = () => {
+                this.data.clear();
+                this.data.frozen = false;
+                this.currentDocument = Schema.LOCAL;
+                this.localName = f.filename;
+                cb(true);
+            };
+            tr.onerror = () => { Courier.alert('failed to create local file (error)'); cb(false); };
+            tr.onabort = () => { Courier.alert('failed to create local file (abort)'); cb(false); };
             tr.objectStore('docs').put(this.localFiles, 'files');
-        };
-        tr.onerror = () => { Courier.alert('failed to create local file (error)'); cb(false); };
-        tr.onabort = () => { Courier.alert('failed to create local file (abort)'); cb(false); };
+        });
     }
 
     private openRemote(f: File, cb: (_: boolean) => void) {
