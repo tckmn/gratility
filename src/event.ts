@@ -4,14 +4,16 @@ import * as Gratility from './gratility.js';
 export const onmove: Array<(x: number, y: number) => void> = [];
 export const keyeater: { ref: ((e: KeyboardEvent) => void) | undefined } = { ref: undefined };
 
-export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: SVGElement, page: HTMLElement) {
+export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: SVGElement, page: HTMLElement): () => void {
 
     const activeTools = new Set<Tool.Tool>();
-    const rect = svg.getBoundingClientRect();
 
     let lastX = 0;
     let lastY = 0;
     let upd = (e: PointerEvent) => {
+        // TODO this moved in here to support gratility as a library usage
+        // but maybe there's a better way
+        const rect = svg.getBoundingClientRect();
         lastX = (e.clientX - rect.left) / gb.view.zoom() - gb.view.x;
         lastY = (e.clientY - rect.top) / gb.view.zoom() - gb.view.y;
     };
@@ -47,7 +49,7 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
         activeTools.clear();
     });
 
-    page.addEventListener('keydown', e => {
+    const kd = (e: KeyboardEvent) => {
         if (gf.menu.isOpen()) {
             if (e.key === 'Escape') { gf.menu.close(); gf.menu.closeContextMenu(); }
             return;
@@ -61,22 +63,31 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
         if (e.repeat && !t.repeat) return;
         t.ondown(lastX, lastY, gb);
         activeTools.add(t);
-    });
+    };
+    page.addEventListener('keydown', kd);
 
-    page.addEventListener('keyup', e => {
+    const ku = (e: KeyboardEvent) => {
         if (gf.menu.isOpen()) return;
         const t = gf.toolbox.keyTools.get(e.key);
         if (t === undefined) return;
         t.onup(gb);
         activeTools.delete(t);
-    });
+    };
+    page.addEventListener('keyup', ku);
 
-    page.addEventListener('wheel', e => {
+    const wh = (e: WheelEvent) => {
         if (gf.menu.isOpen()) return;
         const t = gf.toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
         t.ondown(lastX, lastY, gb);
         t.onup(gb);
-    });
+    };
+    page.addEventListener('wheel', wh);
+
+    return () => {
+        page.removeEventListener('keydown', kd);
+        page.removeEventListener('keyup', ku);
+        page.removeEventListener('wheel', wh);
+    };
 
 }

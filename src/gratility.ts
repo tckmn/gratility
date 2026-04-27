@@ -15,10 +15,10 @@ export class Backend {
 export class Frontend {
     public readonly toolbox: Toolbox.Toolboxbox;
     public readonly menu: MenuManager;
-    public constructor(backend: Backend, toolcont: HTMLElement, btns: Array<HTMLElement>, popups: Array<HTMLElement>, states: Array<HTMLElement>) {
+    public constructor(backend: Backend, toolcont: HTMLElement | undefined, toolsaved: string | undefined, btns: Array<HTMLElement>, popups: Array<HTMLElement>, states: Array<HTMLElement>) {
         // kinda hacky, but must be done in this order, because toolbox references menu
         this.menu = new MenuManager(this, backend, btns, popups, states);
         this.toolbox = new Toolbox.Toolboxbox(this, toolcont);
-        this.toolbox.loadSaved(); // uh oh it got hackier (same reason)
+        this.toolbox.loadSaved(toolsaved); // uh oh it got hackier (same reason)
     }
 }

@@ -2,7 +2,6 @@ import * as Event from './event.js';
 import * as Stamp from './stamp.js';
 import * as Data from './data.js';
 import * as Draw from './draw.js';
-import * as File from './file.js';
 import * as Toolbox from './toolbox.js';
 import ViewManager from './view.js';
 import Image from './image.js';
@@ -21,7 +20,8 @@ const backend = new Gratility.Backend(image, data, stamp, view);
 data.connect(document.getElementById('filecont')!, document.getElementById('server')!);
 
 const frontend = new Gratility.Frontend(backend,
-    document.getElementById('toolbox')!,
+    document.getElementById('toolbox') ?? undefined,
+    localStorage.toolbox,
     Array.from(document.getElementsByClassName('menuaction')) as Array<HTMLElement>,
     Array.from(document.getElementById('menupopups')!.children) as Array<HTMLElement>,
     Array.from(document.getElementsByClassName('menustate')) as Array<HTMLElement>);

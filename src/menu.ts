@@ -302,7 +302,9 @@ export default class MenuManager {
     }
 
     public init_addtool<T>(fn: (_: HTMLElement) => T): T {
-        return fn(this.menus.get('addtool')!.popup.querySelector('#actions')!);
+        const menu = this.menus.get('addtool');
+        if (menu === undefined) return fn(document.createElement('div')); // TODO
+        return fn(menu.popup.querySelector('#actions')!);
     }
 
     public addtool(box: Toolbox.Toolbox, entry: Toolbox.ToolboxEntry | undefined) {

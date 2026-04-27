@@ -285,14 +285,14 @@ export class Toolboxbox {
     public readonly keyTools = new Map<string, Tool.Tool>();
     public readonly wheelTools = new Map<boolean, Tool.Tool>();
 
-    constructor(private gf: Gratility.Frontend, private container: HTMLElement) {
+    constructor(private gf: Gratility.Frontend, private container: HTMLElement | undefined) {
         this.toolMenu = gf.menu.init_addtool(el => this.generateMenu(el));
     }
 
     public save() { localStorage.toolbox = this.saveStr(); }
     public saveStr() { return this.toolboxes.map(b => b.saveStr()).join('\n:\n'); }
     public load(s: string) { this.toolboxes = s.split('\n:\n').map(x => Toolbox.load(this.gf, x)); this.refresh(); }
-    public loadSaved() { this.load(localStorage.toolbox ?? DEFAULT_TOOLS); }
+    public loadSaved(s: string | undefined) { this.load(s ?? DEFAULT_TOOLS); }
 
     public refresh() { this.recompute(); this.rerender(); }
     public saveRefresh() { this.refresh(); this.save(); }
@@ -319,6 +319,7 @@ export class Toolboxbox {
     }
 
     private rerender() {
+        if (this.container === undefined) return;
         while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
         for (const t of this.toolboxes) t.display(this.container);
     }
