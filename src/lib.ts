@@ -51,14 +51,14 @@ export function create(maxw: number, maxh: number, initStamp: string, tools: str
 
     return {
         svg, cleanup,
-        set: (newStamp: string) => {
+        set: (newStamp: string, offset: [number, number] | undefined = undefined) => {
             data.clear();
             const s = Stamp.render(Data.deserializeStamp(new Uint8Array(atob(newStamp).split('').map(c => c.charCodeAt(0)))));
             const xmin = Math.floor(s.xmin/2)*2;
             const ymin = Math.floor(s.ymin/2)*2;
             const xmax = Math.ceil(s.xmax/2)*2;
             const ymax = Math.ceil(s.ymax/2)*2;
-            s.apply(data, -xmin, -ymin, true);
+            s.apply(data, -xmin + (offset ? offset[0]*2 : 0), -ymin + (offset ? offset[1]*2 : 0), true);
         }
     };
 };
