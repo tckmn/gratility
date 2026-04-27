@@ -11,7 +11,7 @@ import * as Measure from './measure.js';
 
 Draw.initialize(document);
 
-export function create(maxw: number, maxh: number, initStamp: string, tools: string | undefined): SVGElement {
+export function create(maxw: number, maxh: number, initStamp: string, tools: string | undefined): object {
     const svg = Draw.draw(undefined, 'svg');
 
     const image = new Image(svg);
@@ -21,7 +21,7 @@ export function create(maxw: number, maxh: number, initStamp: string, tools: str
     const backend = new Gratility.Backend(image, data, stamp, view);
     const frontend = new Gratility.Frontend(backend, undefined, tools, [], [], []);
 
-    Event.initialize(frontend, backend, svg, document.body);
+    const cleanup = Event.initialize(frontend, backend, svg, document.body);
 
     const s = Stamp.render(Data.deserializeStamp(new Uint8Array(atob(initStamp).split('').map(c => c.charCodeAt(0)))));
 
@@ -43,10 +43,22 @@ export function create(maxw: number, maxh: number, initStamp: string, tools: str
     view.z = ratio < 1 ?
         Math.log(maxh/(h*Measure.HALFCELL))/Math.log(Measure.ZOOMTICK) :
         Math.log(maxw/(w*Measure.HALFCELL))/Math.log(Measure.ZOOMTICK);
-    view.update()
+    view.update();
 
     svg.style.width = ratio < 1 ? (maxh/h*w)+'px' : maxw+'px';
     svg.style.height = ratio < 1 ? maxh+'px' : (maxw/w*h)+'px';
     svg.style.userSelect = 'none';
-    return svg;
+
+    return {
+        svg, cleanup,
+        set: (newStamp: string) => {
+            data.clear();
+            const s = Stamp.render(Data.deserializeStamp(new Uint8Array(atob(newStamp).split('').map(c => c.charCodeAt(0)))));
+            const xmin = Math.floor(s.xmin/2)*2;
+            const ymin = Math.floor(s.ymin/2)*2;
+            const xmax = Math.ceil(s.xmax/2)*2;
+            const ymax = Math.ceil(s.ymax/2)*2;
+            s.apply(data, -xmin, -ymin, true);
+        }
+    };
 };
