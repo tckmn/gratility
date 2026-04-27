@@ -369,6 +369,7 @@ export class Toolboxbox {
         group.append(tm.item('shape', 'Shape', (param) => {
             const type = param.multi('type', [
                 ['circle', Data.Shape.CIRCLE],
+                ['cross', Data.Shape.CROSS],
                 ['flag', Data.Shape.FLAG],
             ]);
             const spec = Input.objectParam(param, Data.ShapeTile.paradigm[Data.Shape.CIRCLE]);

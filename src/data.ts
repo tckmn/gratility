@@ -95,8 +95,8 @@ export type Layer_TEXT =
 
 export const enum Shape {
     CIRCLE = 0,
-    // SQUARE,
-    FLAG = 2,
+    CROSS,
+    FLAG,
     // STAR,
 }
 
@@ -360,6 +360,7 @@ export class ShapeTile extends Tile {
     public readonly layer: Layer_SHAPE;
     public static readonly paradigm: {[key in Shape]: Paradigm} = {
         [Shape.CIRCLE]: Paradigm.NONE,
+        [Shape.CROSS]: Paradigm.POLY[4],
         [Shape.FLAG]: Paradigm.ALL,
     };
     constructor(
@@ -385,10 +386,17 @@ export class ShapeTile extends Tile {
                 strokeWidth, fill, stroke
             });
             break;
+        case Shape.CROSS:
+            Draw.draw(g, 'path', {
+                d: 'M 0 1 L 4 5 L 5 4 L 1 0 L 5 -4 L 4 -5 L 0 -1 L -4 -5 L -5 -4 L -1 0 L -5 4 L -4 5 Z',
+                transform: 'scale(0.2)',
+                strokeWidth, fill, stroke
+            });
+            break;
         case Shape.FLAG:
             Draw.draw(g, 'path', {
                 d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
-                transform: `scale(0.9)`,
+                transform: 'scale(0.9)',
                 strokeWidth: strokeWidth/0.9, fill, stroke
             });
             break;
@@ -443,6 +451,7 @@ export class TextTile extends Tile {
         const strokeWidth = this.spec.strokeWidth();
         const fill = this.spec.fill();
         const stroke = this.spec.stroke();
+        const size = this.spec.size();
 
         return Draw.draw(undefined, 'text', {
             x: Measure.HALFCELL*x + ox,
@@ -454,7 +463,7 @@ export class TextTile extends Tile {
                 this.val.length === 2 ? 0.55 :
                 this.val.length === 3 ? 0.4 :
                 0.3
-            )*(this.spec.size()/3),
+            )*(size === 1 ? 1/2 : size/3),
             textContent: this.val,
             strokeWidth, fill, stroke
         });
