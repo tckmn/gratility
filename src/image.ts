@@ -28,11 +28,11 @@ export default class Image {
         this.root      = Draw.draw(svg, 'g');
         this.gridlines = Draw.draw(this.root, 'g', { stroke: Measure.GRIDCOLOR, strokeWidth: Measure.GRIDLINE });
         this.surface   = Draw.draw(this.root, 'g');
+        this.shape_xl  = Draw.draw(this.root, 'g');
+        this.shape_l   = Draw.draw(this.root, 'g');
         this.path      = Draw.draw(this.root, 'g');
         this.edge      = Draw.draw(this.root, 'g');
         this.wall      = Draw.draw(this.root, 'g');
-        this.shape_xl  = Draw.draw(this.root, 'g');
-        this.shape_l   = Draw.draw(this.root, 'g');
         this.shape_m   = Draw.draw(this.root, 'g');
         this.shape_s   = Draw.draw(this.root, 'g');
         this.shape_xs  = Draw.draw(this.root, 'g');
