@@ -371,6 +371,7 @@ export class Toolboxbox {
                 ['circle', Data.Shape.CIRCLE],
                 ['cross', Data.Shape.CROSS],
                 ['flag', Data.Shape.FLAG],
+                ['arrow', Data.Shape.ARROW],
             ]);
             const spec = Input.objectParam(param, Data.ShapeTile.paradigm[Data.Shape.CIRCLE]);
             type.hook = shape => spec.setParadigm(Data.ShapeTile.paradigm[shape]);

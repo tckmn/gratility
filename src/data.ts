@@ -97,7 +97,7 @@ export const enum Shape {
     CIRCLE = 0,
     CROSS,
     FLAG,
-    // STAR,
+    ARROW,
 }
 
 export const enum Head {
@@ -171,6 +171,7 @@ export class Paradigm {
     public static readonly NONE = new Paradigm(0, 0, 0, () => Draw.draw(undefined, 'circle', { cx: 0, cy: 0, r: 1 }));
     public static readonly POLY = Array.from({length: 19}, (_,i) => new Paradigm(i%4 ? 90 : 180/i, 0, i%2 ? 2 : 1, () => Draw.poly(undefined, i, false)));
     public static readonly ALL = new Paradigm(45, 0x8, 4, () => Draw.poly(undefined, 3, false));
+    public static readonly ROT8 = new Paradigm(45, 0, 3, () => Draw.poly(undefined, 3, false));
     public constructor(
         public readonly rotAmt: number,
         public readonly flipBit: number,
@@ -362,6 +363,7 @@ export class ShapeTile extends Tile {
         [Shape.CIRCLE]: Paradigm.NONE,
         [Shape.CROSS]: Paradigm.POLY[4],
         [Shape.FLAG]: Paradigm.ALL,
+        [Shape.ARROW]: Paradigm.ROT8,
     };
     constructor(
         public shape: Shape,
@@ -398,6 +400,12 @@ export class ShapeTile extends Tile {
                 d: 'M -0.8 1 L -0.8 -1 L -0.6 -1 L 0.8 -0.5 L -0.6 0 L -0.6 1 Z',
                 transform: 'scale(0.9)',
                 strokeWidth: strokeWidth/0.9, fill, stroke
+            });
+            break;
+        case Shape.ARROW:
+            Draw.draw(g, 'path', {
+                d: 'M -1 0 L 0 -1 L 1 0 L 0.4 0 L 0.4 1 L -0.4 1 L -0.4 0 Z',
+                strokeWidth, fill, stroke
             });
             break;
         }
