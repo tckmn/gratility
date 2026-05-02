@@ -73,12 +73,8 @@ section#toolbar {
                             padding: 0 3px;
                             box-shadow: 0 1px 1px rgba(0,0,0,0.2), 0 2px 0 0 rgba(255,255,255,0.7) inset;
                         }
-                        &.mouse::before {
-                            content: '🖰';
-                            position: absolute;
-                            font-size: 15pt;
-                            margin-top: 7px;
-                            color: #888;
+                        &.mouse {
+                            background: url(data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSI2MG1tIiBoZWlnaHQ9IjYwbW0iIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDYwIDYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRhNGE0YSIgc3Ryb2tlLXdpZHRoPSIyLjE2NSI+PHJlY3QgeD0iMTIuODUyIiB5PSIzLjMwNTQiIHdpZHRoPSIzNC4yOTYiIGhlaWdodD0iNTMuMzg5IiByeD0iMTIuNTAxIiByeT0iOS41MDA1Ii8+PHBhdGggZD0ibTEyLjgwOCAyNS40NjloMzQuMzg1Ii8+PHBhdGggZD0ibTMwIDkuMTUzMXYtNS43NTkzIi8+PHBhdGggZD0ibTMwIDI1LjE5OHYtNS43MTUxIi8+PHJlY3QgeD0iMjcuMTM2IiB5PSI5LjA3MjYiIHdpZHRoPSI1LjcyNzEiIGhlaWdodD0iMTAuNjAzIiByeD0iMi4xNTQiIHJ5PSIzLjY0MTYiLz48L2c+PC9zdmc+) center/contain;
                         }
                     }
                 }
