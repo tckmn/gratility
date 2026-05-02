@@ -184,7 +184,7 @@ class ContextMenu {
     public readonly menu: HTMLElement;
     private readonly overlay: HTMLElement;
 
-    constructor(e: MouseEvent, private readonly onclose: () => void) {
+    constructor(private e: MouseEvent, private readonly onclose: () => void) {
         this.menu = document.createElement('div');
         this.menu.classList.add('contextmenu');
         this.menu.style.left = e.pageX + 'px';
@@ -228,6 +228,13 @@ class ContextMenu {
         const elt = document.createElement('div');
         elt.classList.add('spacer');
         this.menu.appendChild(elt);
+    }
+
+    public reposition() {
+        const rect = this.menu.getBoundingClientRect();
+        if (rect.y + rect.height > window.innerHeight) {
+            this.menu.style.top = (this.e.pageY - rect.height) + 'px';
+        }
     }
 }
 

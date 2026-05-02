@@ -272,6 +272,8 @@ export class Toolbox {
             this.gf.menu.ietool(this.gf.toolbox.saveStr(), s => this.gf.toolbox.load(s));
             return true;
         });
+
+        c.reposition();
     }
 
 }
