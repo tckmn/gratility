@@ -9,6 +9,7 @@ export abstract class Tool {
     ondown(x: number, y: number, g: Gratility.Backend): void {}
     onmove(x: number, y: number, g: Gratility.Backend): void {}
     onup(g: Gratility.Backend): void {}
+    onclick(g: Gratility.Backend): boolean { return false; }
 }
 
 export abstract class DragTool extends Tool {

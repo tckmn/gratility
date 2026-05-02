@@ -103,6 +103,12 @@ export class ToolboxEntry {
 
         container.addEventListener('click', e => {
             e.preventDefault();
+            if (e.button === 0 && !this.tool.onclick(this.gf.backend)) {
+                toolbox.showMenu(e, this, container);
+            }
+        });
+        container.addEventListener('contextmenu', e => {
+            e.preventDefault();
             toolbox.showMenu(e, this, container);
         });
 
@@ -149,10 +155,14 @@ export class Toolbox {
             e.preventDefault();
             this.showMenu(e);
         });
+        container.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            this.showMenu(e);
+        });
 
         cont.appendChild(this.generateList());
         cont.addEventListener('mousedown', e => {
-            if (e.buttons === 4) {
+            if (e.button === 1) {
                 this.enabled = !this.enabled;
                 this.gf.toolbox.saveRefresh();
             }
