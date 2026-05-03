@@ -25,16 +25,6 @@ function onesplit(s: string, delim: string): [string, string | undefined] {
     return parts.length === 1 ? [s, undefined] : [parts[0], parts.slice(1).join(delim)];
 }
 
-export function parse(gf: Gratility.Frontend, s: string): Tool.Tool {
-    const [mid, spec] = onesplit(s, ':');
-    if (spec === undefined) { Courier.alert('malformed toolbox entry: no menu id'); throw new Error(); }
-    const menuItem = gf.toolbox.toolMenu.lookup.get(mid);
-    if (menuItem === undefined) { Courier.alert('malformed toolbox entry: bad menu id'); throw new Error(); }
-    const tool = menuItem.fromJSON(spec);
-    if (tool === undefined) { Courier.alert('malformed toolbox entry: tool gen failed'); throw new Error(); }
-    return tool;
-}
-
 export class ToolboxEntry {
 
     constructor(private gf: Gratility.Frontend, public tbind: number | string | boolean, public tparam: string, public tool: Tool.Tool) {}
@@ -82,7 +72,7 @@ export class ToolboxEntry {
         if (rest === undefined) { Courier.alert('malformed toolbox entry: no bind'); throw new Error(); }
         const bindtype = bind[0];
         const bindval = bind.slice(1);
-        const tool = parse(gf, rest);
+        const tool = gf.toolbox.toolMenu.parse(rest);
         switch (bindtype) {
         case 'm': return new ToolboxEntry(gf, parseInt(bindval, 10), rest, tool);
         case 'k': return new ToolboxEntry(gf, bindval, rest, tool);
@@ -437,15 +427,14 @@ export class Toolboxbox {
 
         group = Input.makeGroup(menuCont, 'meta');
         group.append(tm.item('multi', 'Multi', (param) => {
-            const t1 = param.subtool('subtool 1', this.subtool.bind(this));
-            const t2 = param.subtool('subtool 2', this.subtool.bind(this));
-            return () => new Tools.MultiTool([parse(this.gf, t1.val), parse(this.gf, t2.val)]);
+            const subtools = param.subtool('subtools', this);
+            return () => new Tools.MultiTool(subtools.val.map(s => this.toolMenu.parse(s)));
         }, 'natwidth'));
 
         return tm;
     }
 
-    private subtool(prevVal: string, cb: (tparam: string, tool: Tool.Tool) => void) {
+    public queryTool(prevVal: string, cb: (tparam: string, tool: Tool.Tool) => void) {
         const toolMenu = this.gf.menu.push('confirm subtool', (cont) => {
             cont.classList.add('big');
             cont.classList.add('actions');
@@ -472,6 +461,16 @@ export class ToolMenu {
     }
 
     public clearActive() { for (const v of this.lookup.values()) v.element.classList.remove('addtool-active'); }
+
+    public parse(s: string): Tool.Tool {
+        const [mid, spec] = onesplit(s, ':');
+        if (spec === undefined) { Courier.alert('malformed toolbox entry: no menu id'); throw new Error(); }
+        const menuItem = this.lookup.get(mid);
+        if (menuItem === undefined) { Courier.alert('malformed toolbox entry: bad menu id'); throw new Error(); }
+        const tool = menuItem.fromJSON(spec);
+        if (tool === undefined) { Courier.alert('malformed toolbox entry: tool gen failed'); throw new Error(); }
+        return tool;
+    }
 }
 
 export class MenuItem {

@@ -368,6 +368,13 @@ div.actions {
             padding: 5px 10px;
             margin-left: 20px;
             display: none;
+            span.subtool {
+                margin: 0 0.5rem;
+                padding: 0.2rem;
+                background-color: #ddd;
+                box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+                svg { width: 1rem; height: 1rem; vertical-align: middle; }
+            }
         }
         &.addtool-active { > label, > span { display: inline; }}
     }

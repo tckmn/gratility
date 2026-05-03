@@ -3,6 +3,7 @@ import * as Draw from './draw.js';
 import * as Data from './data.js'; // TODO only needed for enums, maybe factor those out
 import * as Courier from './courier.js';
 import * as Tool from './tools/tool.js';
+import * as Toolbox from './toolbox.js';
 
 export class Param<T> {
     public val: T;
@@ -246,18 +247,65 @@ export class ParamSource {
         });
     }
 
-    public subtool(name: string, push: (prevVal: string, cb: (tparam: string, tool: Tool.Tool) => void) => void): Param<string> {
-        let val = '';
-        const el = this.el('label', name, 'span');
-        const btn = document.createElement('button');
-        btn.textContent = 'set subtool...';
-        btn.addEventListener('click', () => {
-            push(val, (tparam, tool) => {
-                val = tparam;
+    public subtool(name: string, toolbox: Toolbox.Toolboxbox): Param<string[]> {
+        let subs: Array<{ el: HTMLElement, tparam: string }> = [];
+        const el = this.el('span', name, 'span');
+
+        const addbtn = document.createElement('button');
+        addbtn.textContent = '+';
+        addbtn.addEventListener('click', () => {
+            toolbox.queryTool('', (tparam, tool) => {
+                addsub(tparam, tool);
             });
         });
-        el.append(btn);
-        return this.param(() => val, s => (val = s));
+        el.append(addbtn);
+
+        const addsub = (tparam: string, tool: Tool.Tool) => {
+            const sub = mksub(tparam, tool);
+            addbtn.before(sub.el);
+            subs.push(sub);
+        };
+
+        const mksub = (tparam: string, tool: Tool.Tool): { el: HTMLElement, tparam: string } => {
+            const el = document.createElement('span');
+            el.classList.add('subtool');
+            const sub = { el, tparam };
+
+            const delbtn = document.createElement('button');
+            delbtn.textContent = '×';
+            delbtn.addEventListener('click', () => {
+                // erm
+                sub.tparam = 'REMOVE';
+                for (let i = subs.length-1; i >= 0; --i) if (subs[i].tparam === 'REMOVE') subs.splice(i, 1);
+                el.remove();
+            });
+            el.append(delbtn);
+
+            const editbtn = document.createElement('button');
+            editbtn.textContent = '✎';
+            editbtn.addEventListener('click', () => {
+                toolbox.queryTool(tparam, (newtparam, newtool) => {
+                    const newsub = mksub(newtparam, newtool);
+                    el.before(newsub.el);
+                    el.remove();
+                    sub.el = newsub.el;
+                    sub.tparam = newsub.tparam;
+                });
+            });
+            el.append(editbtn);
+
+            const maybeIcon = tool.icon();
+            el.append(' ' + toolbox.toolMenu.lookup.get(tparam.split(':')[0])?.name + (maybeIcon === undefined ? '' : ' '));
+            if (maybeIcon !== undefined) el.append(maybeIcon);
+
+            return sub;
+        };
+
+        return this.param(() => subs.map(s => s.tparam), arr => {
+            for (const sub of subs) sub.el.remove();
+            subs = [];
+            for (const tparam of arr) addsub(tparam, toolbox.toolMenu.parse(tparam));
+        });
     }
 
     public setFromHTML() { for (const p of this.params) p.setFromHTML(); }
