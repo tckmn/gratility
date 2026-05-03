@@ -90,13 +90,6 @@ let resolve: number | string | boolean | undefined = undefined;
 menuevents.set('addtool-nop', (manager: MenuManager, menu: Menu, e: Event) => {
     e.preventDefault();
 });
-menuevents.set('addtool-close', (manager: MenuManager, menu: Menu) => {
-    for (;;) {
-        const pages = menu.popup.querySelectorAll('.page');
-        if (pages.length > 1) pages[0].remove();
-        else break;
-    }
-});
 
 // TODO: something if file does not exist below? it should never not exist
 
@@ -268,9 +261,13 @@ export default class MenuManager {
     public close() {
         if (this.activeMenu !== undefined) {
             const menu = this.activeMenu;
-            this.activeMenu.close();
-            this.activeMenu = undefined;
-            this.menuevent(menu, 'close');
+            const pages = menu.popup.querySelectorAll('.page');
+            if (pages.length > 1) pages[0].remove();
+            else {
+                this.activeMenu.close();
+                this.activeMenu = undefined;
+                this.menuevent(menu, 'close');
+            }
         }
     }
 
@@ -341,11 +338,7 @@ export default class MenuManager {
             elt.value = entry.describeBind();
             resolve = entry.tbind;
             btn.textContent = 'save edits';
-
-            const menuItem = entry.menuItem();
-            menuItem.element.classList.add('addtool-active');
-            menuItem.element.scrollIntoView();
-            menuItem.load(entry.spec());
+            this.setSelectedTool(this.gf.toolbox.toolMenu, entry.tparam);
         }
 
         menuevents.set('addtool-bindmouse', (manager: MenuManager, menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
@@ -377,7 +370,7 @@ export default class MenuManager {
                 return;
             }
 
-            const tool = manager.selectedTool(this.gf.toolbox.toolMenu, menu.popup);
+            const tool = manager.getSelectedTool(this.gf.toolbox.toolMenu, menu.popup);
             if (tool === undefined) return;
 
             if (entry === undefined) {
@@ -392,7 +385,18 @@ export default class MenuManager {
 
     }
 
-    public selectedTool(toolMenu: Toolbox.ToolMenu, cont: HTMLElement): [string, Tool.Tool] | undefined {
+    public setSelectedTool(toolMenu: Toolbox.ToolMenu, tparam: string) {
+        const menuItem = toolMenu.lookup.get(tparam.split(':')[0]);
+        if (menuItem === undefined) {
+            console.error('no menu item in setSelectedTool??', toolMenu, tparam);
+        } else {
+            menuItem.element.classList.add('addtool-active');
+            menuItem.element.scrollIntoView();
+            menuItem.load(tparam.slice(tparam.indexOf(':')+1));
+        }
+    }
+
+    public getSelectedTool(toolMenu: Toolbox.ToolMenu, cont: HTMLElement): [string, Tool.Tool] | undefined {
         const el = cont.querySelector('.addtool-active') as HTMLElement | null;
         if (!el) {
             Courier.alert('please pick an action for this tool');

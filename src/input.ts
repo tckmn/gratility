@@ -246,13 +246,13 @@ export class ParamSource {
         });
     }
 
-    public subtool(name: string, push: (cb: (tparam: string, tool: Tool.Tool) => void) => void): Param<string> {
+    public subtool(name: string, push: (prevVal: string, cb: (tparam: string, tool: Tool.Tool) => void) => void): Param<string> {
         let val = '';
         const el = this.el('label', name, 'span');
         const btn = document.createElement('button');
         btn.textContent = 'set subtool...';
         btn.addEventListener('click', () => {
-            push((tparam, tool) => {
+            push(val, (tparam, tool) => {
                 val = tparam;
             });
         });

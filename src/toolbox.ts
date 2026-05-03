@@ -445,17 +445,18 @@ export class Toolboxbox {
         return tm;
     }
 
-    private subtool(cb: (tparam: string, tool: Tool.Tool) => void) {
-        this.gf.menu.push('confirm subtool', (cont) => {
+    private subtool(prevVal: string, cb: (tparam: string, tool: Tool.Tool) => void) {
+        const toolMenu = this.gf.menu.push('confirm subtool', (cont) => {
             cont.classList.add('big');
             cont.classList.add('actions');
             return this.generateMenu(cont);
         }, (tm, page) => {
-            const tool = this.gf.menu.selectedTool(tm, page);
+            const tool = this.gf.menu.getSelectedTool(tm, page);
             if (tool === undefined) return false;
             cb(tool[0], tool[1]);
             return true;
         });
+        if (toolMenu && prevVal) this.gf.menu.setSelectedTool(toolMenu, prevVal);
     }
 
 }
