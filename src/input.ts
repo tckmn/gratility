@@ -308,6 +308,19 @@ export class ParamSource {
         });
     }
 
+    public binding(name: string): Param<number | string | boolean | undefined> {
+        let val: number | string | boolean | undefined = undefined;
+        const el = this.el('label', name, 'input');
+        const p = this.param(() => val, tbind => setval(tbind));
+        const setval = (tbind: number | string | boolean | undefined) => (p.hook(val = tbind), el.value = tbind === undefined ? '' : new Toolbox.Bind(tbind).describe());
+        el.addEventListener('pointerdown', e => { if (e.button !== 0) e.preventDefault(); setval(e.button); });
+        el.addEventListener('keydown', e => { e.preventDefault(); setval(e.key); });
+        el.addEventListener('wheel', e => { e.preventDefault(); setval(e.deltaY < 0); });
+        el.addEventListener('paste', e => e.preventDefault());
+        el.addEventListener('contextmenu', e => e.preventDefault());
+        return p;
+    }
+
     public setFromHTML() { for (const p of this.params) p.setFromHTML(); }
     public setFromJSON(s: string) { JSON.parse(`[${s}]`).forEach((x:any,i:any) => this.params[i].setFromJSON(x)); }
 

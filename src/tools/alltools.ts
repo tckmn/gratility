@@ -1,5 +1,6 @@
 import * as Tool from './tool.js';
 
+export { default as BindTool      } from './bind.js';
 export { default as CopyTool      } from './copy.js';
 export { default as FuncTool      } from './func.js';
 export { default as LineTool      } from './line.js';

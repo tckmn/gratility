@@ -25,15 +25,10 @@ function onesplit(s: string, delim: string): [string, string | undefined] {
     return parts.length === 1 ? [s, undefined] : [parts[0], parts.slice(1).join(delim)];
 }
 
-export class ToolboxEntry {
+export class Bind {
+    constructor(public tbind: number | string | boolean) {}
 
-    constructor(private gf: Gratility.Frontend, public tbind: number | string | boolean, public tparam: string, public tool: Tool.Tool) {}
-    public mid(): string { return this.tparam.split(':')[0]; }
-    public spec(): string { return this.tparam.slice(this.tparam.indexOf(':')+1); }
-    public menuItem(): MenuItem { return this.gf.toolbox.toolMenu.lookup.get(this.mid())!; }
-    public replace(tbind: number | string | boolean, tparam: string, tool: Tool.Tool) { this.tbind = tbind; this.tparam = tparam; this.tool = tool; }
-
-    public describeBind(): string {
+    public describe() {
         switch (typeof this.tbind) {
         case 'number': return `click ${this.tbind}`;
         case 'string': return `key [${this.tbind}]`;
@@ -41,7 +36,7 @@ export class ToolboxEntry {
         }
     }
 
-    public renderBind(): HTMLElement {
+    public render(): HTMLElement {
         const el = document.createElement('span');
         el.classList.add('pic');
         switch (typeof this.tbind) {
@@ -52,7 +47,7 @@ export class ToolboxEntry {
         return el;
     }
 
-    private saveBind(): string {
+    public save(): string {
         switch (typeof this.tbind) {
         case 'number': return `m${this.tbind}`;
         case 'string': return `k${this.tbind}`;
@@ -60,31 +55,43 @@ export class ToolboxEntry {
         }
     }
 
+    static load(s: string): Bind {
+        const bindtype = s[0];
+        const bindval = s.slice(1);
+        switch (bindtype) {
+        case 'm': return new Bind(parseInt(bindval, 10));
+        case 'k': return new Bind(bindval);
+        case 'w': return new Bind(bindval === '1');
+        default: Courier.alert('malformed toolbox entry: bad bind'); throw new Error();
+        }
+    }
+}
+
+export class ToolboxEntry {
+
+    constructor(private gf: Gratility.Frontend, public tbind: Bind, public tparam: string, public tool: Tool.Tool) {}
+    public mid(): string { return this.tparam.split(':')[0]; }
+    public spec(): string { return this.tparam.slice(this.tparam.indexOf(':')+1); }
+    public menuItem(): MenuItem { return this.gf.toolbox.toolMenu.lookup.get(this.mid())!; }
+    public replace(tbind: Bind, tparam: string, tool: Tool.Tool) { this.tbind = tbind; this.tparam = tparam; this.tool = tool; }
+
     public save(): string {
         // the delimiter is :: to avoid any confusion about keybinds to Space
         // maybe i should just globally turn ' ' into 'Space' everywhere,
         // but whatever
-        return `${this.saveBind()}::${this.tparam}`;
+        return `${this.tbind.save()}::${this.tparam}`;
     }
 
     static load(gf: Gratility.Frontend, s: string): ToolboxEntry {
         const [bind, rest] = onesplit(s, '::');
         if (rest === undefined) { Courier.alert('malformed toolbox entry: no bind'); throw new Error(); }
-        const bindtype = bind[0];
-        const bindval = bind.slice(1);
-        const tool = gf.toolbox.toolMenu.parse(rest);
-        switch (bindtype) {
-        case 'm': return new ToolboxEntry(gf, parseInt(bindval, 10), rest, tool);
-        case 'k': return new ToolboxEntry(gf, bindval, rest, tool);
-        case 'w': return new ToolboxEntry(gf, bindval === '1', rest, tool);
-        default: Courier.alert('malformed toolbox entry: bad bind'); throw new Error();
-        }
+        return new ToolboxEntry(gf, Bind.load(bind), rest, gf.toolbox.toolMenu.parse(rest));
     }
 
     public display(toolbox: Toolbox): HTMLElement {
         const container = document.createElement('div');
 
-        container.appendChild(this.renderBind());
+        container.appendChild(this.tbind.render());
 
         const name = document.createElement('div');
         name.textContent = this.menuItem().name;
@@ -115,11 +122,15 @@ export class Toolbox {
 
     constructor(private readonly gf: Gratility.Frontend, public enabled: boolean, public name: string, public readonly tools: Array<ToolboxEntry> = []) {}
 
-    public hasBind(tbind: number | string | boolean): boolean {
-        return this.tools.some(e => e.tbind === tbind);
+    public byBind(tbind: Bind): ToolboxEntry | undefined {
+        return this.tools.find(e => e.tbind.tbind === tbind.tbind);
     }
 
-    public addBind(tbind: number | string | boolean, tparam: string, tool: Tool.Tool): boolean {
+    public hasBind(tbind: Bind): boolean {
+        return this.tools.some(e => e.tbind.tbind === tbind.tbind);
+    }
+
+    public addBind(tbind: Bind, tparam: string, tool: Tool.Tool): boolean {
         if (this.hasBind(tbind)) return false;
         this.tools.push(new ToolboxEntry(this.gf, tbind, tparam, tool));
         return true;
@@ -291,7 +302,7 @@ export class Toolboxbox {
     public readonly keyTools = new Map<string, Tool.Tool>();
     public readonly wheelTools = new Map<boolean, Tool.Tool>();
 
-    constructor(private gf: Gratility.Frontend, private container: HTMLElement | undefined) {
+    constructor(public gf: Gratility.Frontend, private container: HTMLElement | undefined) {
         this.toolMenu = gf.menu.init_addtool(el => this.generateMenu(el));
     }
 
@@ -315,10 +326,10 @@ export class Toolboxbox {
         for (const toolbox of this.toolboxes) {
             if (!toolbox.enabled) continue;
             for (const entry of toolbox.tools) {
-                switch (typeof entry.tbind) {
-                case 'number': this.mouseTools.set(entry.tbind, entry.tool); break;
-                case 'string': this.keyTools.set(entry.tbind, entry.tool); break;
-                case 'boolean': this.wheelTools.set(entry.tbind, entry.tool); break;
+                switch (typeof entry.tbind.tbind) {
+                case 'number': this.mouseTools.set(entry.tbind.tbind, entry.tool); break;
+                case 'string': this.keyTools.set(entry.tbind.tbind, entry.tool); break;
+                case 'boolean': this.wheelTools.set(entry.tbind.tbind, entry.tool); break;
                 }
             }
         }
@@ -428,7 +439,18 @@ export class Toolboxbox {
         group = Input.makeGroup(menuCont, 'meta');
         group.append(tm.item('multi', 'Multi', (param) => {
             const subtools = param.subtool('subtools', this);
-            return () => new Tools.MultiTool(subtools.val.map(s => this.toolMenu.parse(s)));
+            return () => subtools.val.length ? new Tools.MultiTool(subtools.val.map(s => this.toolMenu.parse(s))) : (Courier.alert('add at least one subtool'), undefined);
+        }, 'natwidth'));
+        group.append(tm.item('bind', 'Bind', (param) => {
+            const name = param.text('toolbox');
+            const binding = param.binding('binding');
+            const action = param.subtool('action', this);
+            return () => {
+                if (!name.val) { Courier.alert('please provide a toolbox to set the binding in'); return; }
+                if (binding.val === undefined) { Courier.alert('please pick a binding to bind to'); return; }
+                if (action.val.length === 0) { Courier.alert('please pick an action to bind to'); return; }
+                return new Tools.BindTool(this, name.val, new Bind(binding.val), action.val[0], this.toolMenu.parse(action.val[0]));
+            };
         }, 'natwidth'));
 
         return tm;

@@ -86,7 +86,7 @@ const menuevents: Map<string, MenuEvent> = new Map();
 
 // ###### ADD TOOL MENU ###### //
 
-let resolve: number | string | boolean | undefined = undefined;
+let resolve: Toolbox.Bind | undefined = undefined;
 menuevents.set('addtool-nop', (manager: MenuManager, menu: Menu, e: Event) => {
     e.preventDefault();
 });
@@ -335,33 +335,31 @@ export default class MenuManager {
             resolve = undefined;
             btn.textContent = 'add';
         } else {
-            elt.value = entry.describeBind();
+            elt.value = entry.tbind.describe();
             resolve = entry.tbind;
             btn.textContent = 'save edits';
             this.setSelectedTool(this.gf.toolbox.toolMenu, entry.tparam);
         }
 
+        const setres = (b: Toolbox.Bind, target: HTMLInputElement) => {
+            target.value = b.describe();
+            const conflict = b.tbind !== entry?.tbind?.tbind && box.hasBind(b);
+            target.classList.toggle('conflict', conflict);
+            resolve = conflict ? undefined : b;
+        };
+
         menuevents.set('addtool-bindmouse', (manager: MenuManager, menu: Menu, e: MouseEvent, target: HTMLInputElement) => {
             if (e.button !== 0) e.preventDefault();
-            target.value = 'click ' + e.button;
-            const conflict = e.button != entry?.tbind && box.hasBind(e.button);
-            target.classList.toggle('conflict', conflict);
-            resolve = conflict ? undefined : e.button;
+            setres(new Toolbox.Bind(e.button), target);
         });
 
         menuevents.set('addtool-bindkey', (manager: MenuManager, menu: Menu, e: KeyboardEvent, target: HTMLInputElement) => {
             e.preventDefault();
-            target.value = 'key [' + e.key + ']';
-            const conflict = e.key != entry?.tbind && box.hasBind(e.key);
-            target.classList.toggle('conflict', conflict);
-            resolve = conflict ? undefined : e.key;
+            setres(new Toolbox.Bind(e.key), target);
         });
 
         menuevents.set('addtool-bindwheel', (manager: MenuManager, menu: Menu, e: WheelEvent, target: HTMLInputElement) => {
-            target.value = 'scr ' + (e.deltaY < 0 ? 'up' : 'dn');
-            const conflict = (e.deltaY < 0) != entry?.tbind && box.hasBind(e.deltaY < 0);
-            target.classList.toggle('conflict', conflict);
-            resolve = conflict ? undefined : e.deltaY < 0;
+            setres(new Toolbox.Bind(e.deltaY < 0), target);
         });
 
         menuevents.set('addtool-go', (manager: MenuManager, menu: Menu) => {
@@ -494,8 +492,8 @@ export default class MenuManager {
         }
 
         for (const state of states) {
+            // TODO refactor stuff in input.ts + this
             if (state.classList.contains('multisel')) {
-                // TODO refactor multisel stuff in toolbox.ts + this
                 const k = state.dataset.menu!;
                 const any = state.classList.contains('any');
                 const children = Array.from(state.children) as Array<HTMLElement>;
