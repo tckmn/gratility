@@ -20,10 +20,19 @@ kv::paste:
 w1::zoomin:
 w0::zoomout:`;
 
-// for load()
 function onesplit(s: string, delim: string): [string, string | undefined] {
     const parts = s.split(delim);
     return parts.length === 1 ? [s, undefined] : [parts[0], parts.slice(1).join(delim)];
+}
+
+export function parse(gf: Gratility.Frontend, s: string): Tool.Tool {
+    const [mid, spec] = onesplit(s, ':');
+    if (spec === undefined) { Courier.alert('malformed toolbox entry: no menu id'); throw new Error(); }
+    const menuItem = gf.toolbox.toolMenu.lookup.get(mid);
+    if (menuItem === undefined) { Courier.alert('malformed toolbox entry: bad menu id'); throw new Error(); }
+    const tool = menuItem.fromJSON(spec);
+    if (tool === undefined) { Courier.alert('malformed toolbox entry: tool gen failed'); throw new Error(); }
+    return tool;
 }
 
 export class ToolboxEntry {
@@ -71,14 +80,9 @@ export class ToolboxEntry {
     static load(gf: Gratility.Frontend, s: string): ToolboxEntry {
         const [bind, rest] = onesplit(s, '::');
         if (rest === undefined) { Courier.alert('malformed toolbox entry: no bind'); throw new Error(); }
-        const [mid, spec] = onesplit(rest, ':');
-        if (spec === undefined) { Courier.alert('malformed toolbox entry: no menu id'); throw new Error(); }
-        const menuItem = gf.toolbox.toolMenu.lookup.get(mid);
-        if (menuItem === undefined) { Courier.alert('malformed toolbox entry: bad menu id'); throw new Error(); }
         const bindtype = bind[0];
         const bindval = bind.slice(1);
-        const tool = menuItem.fromJSON(spec);
-        if (tool === undefined) { Courier.alert('malformed toolbox entry: tool gen failed'); throw new Error(); }
+        const tool = parse(gf, rest);
         switch (bindtype) {
         case 'm': return new ToolboxEntry(gf, parseInt(bindval, 10), rest, tool);
         case 'k': return new ToolboxEntry(gf, bindval, rest, tool);
@@ -432,10 +436,26 @@ export class Toolboxbox {
         group.append(tm.item('redo', 'Redo', () => () => new Tools.UndoTool(false)));
 
         group = Input.makeGroup(menuCont, 'meta');
-        // group.append(tm.item('multi', 'Multi', (param) => {
-        // }));
+        group.append(tm.item('multi', 'Multi', (param) => {
+            const t1 = param.subtool('subtool 1', this.subtool.bind(this));
+            const t2 = param.subtool('subtool 2', this.subtool.bind(this));
+            return () => new Tools.MultiTool([parse(this.gf, t1.val), parse(this.gf, t2.val)]);
+        }, 'natwidth'));
 
         return tm;
+    }
+
+    private subtool(cb: (tparam: string, tool: Tool.Tool) => void) {
+        this.gf.menu.push('confirm subtool', (cont) => {
+            cont.classList.add('big');
+            cont.classList.add('actions');
+            return this.generateMenu(cont);
+        }, (tm, page) => {
+            const tool = this.gf.menu.selectedTool(tm, page);
+            if (tool === undefined) return false;
+            cb(tool[0], tool[1]);
+            return true;
+        });
     }
 
 }

@@ -167,7 +167,7 @@ div#menupopups > div {
     &.small { width: 40vw; height: 40vh; left: 30vw; top: 30vh; }
     .big { flex: 1; }
     > div.scroll { overflow-y: auto; }
-    > div.page { min-height: 0; display: flex; flex-direction: column; }
+    > div.page { min-height: 0; display: none; &:first-child { display: flex; } flex-direction: column; }
 }
 
 div.menuclose {
@@ -345,7 +345,7 @@ section.group {
     }
 }
 
-div#actions {
+div.actions {
     overflow-y: scroll;
 
     div.settool {

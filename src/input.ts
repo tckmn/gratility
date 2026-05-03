@@ -246,6 +246,20 @@ export class ParamSource {
         });
     }
 
+    public subtool(name: string, push: (cb: (tparam: string, tool: Tool.Tool) => void) => void): Param<string> {
+        let val = '';
+        const el = this.el('label', name, 'span');
+        const btn = document.createElement('button');
+        btn.textContent = 'set subtool...';
+        btn.addEventListener('click', () => {
+            push((tparam, tool) => {
+                val = tparam;
+            });
+        });
+        el.append(btn);
+        return this.param(() => val, s => (val = s));
+    }
+
     public setFromHTML() { for (const p of this.params) p.setFromHTML(); }
     public setFromJSON(s: string) { JSON.parse(`[${s}]`).forEach((x:any,i:any) => this.params[i].setFromJSON(x)); }
 

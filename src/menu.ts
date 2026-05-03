@@ -4,6 +4,7 @@ import * as Data from './data.js';
 import * as Draw from './draw.js';
 import * as Toolbox from './toolbox.js';
 import * as File from './file.js';
+import * as Tool from './tools/tool.js';
 import * as Tools from './tools/alltools.js';
 import * as Courier from './courier.js';
 
@@ -80,13 +81,21 @@ const menuactions: Map<string, (manager: MenuManager) => void> = new Map([
 ]);
 
 
-const menuevents: Map<string, (manager: MenuManager, menu: Menu, e: never, target: never) => void> = new Map();
+type MenuEvent = (manager: MenuManager, menu: Menu, e: never, target: never) => void;
+const menuevents: Map<string, MenuEvent> = new Map();
 
 // ###### ADD TOOL MENU ###### //
 
 let resolve: number | string | boolean | undefined = undefined;
 menuevents.set('addtool-nop', (manager: MenuManager, menu: Menu, e: Event) => {
     e.preventDefault();
+});
+menuevents.set('addtool-close', (manager: MenuManager, menu: Menu) => {
+    for (;;) {
+        const pages = menu.popup.querySelectorAll('.page');
+        if (pages.length > 1) pages[0].remove();
+        else break;
+    }
 });
 
 // TODO: something if file does not exist below? it should never not exist
@@ -242,6 +251,7 @@ export default class MenuManager {
 
     private activeMenu: Menu | undefined = undefined;
     private contextMenu: ContextMenu | undefined = undefined;
+    private stack: Array<MenuEvent> = [];
 
     public isOpen(): boolean { return this.activeMenu !== undefined || this.contextMenu !== undefined; }
 
@@ -367,27 +377,58 @@ export default class MenuManager {
                 return;
             }
 
-            const el = document.getElementsByClassName('addtool-active')[0] as HTMLElement | undefined;
-            if (el === undefined) {
-                Courier.alert('please pick an action for this tool');
-                return;
-            }
-
-            const menuItem = manager.gf.toolbox.toolMenu.lookup.get(el.dataset.tool!)!;
-            const tparam = menuItem.save();
-            const tool = menuItem.fromHTML();
+            const tool = manager.selectedTool(this.gf.toolbox.toolMenu, menu.popup);
             if (tool === undefined) return;
 
             if (entry === undefined) {
-                box.addBind(resolve, tparam, tool);
+                box.addBind(resolve, tool[0], tool[1]);
             } else {
-                entry.replace(resolve, tparam, tool);
+                entry.replace(resolve, tool[0], tool[1]);
             }
 
             manager.gf.toolbox.saveRefresh();
             manager.close();
         });
 
+    }
+
+    public selectedTool(toolMenu: Toolbox.ToolMenu, cont: HTMLElement): [string, Tool.Tool] | undefined {
+        const el = cont.querySelector('.addtool-active') as HTMLElement | null;
+        if (!el) {
+            Courier.alert('please pick an action for this tool');
+            return;
+        }
+
+        const menuItem = toolMenu.lookup.get(el.dataset.tool!);
+        if (menuItem === undefined) return;
+
+        const tparam = menuItem.save();
+        const tool = menuItem.fromHTML();
+        if (tool === undefined) return;
+
+        return [tparam, tool];
+    }
+
+    public push<T>(btnText: string, fn: (_: HTMLElement) => T, cb: (ret: T, cont: HTMLElement) => boolean): T | undefined {
+        const menu = this.activeMenu;
+        if (menu === undefined) return;
+
+        const page = document.createElement('div');
+        page.classList.add('page');
+        menu.popup.prepend(page);
+
+        const cont = document.createElement('div');
+        page.append(cont);
+        const ret = fn(cont);
+
+        const btn = document.createElement('button');
+        btn.textContent = btnText;
+        btn.addEventListener('click', e => {
+            if (cb(ret, cont)) page.remove();
+        });
+        page.append(btn);
+
+        return ret;
     }
 
     private readonly menus: Map<string, Menu> = new Map();
