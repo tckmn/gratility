@@ -298,9 +298,9 @@ export class Toolboxbox {
     public toolboxes: Array<Toolbox> = [];
     public toolMenu: ToolMenu;
 
-    public readonly mouseTools = new Map<number, Tool.Tool>();
-    public readonly keyTools = new Map<string, Tool.Tool>();
-    public readonly wheelTools = new Map<boolean, Tool.Tool>();
+    public readonly mouseTools = new Map<number, [Toolbox, Tool.Tool]>();
+    public readonly keyTools = new Map<string, [Toolbox, Tool.Tool]>();
+    public readonly wheelTools = new Map<boolean, [Toolbox, Tool.Tool]>();
 
     constructor(public gf: Gratility.Frontend, private container: HTMLElement | undefined) {
         this.toolMenu = gf.menu.init_addtool(el => this.generateMenu(el));
@@ -327,9 +327,9 @@ export class Toolboxbox {
             if (!toolbox.enabled) continue;
             for (const entry of toolbox.tools) {
                 switch (typeof entry.tbind.tbind) {
-                case 'number': this.mouseTools.set(entry.tbind.tbind, entry.tool); break;
-                case 'string': this.keyTools.set(entry.tbind.tbind, entry.tool); break;
-                case 'boolean': this.wheelTools.set(entry.tbind.tbind, entry.tool); break;
+                case 'number': this.mouseTools.set(entry.tbind.tbind, [toolbox, entry.tool]); break;
+                case 'string': this.keyTools.set(entry.tbind.tbind, [toolbox, entry.tool]); break;
+                case 'boolean': this.wheelTools.set(entry.tbind.tbind, [toolbox, entry.tool]); break;
                 }
             }
         }
@@ -446,7 +446,6 @@ export class Toolboxbox {
             const binding = param.binding('binding');
             const action = param.subtool('action', this);
             return () => {
-                if (!name.val) { Courier.alert('please provide a toolbox to set the binding in'); return; }
                 if (binding.val === undefined) { Courier.alert('please pick a binding to bind to'); return; }
                 if (action.val.length === 0) { Courier.alert('please pick an action to bind to'); return; }
                 return new Tools.BindTool(this, name.val, new Bind(binding.val), action.val[0], this.toolMenu.parse(action.val[0]));

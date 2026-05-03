@@ -32,16 +32,16 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
         upd(e);
         const t = gf.toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        t.ondown(lastX, lastY, gb);
-        activeTools.add(t);
+        t[1].ondown(lastX, lastY, gb, t[0]);
+        activeTools.add(t[1]);
     });
 
     svg.addEventListener('pointerup', e => {
         if (gf.menu.isOpen()) return;
         const t = gf.toolbox.mouseTools.get(e.button);
         if (t === undefined) return;
-        t.onup(gb);
-        activeTools.delete(t);
+        t[1].onup(gb);
+        activeTools.delete(t[1]);
     });
 
     svg.addEventListener('pointerleave', e => {
@@ -60,9 +60,9 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
         }
         const t = gf.toolbox.keyTools.get(e.key);
         if (t === undefined) return;
-        if (e.repeat && !t.repeat) return;
-        t.ondown(lastX, lastY, gb);
-        activeTools.add(t);
+        if (e.repeat && !t[1].repeat) return;
+        t[1].ondown(lastX, lastY, gb, t[0]);
+        activeTools.add(t[1]);
     };
     page.addEventListener('keydown', kd);
 
@@ -70,8 +70,8 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
         if (gf.menu.isOpen()) return;
         const t = gf.toolbox.keyTools.get(e.key);
         if (t === undefined) return;
-        t.onup(gb);
-        activeTools.delete(t);
+        t[1].onup(gb);
+        activeTools.delete(t[1]);
     };
     page.addEventListener('keyup', ku);
 
@@ -79,8 +79,8 @@ export function initialize(gf: Gratility.Frontend, gb: Gratility.Backend, svg: S
         if (gf.menu.isOpen()) return;
         const t = gf.toolbox.wheelTools.get(e.deltaY < 0);
         if (t === undefined) return;
-        t.ondown(lastX, lastY, gb);
-        t.onup(gb);
+        t[1].ondown(lastX, lastY, gb, t[0]);
+        t[1].onup(gb);
     };
     page.addEventListener('wheel', wh);
 

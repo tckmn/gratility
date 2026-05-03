@@ -2,11 +2,12 @@ import * as Gratility from '../gratility.js';
 import * as Data from '../data.js';
 import * as Draw from '../draw.js';
 import * as Measure from '../measure.js';
+import * as Toolbox from '../toolbox.js';
 
 export abstract class Tool {
     abstract readonly repeat: boolean;
     icon(): SVGElement | void {}
-    ondown(x: number, y: number, g: Gratility.Backend): void {}
+    ondown(x: number, y: number, g: Gratility.Backend, b: Toolbox.Toolbox): void {}
     onmove(x: number, y: number, g: Gratility.Backend): void {}
     onup(g: Gratility.Backend): void {}
     onclick(g: Gratility.Backend): boolean { return false; }
