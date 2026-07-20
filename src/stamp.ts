@@ -88,7 +88,7 @@ export class Stamp {
         svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
         if (bgcolor !== undefined) {
-            image.root.prepend(Draw.draw(undefined, 'rect', { fill: bgcolor, x: vx, y: vy, w: vw, h: vh }));
+            image.root.prepend(Draw.draw(undefined, 'rect', { fill: bgcolor, x: vx, y: vy, width: vw, height: vh }));
         }
     }
 }
